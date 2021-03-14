@@ -1,5 +1,5 @@
-# From https://www.apache.org/dist/subversion/subversion-1.9.10.tar.bz2.sha512
-sha512 08a5c6c0233cc1dbd992180d2077eb1c67725682c457d3f67ebb6d22db0f6b64002a699ab828d435b708340ce6fb07bb1f03d11daefb887053c427ed75ad2de7 subversion-1.9.12.tar.bz2
+# From https://www.apache.org/dist/subversion/subversion-1.14.0.tar.bz2.sha512
+sha512  af6b706fdc91f7ab292fce9d9de582da306fd11e92767dc852687e71a6a8b65bb867fa70d5afd7f76a46005acb1b3c2d3193e690def48cd26875b3a7851cd13b  subversion-1.14.0.tar.bz2
 
 # Locally calculated
-sha256 3202942c1aba495fd17390618dedc1d3542815c5bc11958da7fd98c985abc11a LICENSE
+sha256  484aff0cfbb81155a10f903ed756e27e9fc65578c245a295bae295c4bb51eaad  LICENSE

@@ -4,9 +4,8 @@
 #
 ################################################################################
 
-MPV_VERSION = 0.29.1
-MPV_SITE = https://github.com/mpv-player/mpv/archive
-MPV_SOURCE = v$(MPV_VERSION).tar.gz
+MPV_VERSION = 0.32.0
+MPV_SITE = $(call github,mpv-player,mpv,v$(MPV_VERSION))
 MPV_DEPENDENCIES = \
 	host-pkgconf ffmpeg zlib \
 	$(if $(BR2_PACKAGE_LIBICONV),libiconv)
@@ -23,15 +22,11 @@ MPV_CONF_OPTS = \
 	--disable-cocoa \
 	--disable-coreaudio \
 	--disable-cuda-hwaccel \
-	--disable-libv4l2 \
 	--disable-opensles \
 	--disable-rsound \
 	--disable-rubberband \
 	--disable-uchardet \
-	--disable-vapoursynth \
-	--disable-vapoursynth-lazy \
-	--disable-vdpau \
-	--disable-mali-fbdev
+	--disable-vapoursynth
 
 # ALSA support requires pcm+mixer
 ifeq ($(BR2_PACKAGE_ALSA_LIB_MIXER)$(BR2_PACKAGE_ALSA_LIB_PCM),yy)
@@ -114,20 +109,20 @@ else
 MPV_CONF_OPTS += --disable-dvdnav
 endif
 
-# libdvdread
-ifeq ($(BR2_PACKAGE_LIBDVDREAD),y)
-MPV_CONF_OPTS += --enable-dvdread
-MPV_DEPENDENCIES += libdvdread
-else
-MPV_CONF_OPTS += --disable-dvdread
-endif
-
 # libdrm
 ifeq ($(BR2_PACKAGE_LIBDRM),y)
 MPV_CONF_OPTS += --enable-drm
 MPV_DEPENDENCIES += libdrm
 else
 MPV_CONF_OPTS += --disable-drm
+endif
+
+# libvdpau
+ifeq ($(BR2_PACKAGE_LIBVDPAU),y)
+MPV_CONF_OPTS += --enable-vdpau
+MPV_DEPENDENCIES += libvdpau
+else
+MPV_CONF_OPTS += --disable-vdpau
 endif
 
 # LUA support, only for lua51/lua52/luajit
@@ -217,6 +212,10 @@ MPV_CONF_OPTS += --disable-xv
 endif
 else
 MPV_CONF_OPTS += --disable-x11
+endif
+
+ifeq ($(BR2_TOOLCHAIN_HAS_LIBATOMIC),y)
+MPV_CONF_ENV += LDFLAGS="$(TARGET_LDFLAGS) -latomic"
 endif
 
 $(eval $(waf-package))

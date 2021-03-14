@@ -1,8 +1,8 @@
 # Locally computed:
-md5    b4529e0cf8e0ee82a2f677e404c3df35  prosody-0.11.2.tar.gz
-sha1   0508cfc1c3c74a7eb8fdac2ed50435e190930f6a  prosody-0.11.2.tar.gz
-sha256 8911f6dc29b9e0c4edf9e61dc23fa22d77bc42c4caf28b809ab843b2f08e4831  prosody-0.11.2.tar.gz
-sha512 22e55a551a40c92f38a1ed1de5fdcad574d699d58c2e27f93c3d465b55487b8e923c2ba088daf93c7140cbafb0d429687e0b662c8bb1c1aba4b79ac1ea271cd1  prosody-0.11.2.tar.gz
+md5  a9bf18a713804b5cc9d0322d1bf5d5d8  prosody-0.11.7.tar.gz
+sha1  425e1c7ca37464b31711da8eb4a4c9444a70360f  prosody-0.11.7.tar.gz
+sha256  28ffc07653485cb63e22b387d3ea4825ee2baaee0c5827de4d6053a35b1c8747   prosody-0.11.7.tar.gz
+sha512  923aa92598ef851ed8408931942859f78f1e3d700fee251f4f5ca67abdcdae43448318ed90a9a1cdc7824d5f4dc5a4732fad4b9ed36d97455fa9b3bff0881a20  prosody-0.11.7.tar.gz
 
 # Hash for license file:
 sha256 bbbdc1c5426e5944cf869fc0faeaf19d88a220cd2b39ea98b7b8e86b0e88a2ef  COPYING

@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-DHCPCD_VERSION = 7.2.2
+DHCPCD_VERSION = 9.1.4
 DHCPCD_SOURCE = dhcpcd-$(DHCPCD_VERSION).tar.xz
 DHCPCD_SITE = http://roy.marples.name/downloads/dhcpcd
 DHCPCD_DEPENDENCIES = host-pkgconf
@@ -16,7 +16,7 @@ DHCPCD_CONFIG_OPTS += --enable-static
 endif
 
 ifeq ($(BR2_USE_MMU),)
-DHCPCD_CONFIG_OPTS += --disable-fork
+DHCPCD_CONFIG_OPTS += --disable-fork --disable-privsep
 endif
 
 define DHCPCD_CONFIGURE_CMDS
@@ -48,9 +48,6 @@ endef
 define DHCPCD_INSTALL_INIT_SYSTEMD
 	$(INSTALL) -D -m 0644 package/dhcpcd/dhcpcd.service \
 		$(TARGET_DIR)/usr/lib/systemd/system/dhcpcd.service
-	mkdir -p $(TARGET_DIR)/etc/systemd/system/multi-user.target.wants
-	ln -sf ../../../../usr/lib/systemd/system/dhcpcd.service \
-		$(TARGET_DIR)/etc/systemd/system/multi-user.target.wants/dhcpcd.service
 endef
 endif
 

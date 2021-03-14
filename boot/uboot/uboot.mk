@@ -8,9 +8,15 @@ UBOOT_VERSION = $(call qstrip,$(BR2_TARGET_UBOOT_VERSION))
 UBOOT_BOARD_NAME = $(call qstrip,$(BR2_TARGET_UBOOT_BOARDNAME))
 
 UBOOT_LICENSE = GPL-2.0+
+ifeq ($(BR2_TARGET_UBOOT_LATEST_VERSION),y)
 UBOOT_LICENSE_FILES = Licenses/gpl-2.0.txt
+endif
 
 UBOOT_INSTALL_IMAGES = YES
+
+# u-boot 2020.01+ needs make 4.0+
+UBOOT_DEPENDENCIES = $(BR2_MAKE_HOST_DEPENDENCY)
+UBOOT_MAKE = $(BR2_MAKE)
 
 ifeq ($(UBOOT_VERSION),custom)
 # Handle custom U-Boot tarballs as specified by the configuration
@@ -28,7 +34,7 @@ UBOOT_SITE = $(call qstrip,$(BR2_TARGET_UBOOT_CUSTOM_REPO_URL))
 UBOOT_SITE_METHOD = svn
 else
 # Handle stable official U-Boot versions
-UBOOT_SITE = ftp://ftp.denx.de/pub/u-boot
+UBOOT_SITE = https://ftp.denx.de/pub/u-boot
 UBOOT_SOURCE = u-boot-$(UBOOT_VERSION).tar.bz2
 endif
 
@@ -85,6 +91,11 @@ UBOOT_BINS += u-boot.img
 UBOOT_MAKE_TARGET += u-boot.img
 endif
 
+ifeq ($(BR2_TARGET_UBOOT_FORMAT_ITB),y)
+UBOOT_BINS += u-boot.itb
+UBOOT_MAKE_TARGET += u-boot.itb
+endif
+
 ifeq ($(BR2_TARGET_UBOOT_FORMAT_IMX),y)
 UBOOT_BINS += u-boot.imx
 UBOOT_MAKE_TARGET += u-boot.imx
@@ -108,6 +119,11 @@ ifeq ($(BR2_TARGET_UBOOT_FORMAT_NAND),y)
 UBOOT_BINS += u-boot.nand
 UBOOT_MAKE_TARGET += u-boot.sb
 UBOOT_DEPENDENCIES += host-elftosb host-openssl
+endif
+
+ifeq ($(BR2_TARGET_UBOOT_FORMAT_STM32),y)
+UBOOT_BINS += u-boot.stm32
+UBOOT_MAKE_TARGET += u-boot.stm32
 endif
 
 ifeq ($(BR2_TARGET_UBOOT_FORMAT_CUSTOM),y)
@@ -149,12 +165,22 @@ ifeq ($(BR2_TARGET_UBOOT_NEEDS_DTC),y)
 UBOOT_DEPENDENCIES += host-dtc
 endif
 
+ifeq ($(BR2_TARGET_UBOOT_NEEDS_PYTHON2),y)
+UBOOT_DEPENDENCIES += host-python
+else ifeq ($(BR2_TARGET_UBOOT_NEEDS_PYTHON3),y)
+UBOOT_DEPENDENCIES += host-python3
+endif
+
 ifeq ($(BR2_TARGET_UBOOT_NEEDS_PYLIBFDT),y)
-UBOOT_DEPENDENCIES += host-python host-swig
+UBOOT_DEPENDENCIES += host-swig
 endif
 
 ifeq ($(BR2_TARGET_UBOOT_NEEDS_PYELFTOOLS),y)
+ifeq ($(BR2_TARGET_UBOOT_NEEDS_PYTHON2),y)
 UBOOT_DEPENDENCIES += host-python-pyelftools
+else ifeq ($(BR2_TARGET_UBOOT_NEEDS_PYTHON3),y)
+UBOOT_DEPENDENCIES += host-python3-pyelftools
+endif
 endif
 
 ifeq ($(BR2_TARGET_UBOOT_NEEDS_OPENSSL),y)
@@ -202,22 +228,42 @@ define UBOOT_APPLY_LOCAL_PATCHES
 endef
 UBOOT_POST_PATCH_HOOKS += UBOOT_APPLY_LOCAL_PATCHES
 
-# This is equivalent to upstream commit
-# http://git.denx.de/?p=u-boot.git;a=commitdiff;h=e0d20dc1521e74b82dbd69be53a048847798a90a. It
-# fixes a build failure when libfdt-devel is installed system-wide.
-# This only works when scripts/dtc/libfdt exists (E.G. versions containing
-# http://git.denx.de/?p=u-boot.git;a=commitdiff;h=c0e032e0090d6541549b19cc47e06ccd1f302893)
+# Fixup inclusion of libfdt headers, which can fail in older u-boot versions
+# when libfdt-devel is installed system-wide.
+# The core change is equivalent to upstream commit
+# e0d20dc1521e74b82dbd69be53a048847798a90a (first in v2018.03). However, the fixup
+# is complicated by the fact that the underlying u-boot code changed multiple
+# times in history:
+# - The directory scripts/dtc/libfdt only exists since upstream commit
+#   c0e032e0090d6541549b19cc47e06ccd1f302893 (first in v2017.11). For earlier
+#   versions, create a dummy scripts/dtc/libfdt directory with symlinks for the
+#   fdt-related files. This allows to use the same -I<path> option for both
+#   cases.
+# - The variable 'srctree' used to be called 'SRCTREE' before upstream commit
+#   01286329b27b27eaeda045b469d41b1d9fce545a (first in v2014.04).
+# - The original location for libfdt, 'lib/libfdt/', used to be simply
+#   'libfdt' before upstream commit 0de71d507157c4bd4fddcd3a419140d2b986eed2
+#   (first in v2010.06). Make the 'lib' part optional in the substitution to
+#   handle this.
 define UBOOT_FIXUP_LIBFDT_INCLUDE
-	if [ -d $(@D)/scripts/dtc/libfdt ]; then \
-		$(SED) 's%-I$$(srctree)/lib/libfdt%-I$$(srctree)/scripts/dtc/libfdt%' $(@D)/tools/Makefile; \
+	$(Q)if [ ! -d $(@D)/scripts/dtc/libfdt ]; then \
+		mkdir -p $(@D)/scripts/dtc/libfdt; \
+		cd $(@D)/scripts/dtc/libfdt; \
+		ln -s ../../../include/fdt.h .; \
+		ln -s ../../../include/libfdt*.h .; \
+		ln -s ../../../lib/libfdt/libfdt_internal.h .; \
 	fi
+	$(Q)$(SED) \
+		's%-I\ *\$$(srctree)/lib/libfdt%-I$$(srctree)/scripts/dtc/libfdt%; \
+		s%-I\ *\$$(SRCTREE)\(/lib\)\?/libfdt%-I$$(SRCTREE)/scripts/dtc/libfdt%' \
+		$(@D)/tools/Makefile
 endef
 UBOOT_POST_PATCH_HOOKS += UBOOT_FIXUP_LIBFDT_INCLUDE
 
 ifeq ($(BR2_TARGET_UBOOT_BUILD_SYSTEM_LEGACY),y)
 define UBOOT_CONFIGURE_CMDS
 	$(TARGET_CONFIGURE_OPTS) \
-		$(MAKE) -C $(@D) $(UBOOT_MAKE_OPTS) \
+		$(UBOOT_MAKE) -C $(@D) $(UBOOT_MAKE_OPTS) \
 		$(UBOOT_BOARD_NAME)_config
 endef
 else ifeq ($(BR2_TARGET_UBOOT_BUILD_SYSTEM_KCONFIG),y)
@@ -254,7 +300,7 @@ define UBOOT_BUILD_CMDS
 		cp -f $(UBOOT_CUSTOM_DTS_PATH) $(@D)/arch/$(UBOOT_ARCH)/dts/
 	)
 	$(TARGET_CONFIGURE_OPTS) \
-		$(MAKE) -C $(@D) $(UBOOT_MAKE_OPTS) \
+		$(UBOOT_MAKE) -C $(@D) $(UBOOT_MAKE_OPTS) \
 		$(UBOOT_MAKE_TARGET)
 	$(if $(BR2_TARGET_UBOOT_FORMAT_SD),
 		$(@D)/tools/mxsboot sd $(@D)/u-boot.sb $(@D)/u-boot.sd)
@@ -271,21 +317,6 @@ define UBOOT_BUILD_OMAP_IFT
 		-c $(call qstrip,$(BR2_TARGET_UBOOT_OMAP_IFT_CONFIG))
 endef
 
-ifneq ($(BR2_TARGET_UBOOT_ENVIMAGE),)
-UBOOT_GENERATE_ENV_FILE=$(call qstrip,$(BR2_TARGET_UBOOT_ENVIMAGE_SOURCE))
-define UBOOT_GENERATE_ENV_IMAGE
-	$(if $(UBOOT_GENERATE_ENV_FILE), \
-		cat $(UBOOT_GENERATE_ENV_FILE), \
-		CROSS_COMPILE="$(TARGET_CROSS)" $(@D)/scripts/get_default_envs.sh $(@D)) \
-		>$(@D)/buildroot-env.txt
-	$(HOST_DIR)/bin/mkenvimage -s $(BR2_TARGET_UBOOT_ENVIMAGE_SIZE) \
-		$(if $(BR2_TARGET_UBOOT_ENVIMAGE_REDUNDANT),-r) \
-		$(if $(filter "BIG",$(BR2_ENDIAN)),-b) \
-		-o $(BINARIES_DIR)/uboot-env.bin \
-		$(@D)/buildroot-env.txt
-endef
-endif
-
 define UBOOT_INSTALL_IMAGES_CMDS
 	$(foreach f,$(UBOOT_BINS), \
 			cp -dpf $(@D)/$(f) $(BINARIES_DIR)/
@@ -297,11 +328,6 @@ define UBOOT_INSTALL_IMAGES_CMDS
 			cp -dpf $(@D)/$(f) $(BINARIES_DIR)/
 		)
 	)
-	$(UBOOT_GENERATE_ENV_IMAGE)
-	$(if $(BR2_TARGET_UBOOT_BOOT_SCRIPT),
-		$(MKIMAGE) -C none -A $(MKIMAGE_ARCH) -T script \
-			-d $(call qstrip,$(BR2_TARGET_UBOOT_BOOT_SCRIPT_SOURCE)) \
-			$(BINARIES_DIR)/boot.scr)
 endef
 
 ifeq ($(BR2_TARGET_UBOOT_ZYNQMP),y)
@@ -317,17 +343,31 @@ UBOOT_ZYNQMP_PMUFW_PATH = $(shell readlink -f $(UBOOT_ZYNQMP_PMUFW))
 endif
 
 define UBOOT_ZYNQMP_KCONFIG_PMUFW
-	$(call KCONFIG_SET_OPT,CONFIG_PMUFW_INIT_FILE,"$(UBOOT_ZYNQMP_PMUFW_PATH)", \
-	       $(@D)/.config)
+	$(call KCONFIG_SET_OPT,CONFIG_PMUFW_INIT_FILE,"$(UBOOT_ZYNQMP_PMUFW_PATH)")
 endef
+
+UBOOT_ZYNQMP_PM_CFG = $(call qstrip,$(BR2_TARGET_UBOOT_ZYNQMP_PM_CFG))
+ifneq ($(UBOOT_ZYNQMP_PM_CFG),)
+UBOOT_ZYNQMP_PM_CFG_BIN = $(UBOOT_DIR)/pm_cfg_obj.bin
+define UBOOT_ZYNQMP_KCONFIG_PM_CFG
+	$(call KCONFIG_SET_OPT,CONFIG_ZYNQMP_SPL_PM_CFG_OBJ_FILE,"$(UBOOT_ZYNQMP_PM_CFG_BIN)", \
+		$(@D)/.config)
+endef
+
+define UBOOT_ZYNQMP_PM_CFG_CONVERT
+	$(UBOOT_DIR)/tools/zynqmp_pm_cfg_obj_convert.py \
+		"$(UBOOT_ZYNQMP_PM_CFG)" \
+		"$(UBOOT_ZYNQMP_PM_CFG_BIN)"
+endef
+UBOOT_PRE_BUILD_HOOKS += UBOOT_ZYNQMP_PM_CFG_CONVERT
+endif
 
 UBOOT_ZYNQMP_PSU_INIT = $(call qstrip,$(BR2_TARGET_UBOOT_ZYNQMP_PSU_INIT_FILE))
 UBOOT_ZYNQMP_PSU_INIT_PATH = $(shell readlink -f $(UBOOT_ZYNQMP_PSU_INIT))
 
 ifneq ($(UBOOT_ZYNQMP_PSU_INIT),)
 define UBOOT_ZYNQMP_KCONFIG_PSU_INIT
-	$(call KCONFIG_SET_OPT,CONFIG_XILINX_PS_INIT_FILE,"$(UBOOT_ZYNQMP_PSU_INIT_PATH)", \
-		$(@D)/.config)
+	$(call KCONFIG_SET_OPT,CONFIG_XILINX_PS_INIT_FILE,"$(UBOOT_ZYNQMP_PSU_INIT_PATH)")
 endef
 endif
 
@@ -384,26 +424,9 @@ endif
 
 define UBOOT_KCONFIG_FIXUP_CMDS
 	$(UBOOT_ZYNQMP_KCONFIG_PMUFW)
+	$(UBOOT_ZYNQMP_KCONFIG_PM_CFG)
 	$(UBOOT_ZYNQMP_KCONFIG_PSU_INIT)
 endef
-
-ifeq ($(BR2_TARGET_UBOOT_ENVIMAGE),y)
-ifeq ($(BR_BUILDING),y)
-ifeq ($(call qstrip,$(BR2_TARGET_UBOOT_ENVIMAGE_SIZE)),)
-$(error Please provide U-Boot environment size (BR2_TARGET_UBOOT_ENVIMAGE_SIZE setting))
-endif
-endif
-UBOOT_DEPENDENCIES += host-uboot-tools
-endif
-
-ifeq ($(BR2_TARGET_UBOOT_BOOT_SCRIPT),y)
-ifeq ($(BR_BUILDING),y)
-ifeq ($(call qstrip,$(BR2_TARGET_UBOOT_BOOT_SCRIPT_SOURCE)),)
-$(error Please define a source file for U-Boot boot script (BR2_TARGET_UBOOT_BOOT_SCRIPT_SOURCE setting))
-endif
-endif
-UBOOT_DEPENDENCIES += host-uboot-tools
-endif
 
 ifeq ($(BR2_TARGET_UBOOT)$(BR_BUILDING),yy)
 

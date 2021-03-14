@@ -7,11 +7,16 @@
 # Use the same VERSION and SITE as target glibc
 # As in glibc.mk, generate version string using:
 #   git describe --match 'glibc-*' --abbrev=40 origin/release/MAJOR.MINOR/master | cut -d '-' -f 2-
-LOCALEDEF_VERSION = 2.29-11-ge28ad442e73b00ae2047d89c8cc7f9b2a0de5436
+LOCALEDEF_VERSION = 2.31-54-g6fdf971c9dbf7dac9bea552113fe4694015bbc4d
 LOCALEDEF_SOURCE = glibc-$(LOCALEDEF_VERSION).tar.gz
 LOCALEDEF_SITE = $(call github,bminor,glibc,$(LOCALEDEF_VERSION))
-LOCALEDEF_DEPENDENCIES = $(BR2_MAKE_HOST_DEPENDENCY)
 HOST_LOCALEDEF_DL_SUBDIR = glibc
+
+HOST_LOCALEDEF_DEPENDENCIES = \
+	$(BR2_MAKE_HOST_DEPENDENCY) \
+	$(BR2_PYTHON3_HOST_DEPENDENCY) \
+	host-bison \
+	host-gawk
 
 HOST_LOCALEDEF_CONF_ENV += ac_cv_prog_MAKE="$(BR2_MAKE)"
 

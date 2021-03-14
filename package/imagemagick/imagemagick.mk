@@ -4,9 +4,8 @@
 #
 ################################################################################
 
-IMAGEMAGICK_VERSION = 7.0.8-59
-IMAGEMAGICK_SOURCE = $(IMAGEMAGICK_VERSION).tar.gz
-IMAGEMAGICK_SITE = https://github.com/ImageMagick/ImageMagick/archive
+IMAGEMAGICK_VERSION = 7.0.10-28
+IMAGEMAGICK_SITE = $(call github,ImageMagick,ImageMagick,$(IMAGEMAGICK_VERSION))
 IMAGEMAGICK_LICENSE = Apache-2.0
 IMAGEMAGICK_LICENSE_FILES = LICENSE
 
@@ -18,10 +17,13 @@ ifeq ($(BR2_INSTALL_LIBSTDCPP)$(BR2_USE_WCHAR),yy)
 IMAGEMAGICK_CONFIG_SCRIPTS += Magick++-config
 endif
 
-IMAGEMAGICK_CONF_ENV = ac_cv_sys_file_offset_bits=64
+IMAGEMAGICK_CONF_ENV = \
+	ac_cv_sys_file_offset_bits=64 \
+	ax_cv_check_cl_libcl=no
 
 IMAGEMAGICK_CONF_OPTS = \
 	--program-transform-name='s,,,' \
+	--disable-opencl \
 	--disable-openmp \
 	--without-djvu \
 	--without-dps \
@@ -152,6 +154,7 @@ IMAGEMAGICK_CONF_OPTS += --without-bzlib
 endif
 
 HOST_IMAGEMAGICK_CONF_OPTS = \
+	--disable-opencl \
 	--disable-openmp \
 	--without-djvu \
 	--without-dps \
@@ -177,7 +180,9 @@ HOST_IMAGEMAGICK_CONF_OPTS = \
 	--with-zlib
 
 # uses clock_gettime, which was provided by librt in glibc < 2.17
-HOST_IMAGEMAGICK_CONF_ENV = LIBS="-lrt"
+HOST_IMAGEMAGICK_CONF_ENV = \
+	LIBS="-lrt" \
+	ax_cv_check_cl_libcl=no
 
 HOST_IMAGEMAGICK_DEPENDENCIES = \
 	host-libjpeg \

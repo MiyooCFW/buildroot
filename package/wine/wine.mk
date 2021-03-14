@@ -4,9 +4,9 @@
 #
 ################################################################################
 
-WINE_VERSION = 4.0
+WINE_VERSION = 5.12
 WINE_SOURCE = wine-$(WINE_VERSION).tar.xz
-WINE_SITE = https://dl.winehq.org/wine/source/4.0
+WINE_SITE = https://dl.winehq.org/wine/source/5.x
 WINE_LICENSE = LGPL-2.1+
 WINE_LICENSE_FILES = COPYING.LIB LICENSE
 WINE_DEPENDENCIES = host-bison host-flex host-wine
@@ -19,6 +19,7 @@ WINE_CONF_OPTS = \
 	--disable-win64 \
 	--without-capi \
 	--without-coreaudio \
+	--without-faudio \
 	--without-gettext \
 	--without-gettextpo \
 	--without-gphoto \
@@ -195,7 +196,7 @@ else
 WINE_CONF_OPTS += --without-ldap
 endif
 
-ifeq ($(BR2_PACKAGE_MESA3D_OSMESA),y)
+ifeq ($(BR2_PACKAGE_MESA3D_OSMESA_CLASSIC),y)
 WINE_CONF_OPTS += --with-osmesa
 WINE_DEPENDENCIES += mesa3d
 else
@@ -357,6 +358,7 @@ HOST_WINE_CONF_OPTS += \
 	--without-capi \
 	--without-cms \
 	--without-coreaudio \
+	--without-faudio \
 	--without-cups \
 	--without-curses \
 	--without-dbus \

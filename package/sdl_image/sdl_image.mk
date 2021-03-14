@@ -15,7 +15,11 @@ SDL_IMAGE_CONF_OPTS = \
 	--with-sdl-prefix=$(STAGING_DIR)/usr \
 	--with-sdl-exec-prefix=$(STAGING_DIR)/usr \
 	--disable-sdltest \
-	--enable-static --disable-shared \
+	--disable-static \
+	--disable-jpg-shared \
+	--disable-png-shared \
+	--disable-tif-shared \
+	--disable-webp-shared \
 	--enable-bmp=$(if $(BR2_PACKAGE_SDL_IMAGE_BMP),yes,no) \
 	--enable-gif=$(if $(BR2_PACKAGE_SDL_IMAGE_GIF),yes,no) \
 	--enable-jpg=$(if $(BR2_PACKAGE_SDL_IMAGE_JPEG),yes,no) \
@@ -28,11 +32,7 @@ SDL_IMAGE_CONF_OPTS = \
 	--enable-webp=$(if $(BR2_PACKAGE_SDL_IMAGE_WEBP),yes,no) \
 	--enable-xcf=$(if $(BR2_PACKAGE_SDL_IMAGE_XCF),yes,no) \
 	--enable-xpm=$(if $(BR2_PACKAGE_SDL_IMAGE_XPM),yes,no) \
-	--enable-xv=$(if $(BR2_PACKAGE_SDL_IMAGE_XV),yes,no) \
-	--disable-jpg-shared \
-	--disable-png-shared \
-	--disable-tif-shared \
-	--disable-webp-shared
+	--enable-xv=$(if $(BR2_PACKAGE_SDL_IMAGE_XV),yes,no)
 
 SDL_IMAGE_DEPENDENCIES = sdl \
 	$(if $(BR2_PACKAGE_SDL_IMAGE_JPEG),jpeg) \
@@ -47,7 +47,8 @@ HOST_SDL_IMAGE_CONF_OPTS = \
 	--disable-static \
 	--disable-jpg-shared \
 	--disable-png-shared \
-	--disable-tif-shared
+	--disable-tif-shared \
+	--disable-webp-shared
 
 HOST_SDL_IMAGE_DEPENDENCIES = host-libjpeg host-libpng host-sdl
 

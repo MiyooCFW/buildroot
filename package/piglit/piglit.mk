@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-PIGLIT_VERSION = ef761094be04d14e258ad7706e7295f80d4411f2
+PIGLIT_VERSION = 2affee53f3ad7a96f5b397a2b6d6408af8a374b0
 PIGLIT_SITE = https://gitlab.freedesktop.org/mesa/piglit.git
 PIGLIT_SITE_METHOD = git
 PIGLIT_LICENSE = MIT (code), \
@@ -29,7 +29,8 @@ PIGLIT_DEPENDENCIES = host-pkgconf \
 PIGLIT_CONF_OPTS += \
 	-DPIGLIT_USE_WAFFLE=ON \
 	-DPIGLIT_BUILD_CL_TESTS=OFF \
-	-DPIGLIT_BUILD_WGL_TESTS=OFF
+	-DPIGLIT_BUILD_WGL_TESTS=OFF \
+	-DPYTHON_EXECUTABLE=$(HOST_DIR)/bin/python3
 
 ifeq ($(BR2_PACKAGE_XORG7),y)
 # libxcb for xcb-dri2

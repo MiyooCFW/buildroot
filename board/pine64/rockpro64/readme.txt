@@ -1,19 +1,10 @@
-Intro
-=====
+PINE64 ROCKPro64
+================
+https://www.pine64.org/rockpro64/
 
-Pine64 RockPro64 is a RK3399 SoC based ARM64 board.
-
-Wiki: https://wiki.pine64.org/index.php/ROCKPro64_Main_Page
-
-Build
-=====
-
-Run Pine64 RockPro64 configuration
-
-  $ make pine64_rockpro64_defconfig
-
-To build, run make comamnd.
-
+Build:
+======
+  $ make rockpro64_defconfig
   $ make
 
 Files created in output directory
@@ -21,8 +12,10 @@ Files created in output directory
 
 output/images
 
-├── bl31.bin
 ├── bl31.elf
+├── boot.vfat
+├── extlinux
+├── idbloader.img
 ├── Image
 ├── rk3399-rockpro64.dtb
 ├── rootfs.ext2
@@ -30,22 +23,38 @@ output/images
 ├── rootfs.tar
 ├── sdcard.img
 ├── u-boot.bin
-├── u-boot.itb
-├── u-boot-spl-dtb.bin
-├── u-boot-tpl-dtb.bin
-├── u-boot-tpl-dtb.img
-└── u-boot-tpl-spl-dtb.img
+└── u-boot.itb
 
 Creating bootable SD card:
-=========================
+==========================
 
 Simply invoke (as root)
 
-  # dd if=output/images/sdcard.img of=/dev/sdX && sync
+sudo dd if=output/images/sdcard.img of=/dev/sdX && sync
 
-Where X is your SD card device
+Where X is your SD card device.
 
-Serial console
---------------
+Booting:
+========
+RockPro64 has a 40-pin PI-2 GPIO Bus.
 
-Baudrate for this board is 1500000
+Connect a jumper between pin 23 and pin 25 for SD card boot.
+
+Serial console:
+---------------
+The pin layout for serial console on PI-2 GPIO Bus is as follows:
+
+pin 6:  gnd
+pin 8:  tx
+pin 10: rx
+
+Initially connect pin 6 and pin 8(transmit). Apply power to RockPro64, once the
+power is on then connect pin 10(receive).
+
+Baudrate for this board is 1500000.
+
+Login:
+------
+Enter 'root' as login user, and the prompt is ready.
+
+https://wiki.amarulasolutions.com/bsp/rockchip/rk3399/rockpro64.html

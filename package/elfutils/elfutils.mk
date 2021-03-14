@@ -4,14 +4,14 @@
 #
 ################################################################################
 
-ELFUTILS_VERSION = 0.176
+ELFUTILS_VERSION = 0.181
 ELFUTILS_SOURCE = elfutils-$(ELFUTILS_VERSION).tar.bz2
 ELFUTILS_SITE = https://sourceware.org/elfutils/ftp/$(ELFUTILS_VERSION)
 ELFUTILS_INSTALL_STAGING = YES
 ELFUTILS_LICENSE = GPL-2.0+ or LGPL-3.0+ (library)
 ELFUTILS_LICENSE_FILES = COPYING COPYING-GPLV2 COPYING-LGPLV3
-ELFUTILS_DEPENDENCIES = zlib $(TARGET_NLS_DEPENDENCIES)
-HOST_ELFUTILS_DEPENDENCIES = host-zlib host-bzip2 host-xz
+ELFUTILS_DEPENDENCIES = host-pkgconf zlib $(TARGET_NLS_DEPENDENCIES)
+HOST_ELFUTILS_DEPENDENCIES = host-pkgconf host-zlib host-bzip2 host-xz
 
 # We patch configure.ac
 ELFUTILS_AUTORECONF = YES
@@ -43,6 +43,15 @@ ELFUTILS_CONF_ENV += \
 ELFUTILS_LDFLAGS = $(TARGET_LDFLAGS) \
 	$(TARGET_NLS_LIBS)
 
+ifeq ($(BR2_TOOLCHAIN_USES_GLIBC),)
+ELFUTILS_DEPENDENCIES += musl-fts
+ELFUTILS_LDFLAGS += -lfts
+endif
+
+# disable for now, needs "distro" support
+ELFUTILS_CONF_OPTS += --disable-libdebuginfod --disable-debuginfod
+HOST_ELFUTILS_CONF_OPTS += --disable-libdebuginfod --disable-debuginfod
+
 ELFUTILS_CONF_ENV += \
 	LDFLAGS="$(ELFUTILS_LDFLAGS)"
 
@@ -67,7 +76,7 @@ endif
 
 ifeq ($(BR2_PACKAGE_ELFUTILS_PROGS),y)
 ELFUTILS_CONF_OPTS += --enable-progs
-ELFUTILS_LICENSE := $(ELFUTILS_LICENSE), GPL-3.0+ (programs)
+ELFUTILS_LICENSE += , GPL-3.0+ (programs)
 ELFUTILS_LICENSE_FILES += COPYING
 else
 ELFUTILS_CONF_OPTS += --disable-progs
