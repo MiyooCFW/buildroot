@@ -9,6 +9,7 @@ jobs:
       image: nfriedly/buildroot-toolchain:master
     env:
       PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      FORCE_UNSAFE_CONFIGURE: 1
     steps:
     - uses: actions/checkout@v2
     - run: pwd
