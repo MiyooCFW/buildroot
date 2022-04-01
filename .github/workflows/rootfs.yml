@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-20.04
     container:
       image: nfriedly/buildroot-toolchain:master
+    env:
+      PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     steps:
     - uses: actions/checkout@v2
     - run: pwd
@@ -16,8 +18,7 @@ jobs:
         #wget https://github.com/nfriedly/buildroot-toolchain/suites/5893824693/artifacts/200185195
         #tar -xvf arm-buildroot-linux-musleabi_sdk-buildroot.tar.gz
         #sudo mv arm-buildroot-linux-musleabi_sdk-buildroot /opt/miyoo
-        PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/miyoo/bin:/opt/miyoo/arm-buildroot-linux-musleabi/sysroot/usr/bin
-make
+        make
     - uses: actions/upload-artifact@v2
       with:
         name: rootfs.tar
