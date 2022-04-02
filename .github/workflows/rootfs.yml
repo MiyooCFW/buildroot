@@ -6,20 +6,15 @@ jobs:
   rootfs:
     runs-on: ubuntu-20.04
     container:
-      image: nfriedly/buildroot-toolchain:master
+      image: miyoocfw/toolchain:master
     env:
-      PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       FORCE_UNSAFE_CONFIGURE: 1
     steps:
     - uses: actions/checkout@v2
     - run: pwd
     - run: echo $PATH
     - name: build
-      run: |
-        #wget https://github.com/nfriedly/buildroot-toolchain/suites/5893824693/artifacts/200185195
-        #tar -xvf arm-buildroot-linux-musleabi_sdk-buildroot.tar.gz
-        #sudo mv arm-buildroot-linux-musleabi_sdk-buildroot /opt/miyoo
-        make
+      run: make
     - uses: actions/upload-artifact@v2
       with:
         name: rootfs.tar
