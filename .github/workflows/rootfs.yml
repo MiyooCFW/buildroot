@@ -1,6 +1,14 @@
 name: Build Root Filesystem
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_call:
+    inputs:
+      submodule:
+        description: The directory of the submodule, if this workflow is being called on a submodule
+        required: true
+        type: string
 
 jobs:   
   rootfs:
@@ -10,13 +18,34 @@ jobs:
     env:
       FORCE_UNSAFE_CONFIGURE: 1
     steps:
-    - uses: actions/checkout@v2
-    - run: pwd
-    - run: echo $PATH
+    - uses: actions/checkout@v3
+    - if: inputs.submodule
+      run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}
+    
+    - name: Generate cache key
+      if: inputs.submodule
+      id: cache-key
+      run: |
+        cd ${{ inputs.submodule }}
+        echo "::set-output name=key::${{ inputs.submodule }}-$(git rev-parse --short HEAD)"
+      
+    - uses: actions/cache@v3
+      if: inputs.submodule
+      with:
+        path: ${{ inputs.submodule || '.' }}/output/images/rootfs.tar.xz
+        key: ${{ steps.cache-key.outputs.key }}
+      id: cache
+        
     - name: build
-      run: make
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        cd ${{ inputs.submodule || '.' }}
+        make
+        cd output/images/
+        xz rootfs.tar
+      
     - uses: actions/upload-artifact@v2
       with:
-        name: rootfs.tar
-        path: output/images/rootfs.tar
+        name: rootfs.tar.xz
+        path: ${{ inputs.submodule || '.' }}/output/images/rootfs.tar.xz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
