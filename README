@@ -1,3 +1,12 @@
+# MiyooCFW Buildroot
+
+The goal of this repo is to build a working root filesystem for MiyooCFW. 
+However, the filesystem it produces is quite a bit different from what MiyooCFW expects, so we're currently using a prebuilt rootfs that lives in https://github.com/MiyooCFW/sdcard
+
+The current configuration expects an external toolchain to exist in `/opt/miyoo` - download it from https://github.com/MiyooCFW/toolchain/releases or use our docker image. 
+Using an external toolchain reduces compile time quite a bit, but it can be disabled if you want to compile everything locally.
+
+## Original Buildroot Readme
 Buildroot is a simple, efficient and easy-to-use tool to generate embedded
 Linux systems through cross-compilation.
 
