@@ -42,7 +42,6 @@ jobs:
         cd ${{ inputs.submodule || '.' }}
         make
         cd output/images/
-        xz rootfs.tar
       
     - uses: actions/upload-artifact@v2
       with:
