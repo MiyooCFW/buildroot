@@ -10,16 +10,27 @@ SCONESERVER_LICENSE = GPL-2.0+
 SCONESERVER_LICENSE_FILES = COPYING
 # fetching from Git, we need to generate the configure script
 SCONESERVER_AUTORECONF = YES
-SCONESERVER_DEPENDENCIES = host-pkgconf pcre zlib
+SCONESERVER_DEPENDENCIES = \
+	host-pkgconf \
+	$(if $(BR2_PACKAGE_PCRE),pcre) \
+	zlib
+# disable image as it fails to build with ImageMagick
 # disable markdown module because its git submodule cmark
 # https://github.com/sconemad/sconeserver/tree/master/markdown
 # has no cross-compile support provided by the sconeserver build system
-SCONESERVER_CONF_OPTS += --with-ip --with-local --with-ip6 --without-markdown
+SCONESERVER_CONF_OPTS += \
+	--with-ip \
+	--with-local \
+	--with-ip6 \
+	--without-image \
+	--without-markdown
 
 # Sconeserver configure script fails to find the libxml2 headers.
 ifeq ($(BR2_PACKAGE_LIBXML2),y)
 SCONESERVER_CONF_OPTS += \
 	--with-xml2-config="$(STAGING_DIR)/usr/bin/xml2-config"
+# Needed to fix build failure when icu is enabled in libxml2
+SCONESERVER_CONF_ENV += CXXFLAGS="$(TARGET_CXXFLAGS) -std=c++11"
 endif
 
 ifeq ($(BR2_PACKAGE_OPENSSL),y)
@@ -27,6 +38,13 @@ SCONESERVER_DEPENDENCIES += openssl
 SCONESERVER_CONF_OPTS += --with-ssl
 else
 SCONESERVER_CONF_OPTS += --without-ssl
+endif
+
+ifeq ($(BR2_PACKAGE_SCONESERVER_BLUETOOTH),y)
+SCONESERVER_DEPENDENCIES += bluez5_utils
+SCONESERVER_CONF_OPTS += --with-bluetooth
+else
+SCONESERVER_CONF_OPTS += --without-bluetooth
 endif
 
 ifeq ($(BR2_PACKAGE_SCONESERVER_EXAMPLES),y)
@@ -42,13 +60,18 @@ else
 SCONESERVER_CONF_OPTS += --without-sconesite
 endif
 
-ifeq ($(BR2_PACKAGE_SCONESERVER_HTTP_SCONESITE_IMAGE),y)
-SCONESERVER_DEPENDENCIES += imagemagick
-SCONESERVER_CONF_OPTS += \
-	--with-sconesite-image \
-	--with-Magick++-config="$(STAGING_DIR)/usr/bin/Magick++-config"
+ifeq ($(BR2_PACKAGE_SCONESERVER_LOCATION),y)
+SCONESERVER_DEPENDENCIES += gpsd
+SCONESERVER_CONF_OPTS += --with-location
 else
-SCONESERVER_CONF_OPTS += --without-sconesite-image --with-Magick++-config=no
+SCONESERVER_CONF_OPTS += --without-location
+endif
+
+ifeq ($(BR2_PACKAGE_SCONESERVER_MATHS),y)
+SCONESERVER_DEPENDENCIES += mpfr
+SCONESERVER_CONF_OPTS += --with-maths
+else
+SCONESERVER_CONF_OPTS += --without-maths
 endif
 
 ifeq ($(BR2_PACKAGE_SCONESERVER_MYSQL),y)
@@ -61,13 +84,6 @@ else
 SCONESERVER_CONF_OPTS += --without-mysql
 endif
 
-ifeq ($(BR2_PACKAGE_SCONESERVER_BLUETOOTH),y)
-SCONESERVER_DEPENDENCIES += bluez5_utils
-SCONESERVER_CONF_OPTS += --with-bluetooth
-else
-SCONESERVER_CONF_OPTS += --without-bluetooth
-endif
-
 ifeq ($(BR2_PACKAGE_SCONESERVER_RSS),y)
 SCONESERVER_DEPENDENCIES += libxml2
 SCONESERVER_CONF_OPTS += --with-rss
@@ -75,37 +91,17 @@ else
 SCONESERVER_CONF_OPTS += --without-rss
 endif
 
-ifeq ($(BR2_PACKAGE_SCONESERVER_LOCATION),y)
-SCONESERVER_DEPENDENCIES += gpsd
-SCONESERVER_CONF_OPTS += --with-location
+ifeq ($(BR2_PACKAGE_SCONESERVER_SQLITE),y)
+SCONESERVER_DEPENDENCIES += sqlite
+SCONESERVER_CONF_OPTS += --with-sqlite
 else
-SCONESERVER_CONF_OPTS += --without-location
-endif
-
-ifeq ($(BR2_PACKAGE_SCONESERVER_LETTUCE),y)
-SCONESERVER_CONF_OPTS += --with-lettuce
-else
-SCONESERVER_CONF_OPTS += --without-lettuce
-endif
-
-ifeq ($(BR2_PACKAGE_SCONESERVER_MATHS),y)
-SCONESERVER_DEPENDENCIES += mpfr
-SCONESERVER_CONF_OPTS += --with-maths
-else
-SCONESERVER_CONF_OPTS += --without-maths
+SCONESERVER_CONF_OPTS += --without-sqlite
 endif
 
 ifeq ($(BR2_PACKAGE_SCONESERVER_TESTBUILDER),y)
 SCONESERVER_CONF_OPTS += --with-testbuilder
 else
 SCONESERVER_CONF_OPTS += --without-testbuilder
-endif
-
-ifeq ($(BR2_PACKAGE_SCONESERVER_UI),y)
-SCONESERVER_DEPENDENCIES += xlib_libX11
-SCONESERVER_CONF_OPTS += --with-ui
-else
-SCONESERVER_CONF_OPTS += --without-ui
 endif
 
 $(eval $(autotools-package))

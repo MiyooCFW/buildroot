@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-QEMU_VERSION = 5.1.0
+QEMU_VERSION = 6.2.0
 QEMU_SOURCE = qemu-$(QEMU_VERSION).tar.xz
 QEMU_SITE = http://download.qemu.org
 QEMU_LICENSE = GPL-2.0, LGPL-2.1, MIT, BSD-3-Clause, BSD-2-Clause, Others/BSD-1c
@@ -12,10 +12,15 @@ QEMU_LICENSE_FILES = COPYING COPYING.LIB
 # NOTE: there is no top-level license file for non-(L)GPL licenses;
 #       the non-(L)GPL license texts are specified in the affected
 #       individual source files.
+QEMU_CPE_ID_VENDOR = qemu
 
 #-------------------------------------------------------------
+
+# The build system is now partly based on Meson.
+# However, building is still done with configure and make as in previous versions of QEMU.
+
 # Target-qemu
-QEMU_DEPENDENCIES = host-pkgconf libglib2 zlib pixman host-python3
+QEMU_DEPENDENCIES = host-meson host-pkgconf libglib2 zlib pixman host-python3
 
 # Need the LIBS variable because librt and libm are
 # not automatically pulled. :-(
@@ -51,15 +56,23 @@ endif
 
 endif
 
-# There is no "--enable-slirp"
-ifeq ($(BR2_PACKAGE_QEMU_SLIRP),)
+ifeq ($(BR2_TOOLCHAIN_USES_UCLIBC),y)
+QEMU_OPTS += --disable-vhost-user
+else
+QEMU_OPTS += --enable-vhost-user
+endif
+
+ifeq ($(BR2_PACKAGE_QEMU_SLIRP),y)
+QEMU_OPTS += --enable-slirp=system
+QEMU_DEPENDENCIES += slirp
+else
 QEMU_OPTS += --disable-slirp
 endif
 
 ifeq ($(BR2_PACKAGE_QEMU_SDL),y)
 QEMU_OPTS += --enable-sdl
 QEMU_DEPENDENCIES += sdl2
-QEMU_VARS += SDL2_CONFIG=$(BR2_STAGING_DIR)/usr/bin/sdl2-config
+QEMU_VARS += SDL2_CONFIG=$(STAGING_DIR)/usr/bin/sdl2-config
 else
 QEMU_OPTS += --disable-sdl
 endif
@@ -75,6 +88,13 @@ ifeq ($(BR2_PACKAGE_QEMU_TOOLS),y)
 QEMU_OPTS += --enable-tools
 else
 QEMU_OPTS += --disable-tools
+endif
+
+ifeq ($(BR2_PACKAGE_LIBFUSE3),y)
+QEMU_OPTS += --enable-fuse --enable-fuse-lseek
+QEMU_DEPENDENCIES += libfuse3
+else
+QEMU_OPTS += --disable-fuse --disable-fuse-lseek
 endif
 
 ifeq ($(BR2_PACKAGE_LIBSECCOMP),y)
@@ -147,6 +167,10 @@ else
 QEMU_OPTS += --disable-usb-redir
 endif
 
+ifeq ($(BR2_STATIC_LIBS),y)
+QEMU_OPTS += --static
+endif
+
 # Override CPP, as it expects to be able to call it like it'd
 # call the compiler.
 define QEMU_CONFIGURE_CMDS
@@ -161,37 +185,49 @@ define QEMU_CONFIGURE_CMDS
 			--prefix=/usr \
 			--cross-prefix=$(TARGET_CROSS) \
 			--audio-drv-list= \
-			--python=$(HOST_DIR)/bin/python3 \
-			--enable-kvm \
-			--enable-attr \
-			--enable-vhost-net \
-			--disable-bsd-user \
-			--disable-containers \
-			--disable-xen \
-			--disable-virtfs \
+			--meson=$(HOST_DIR)/bin/meson \
+			--ninja=$(HOST_DIR)/bin/ninja \
+			--disable-alsa \
+			--disable-bpf \
 			--disable-brlapi \
-			--disable-curses \
+			--disable-bsd-user \
+			--disable-cap-ng \
+			--disable-capstone \
+			--disable-containers \
+			--disable-coreaudio \
 			--disable-curl \
-			--disable-vde \
+			--disable-curses \
+			--disable-docs \
+			--disable-dsound \
+			--disable-hvf \
+			--disable-jack \
+			--disable-libiscsi \
+			--disable-libxml2 \
 			--disable-linux-aio \
 			--disable-linux-io-uring \
-			--disable-cap-ng \
-			--disable-docs \
-			--disable-rbd \
-			--disable-libiscsi \
-			--disable-strip \
-			--disable-sparse \
-			--disable-mpath \
-			--disable-sanitizers \
-			--disable-hvf \
-			--disable-whpx \
 			--disable-malloc-trim \
 			--disable-membarrier \
-			--disable-vhost-crypto \
-			--disable-libxml2 \
-			--disable-capstone \
-			--disable-git-update \
+			--disable-mpath \
+			--disable-netmap \
 			--disable-opengl \
+			--disable-oss \
+			--disable-pa \
+			--disable-rbd \
+			--disable-sanitizers \
+			--disable-selinux \
+			--disable-sparse \
+			--disable-strip \
+			--disable-vde \
+			--disable-vhost-crypto \
+			--disable-vhost-user-blk-server \
+			--disable-virtfs \
+			--disable-virtiofsd \
+			--disable-whpx \
+			--disable-xen \
+			--enable-attr \
+			--enable-kvm \
+			--enable-vhost-net \
+			--with-git-submodules=ignore \
 			$(QEMU_OPTS)
 endef
 
@@ -210,7 +246,7 @@ $(eval $(generic-package))
 #-------------------------------------------------------------
 # Host-qemu
 
-HOST_QEMU_DEPENDENCIES = host-pkgconf host-zlib host-libglib2 host-pixman host-python3
+HOST_QEMU_DEPENDENCIES = host-meson host-pkgconf host-zlib host-libglib2 host-pixman host-python3
 
 #       BR ARCH         qemu
 #       -------         ----
@@ -241,6 +277,9 @@ HOST_QEMU_DEPENDENCIES = host-pkgconf host-zlib host-libglib2 host-pixman host-p
 #       xtensa          xtensa
 
 HOST_QEMU_ARCH = $(ARCH)
+ifeq ($(HOST_QEMU_ARCH),armeb)
+HOST_QEMU_SYS_ARCH = arm
+endif
 ifeq ($(HOST_QEMU_ARCH),i486)
 HOST_QEMU_ARCH = i386
 endif
@@ -325,13 +364,28 @@ define HOST_QEMU_CONFIGURE_CMDS
 		--host-cc="$(HOSTCC)" \
 		--extra-cflags="$(HOST_QEMU_CFLAGS)" \
 		--extra-ldflags="$(HOST_LDFLAGS)" \
-		--python=$(HOST_DIR)/bin/python3 \
+		--meson=$(HOST_DIR)/bin/meson \
+		--ninja=$(HOST_DIR)/bin/ninja \
+		--disable-alsa \
+		--disable-bpf \
 		--disable-bzip2 \
 		--disable-containers \
+		--disable-coreaudio \
 		--disable-curl \
+		--disable-docs \
+		--disable-dsound \
+		--disable-jack \
 		--disable-libssh \
+		--disable-linux-aio \
 		--disable-linux-io-uring \
+		--disable-netmap \
+		--disable-oss \
+		--disable-pa \
 		--disable-sdl \
+		--disable-selinux \
+		--disable-vde \
+		--disable-vhost-user-blk-server \
+		--disable-virtiofsd \
 		--disable-vnc-jpeg \
 		--disable-vnc-png \
 		--disable-vnc-sasl \

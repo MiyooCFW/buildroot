@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-PYTHON_LXML_VERSION = 4.5.1
-PYTHON_LXML_SITE = https://files.pythonhosted.org/packages/03/a8/73d795778143be51d8b86750b371b3efcd7139987f71618ad9f4b8b65543
+PYTHON_LXML_VERSION = 4.9.1
+PYTHON_LXML_SITE = https://files.pythonhosted.org/packages/70/bb/7a2c7b4f8f434aa1ee801704bf08f1e53d7b5feba3d5313ab17003477808
 PYTHON_LXML_SOURCE = lxml-$(PYTHON_LXML_VERSION).tar.gz
 
 # Not including the GPL, because it is used only for the test scripts.
@@ -15,6 +15,8 @@ PYTHON_LXML_LICENSE_FILES = \
 	doc/licenses/BSD.txt \
 	doc/licenses/elementtree.txt \
 	src/lxml/isoschematron/resources/rng/iso-schematron.rng
+PYTHON_LXML_CPE_ID_VENDOR = lxml
+PYTHON_LXML_CPE_ID_PRODUCT = lxml
 
 # python-lxml can use either setuptools, or distutils as a fallback.
 # So, we use setuptools.

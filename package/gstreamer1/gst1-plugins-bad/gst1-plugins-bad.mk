@@ -4,15 +4,18 @@
 #
 ################################################################################
 
-GST1_PLUGINS_BAD_VERSION = 1.18.0
+GST1_PLUGINS_BAD_VERSION = 1.20.4
 GST1_PLUGINS_BAD_SOURCE = gst-plugins-bad-$(GST1_PLUGINS_BAD_VERSION).tar.xz
 GST1_PLUGINS_BAD_SITE = https://gstreamer.freedesktop.org/src/gst-plugins-bad
 GST1_PLUGINS_BAD_INSTALL_STAGING = YES
 # Additional plugin licenses will be appended to GST1_PLUGINS_BAD_LICENSE and
 # GST1_PLUGINS_BAD_LICENSE_FILES if enabled.
-GST1_PLUGINS_BAD_LICENSE_FILES = COPYING.LIB
-GST1_PLUGINS_BAD_LICENSE = LGPL-2.0+, LGPL-2.1+
+GST1_PLUGINS_BAD_LICENSE_FILES = COPYING
+GST1_PLUGINS_BAD_LICENSE = LGPL-2.0+
+GST1_PLUGINS_BAD_CPE_ID_VENDOR = freedesktop
+GST1_PLUGINS_BAD_CPE_ID_PRODUCT = gst-plugins-bad
 
+GST1_PLUGINS_BAD_CFLAGS = $(TARGET_CFLAGS) -std=c99 -D_GNU_SOURCE
 GST1_PLUGINS_BAD_LDFLAGS = $(TARGET_LDFLAGS) $(TARGET_NLS_LIBS)
 
 GST1_PLUGINS_BAD_CONF_OPTS = \
@@ -31,9 +34,9 @@ GST1_PLUGINS_BAD_CONF_OPTS = \
 
 # Options which require currently unpackaged libraries
 GST1_PLUGINS_BAD_CONF_OPTS += \
+	-Dasio=disabled \
 	-Davtp=disabled \
 	-Dopensles=disabled \
-	-Duvch264=disabled \
 	-Dmsdk=disabled \
 	-Dvoamrwbenc=disabled \
 	-Dbs2b=disabled \
@@ -44,30 +47,32 @@ GST1_PLUGINS_BAD_CONF_OPTS += \
 	-Dresindvd=disabled \
 	-Dfaac=disabled \
 	-Dflite=disabled \
+	-Dgs=disabled \
 	-Dgsm=disabled \
 	-Dkate=disabled \
 	-Dladspa=disabled \
+	-Dldac=disabled \
 	-Dlv2=disabled \
 	-Dmediafoundation=disabled \
 	-Dmicrodns=disabled \
 	-Dlibde265=disabled \
 	-Dmodplug=disabled \
 	-Dmplex=disabled \
-	-Dofa=disabled \
+	-Donnx=disabled \
 	-Dopenexr=disabled \
 	-Dopenni2=disabled \
-	-Dteletextdec=disabled \
+	-Dteletext=disabled \
 	-Dwildmidi=disabled \
 	-Dsmoothstreaming=disabled \
 	-Dsoundtouch=disabled \
 	-Dgme=disabled \
-	-Dvdpau=disabled \
 	-Dspandsp=disabled \
 	-Dsvthevcenc=disabled \
 	-Dtranscode=disabled \
 	-Dwasapi2=disabled \
 	-Dzxing=disabled \
 	-Dmagicleap=disabled \
+	-Disac=disabled \
 	-Diqa=disabled \
 	-Dopencv=disabled
 
@@ -177,6 +182,12 @@ ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_CAMERABIN2),y)
 GST1_PLUGINS_BAD_CONF_OPTS += -Dcamerabin2=enabled
 else
 GST1_PLUGINS_BAD_CONF_OPTS += -Dcamerabin2=disabled
+endif
+
+ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_CODECALPHA),y)
+GST1_PLUGINS_BAD_CONF_OPTS += -Dcodecalpha=enabled
+else
+GST1_PLUGINS_BAD_CONF_OPTS += -Dcodecalpha=disabled
 endif
 
 ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_COLOREFFECTS),y)
@@ -496,6 +507,13 @@ endif
 
 # Plugins with dependencies
 
+ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_AES),y)
+GST1_PLUGINS_BAD_CONF_OPTS += -Daes=enabled
+GST1_PLUGINS_BAD_DEPENDENCIES += openssl
+else
+GST1_PLUGINS_BAD_CONF_OPTS += -Daes=disabled
+endif
+
 ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_ASSRENDER),y)
 GST1_PLUGINS_BAD_CONF_OPTS += -Dassrender=enabled
 GST1_PLUGINS_BAD_DEPENDENCIES += libass
@@ -603,13 +621,6 @@ else
 GST1_PLUGINS_BAD_CONF_OPTS += -Dkms=disabled
 endif
 
-ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_LIBMMS),y)
-GST1_PLUGINS_BAD_CONF_OPTS += -Dlibmms=enabled
-GST1_PLUGINS_BAD_DEPENDENCIES += libmms
-else
-GST1_PLUGINS_BAD_CONF_OPTS += -Dlibmms=disabled
-endif
-
 ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_DTLS),y)
 GST1_PLUGINS_BAD_CONF_OPTS += -Ddtls=enabled
 GST1_PLUGINS_BAD_DEPENDENCIES += openssl
@@ -676,6 +687,13 @@ else
 GST1_PLUGINS_BAD_CONF_OPTS += -Dopus=disabled
 endif
 
+ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_QROVERLAY),y)
+GST1_PLUGINS_BAD_CONF_OPTS += -Dqroverlay=enabled
+GST1_PLUGINS_BAD_DEPENDENCIES += json-glib libqrencode
+else
+GST1_PLUGINS_BAD_CONF_OPTS += -Dqroverlay=disabled
+endif
+
 ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_RSVG),y)
 GST1_PLUGINS_BAD_CONF_OPTS += -Drsvg=enabled
 GST1_PLUGINS_BAD_DEPENDENCIES += librsvg
@@ -688,6 +706,16 @@ GST1_PLUGINS_BAD_CONF_OPTS += -Dsbc=enabled
 GST1_PLUGINS_BAD_DEPENDENCIES += sbc
 else
 GST1_PLUGINS_BAD_CONF_OPTS += -Dsbc=disabled
+endif
+
+ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_SCTP),y)
+GST1_PLUGINS_BAD_CONF_OPTS += \
+	-Dsctp=enabled \
+	-Dsctp-internal-usrsctp=enabled
+else
+GST1_PLUGINS_BAD_CONF_OPTS += \
+	-Dsctp=disabled \
+	-Dsctp-internal-usrsctp=disabled
 endif
 
 ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_SHM),y)
@@ -708,6 +736,13 @@ GST1_PLUGINS_BAD_CONF_OPTS += -Dsrtp=enabled
 GST1_PLUGINS_BAD_DEPENDENCIES += libsrtp
 else
 GST1_PLUGINS_BAD_CONF_OPTS += -Dsrtp=disabled
+endif
+
+ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_UVCH264),y)
+GST1_PLUGINS_BAD_CONF_OPTS += -Duvch264=enabled
+GST1_PLUGINS_BAD_DEPENDENCIES += libgudev libusb
+else
+GST1_PLUGINS_BAD_CONF_OPTS += -Duvch264=disabled
 endif
 
 ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_VOAACENC),y)
@@ -769,6 +804,7 @@ endif
 
 # Add GPL license if GPL licensed plugins enabled.
 ifeq ($(GST1_PLUGINS_BAD_HAS_GPL_LICENSE),y)
+GST1_PLUGINS_BAD_CONF_OPTS += -Dgpl=enabled
 GST1_PLUGINS_BAD_LICENSE += , GPL-2.0+
 GST1_PLUGINS_BAD_LICENSE_FILES += COPYING
 endif

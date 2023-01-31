@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-BELR_VERSION = 4.3.1
+BELR_VERSION = 4.4.8
 BELR_SITE = https://gitlab.linphone.org/BC/public/belr/-/archive/$(BELR_VERSION)
 BELR_LICENSE = GPL-3.0+
 BELR_LICENSE_FILES = LICENSE.txt
@@ -17,9 +17,8 @@ BELR_CONF_OPTS = \
 
 ifeq ($(BR2_STATIC_LIBS),y)
 BELR_CONF_OPTS += -DENABLE_SHARED=OFF -DENABLE_STATIC=ON
-else ifeq ($(BR2_SHARED_STATIC_LIBS),y)
-BELR_CONF_OPTS += -DENABLE_SHARED=ON -DENABLE_STATIC=ON
-else ifeq ($(BR2_SHARED_LIBS),y)
+else
+# cannot build static and shared together
 BELR_CONF_OPTS += -DENABLE_SHARED=ON -DENABLE_STATIC=OFF
 endif
 

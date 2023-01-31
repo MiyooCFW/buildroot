@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2014 by Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 #
@@ -18,14 +18,13 @@
 
 # This script generates a random configuration for testing Buildroot.
 
-from __future__ import print_function
-
 import contextlib
 import csv
 import os
 from random import randint
 import subprocess
 import sys
+import traceback
 from distutils.version import StrictVersion
 import platform
 
@@ -182,7 +181,7 @@ def is_toolchain_usable(configfile, config):
            'BR2_TOOLCHAIN_EXTERNAL_LINARO_AARCH64_BE=y\n' in configlines or \
            'BR2_TOOLCHAIN_EXTERNAL_LINARO_ARMEB=y\n' in configlines:
             ldd_version_output = subprocess.check_output(['ldd', '--version'])
-            glibc_version = ldd_version_output.splitlines()[0].split()[-1]
+            glibc_version = ldd_version_output.decode().splitlines()[0].split()[-1]
             if StrictVersion('2.14') > StrictVersion(glibc_version):
                 print("WARN: ignoring the Linaro ARM toolchains because too old host glibc", file=sys.stderr)
                 return False
@@ -239,12 +238,9 @@ def fixup_config(sysinfo, configfile):
     if 'BR2_PACKAGE_PYTHON3=y\n' in configlines and \
        BR2_TOOLCHAIN_EXTERNAL_URL + 'mips64el-ctng_n64-linux-gnu.tar.xz"\n' in configlines:
         return False
-    # libffi not available on sh2a and ARMv7-M, but propagating libffi
-    # arch dependencies in Buildroot is really too much work, so we
-    # handle this here.
-    if 'BR2_sh2a=y\n' in configlines and \
-       'BR2_PACKAGE_LIBFFI=y\n' in configlines:
-        return False
+    # libffi not available on ARMv7-M, but propagating libffi arch
+    # dependencies in Buildroot is really too much work, so we handle
+    # this here.
     if 'BR2_ARM_CPU_ARMV7M=y\n' in configlines and \
        'BR2_PACKAGE_LIBFFI=y\n' in configlines:
         return False
@@ -299,6 +295,11 @@ def fixup_config(sysinfo, configfile):
     # The cs nios2 2017.02 toolchain is affected by binutils PR19405
     if 'BR2_TOOLCHAIN_EXTERNAL_CODESOURCERY_NIOSII=y\n' in configlines and \
        'BR2_PACKAGE_FLANN=y\n' in configlines:
+        return False
+    if 'BR2_PACKAGE_AUFS_UTIL=y\n' in configlines and \
+       'BR2_PACKAGE_AUFS_UTIL_VERSION=""\n' in configlines:
+        return False
+    if 'BR2_PACKAGE_A10DISP=y\n' in configlines:
         return False
 
     if 'BR2_PACKAGE_HOST_UBOOT_TOOLS_ENVIMAGE=y\n' in configlines:
@@ -357,6 +358,8 @@ def gen_config(args):
     # Amend the configuration with a few things.
     if randint(0, 20) == 0:
         configlines.append("BR2_ENABLE_DEBUG=y\n")
+    if randint(0, 20) == 0:
+        configlines.append("BR2_ENABLE_RUNTIME_DEBUG=y\n")
     if randint(0, 1) == 0:
         configlines.append("BR2_INIT_BUSYBOX=y\n")
     elif randint(0, 15) == 0:
@@ -366,27 +369,13 @@ def gen_config(args):
     if randint(0, 20) == 0:
         configlines.append("BR2_STATIC_LIBS=y\n")
     if randint(0, 20) == 0:
-        configlines.append("BR2_PACKAGE_PYTHON_PY_ONLY=y\n")
+        configlines.append("BR2_PACKAGE_PYTHON3_PY_ONLY=y\n")
     if randint(0, 5) == 0:
         configlines.append("BR2_OPTIMIZE_2=y\n")
     if randint(0, 4) == 0:
         configlines.append("BR2_SYSTEM_ENABLE_NLS=y\n")
     if randint(0, 4) == 0:
-        configlines.append("BR2_PIC_PIE=y\n")
-    if randint(0, 4) == 0:
-        configlines.append("BR2_RELRO_FULL=y\n")
-    elif randint(0, 4) == 0:
-        configlines.append("BR2_RELRO_PARTIAL=y\n")
-    if randint(0, 4) == 0:
-        configlines.append("BR2_SSP_ALL=y\n")
-    elif randint(0, 4) == 0:
-        configlines.append("BR2_SSP_REGULAR=y\n")
-    elif randint(0, 4) == 0:
-        configlines.append("BR2_SSP_STRONG=y\n")
-    if randint(0, 4) == 0:
         configlines.append("BR2_FORTIFY_SOURCE_2=y\n")
-    elif randint(0, 4) == 0:
-        configlines.append("BR2_FORTIFY_SOURCE_1=y\n")
 
     # Randomly enable BR2_REPRODUCIBLE 10% of times
     # also enable tar filesystem images for testing
@@ -422,7 +411,7 @@ def gen_config(args):
             return 1
         bounded_loop -= 1
         subprocess.check_call(["make", "O=%s" % args.outputdir, "-C", args.buildrootdir,
-                               "KCONFIG_PROBABILITY=%d" % randint(1, 30),
+                               "KCONFIG_PROBABILITY=%d" % randint(1, 20),
                                "randpackageconfig"])
 
         if fixup_config(sysinfo, configfile):
@@ -460,7 +449,7 @@ if __name__ == '__main__':
 
     try:
         ret = gen_config(args)
-    except Exception as e:
-        print(str(e), file=sys.stderr)
+    except Exception:
+        traceback.print_exc()
         parser.exit(1)
     parser.exit(ret)

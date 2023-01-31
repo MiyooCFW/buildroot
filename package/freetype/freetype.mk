@@ -4,15 +4,23 @@
 #
 ################################################################################
 
-FREETYPE_VERSION = 2.10.2
+FREETYPE_VERSION = 2.11.1
 FREETYPE_SOURCE = freetype-$(FREETYPE_VERSION).tar.xz
 FREETYPE_SITE = http://download.savannah.gnu.org/releases/freetype
 FREETYPE_INSTALL_STAGING = YES
 FREETYPE_MAKE_OPTS = CCexe="$(HOSTCC)"
 FREETYPE_LICENSE = Dual FTL/GPL-2.0+
-FREETYPE_LICENSE_FILES = docs/LICENSE.TXT docs/FTL.TXT docs/GPLv2.TXT
+FREETYPE_LICENSE_FILES = LICENSE.TXT docs/FTL.TXT docs/GPLv2.TXT
+FREETYPE_CPE_ID_VENDOR = freetype
 FREETYPE_DEPENDENCIES = host-pkgconf
 FREETYPE_CONFIG_SCRIPTS = freetype-config
+
+# 0001-sfnt-Avoid-invalid-face-index.patch
+FREETYPE_IGNORE_CVES += CVE-2022-27404
+# 0002-src-base-ftobjs.c-ft_open_face_internal-Properly-gua.patch
+FREETYPE_IGNORE_CVES += CVE-2022-27405
+# 0003-src-base-ftobjs.c-FT_Request_Size-Guard-face-size.patch
+FREETYPE_IGNORE_CVES += CVE-2022-27406
 
 # harfbuzz already depends on freetype so disable harfbuzz in freetype to avoid
 # a circular dependency

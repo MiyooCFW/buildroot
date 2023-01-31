@@ -10,6 +10,8 @@ UTIL_LINUX_LIBS_VERSION = $(UTIL_LINUX_VERSION)
 UTIL_LINUX_LIBS_SOURCE = $(UTIL_LINUX_SOURCE)
 UTIL_LINUX_LIBS_SITE = $(UTIL_LINUX_SITE)
 UTIL_LINUX_LIBS_DL_SUBDIR = $(UTIL_LINUX_DL_SUBDIR)
+UTIL_LINUX_LIBS_CPE_ID_VENDOR = $(UTIL_LINUX_CPE_ID_VENDOR)
+UTIL_LINUX_LIBS_CPE_ID_PRODUCT = $(UTIL_LINUX_CPE_ID_PRODUCT)
 
 # README.licensing claims that some files are GPL-2.0 only, but this is not
 # true. Some files are GPL-3.0+ but only in tests and optionally in hwclock
@@ -82,5 +84,8 @@ UTIL_LINUX_LIBS_CONF_OPTS += --without-readline
 
 # No libs use audit
 UTIL_LINUX_LIBS_CONF_OPTS += --without-audit
+
+# No libs use libmagic
+UTIL_LINUX_LIBS_CONF_OPTS += --without-libmagic
 
 $(eval $(autotools-package))

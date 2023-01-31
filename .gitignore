@@ -1,7 +1,5 @@
 /output
-# github actions keeps hitting issues downloading from invisible-mirror.net, and then builds take hours to complete
-# so... checking in the dl/ folder instead of downloading it in CI
-# /dl
+/dl
 /.auto.deps
 /.config.cmd
 /.config.old
