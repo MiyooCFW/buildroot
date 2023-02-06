@@ -4,11 +4,12 @@
 #
 ################################################################################
 
-LIBZIP_VERSION = 1.7.3
+LIBZIP_VERSION = 1.8.0
 LIBZIP_SITE = https://libzip.org/download
 LIBZIP_SOURCE = libzip-$(LIBZIP_VERSION).tar.xz
 LIBZIP_LICENSE = BSD-3-Clause
 LIBZIP_LICENSE_FILES = LICENSE
+LIBZIP_CPE_ID_VENDOR = libzip
 LIBZIP_INSTALL_STAGING = YES
 LIBZIP_DEPENDENCIES = zlib
 HOST_LIBZIP_DEPENDENCIES = host-zlib
@@ -51,6 +52,13 @@ LIBZIP_DEPENDENCIES += xz
 LIBZIP_CONF_OPTS += -DENABLE_LZMA=ON
 else
 LIBZIP_CONF_OPTS += -DENABLE_LZMA=OFF
+endif
+
+ifeq ($(BR2_PACKAGE_ZSTD),y)
+LIBZIP_DEPENDENCIES += zstd
+LIBZIP_CONF_OPTS += -DENABLE_ZSTD=ON
+else
+LIBZIP_CONF_OPTS += -DENABLE_ZSTD=OFF
 endif
 
 $(eval $(cmake-package))

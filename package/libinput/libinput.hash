@@ -1,8 +1,5 @@
-# From https://lists.freedesktop.org/archives/wayland-devel/2020-October/041640.html
-md5  7c0aca7bba3e8559a869ed15b2173b2e  libinput-1.16.2.tar.xz
-sha1  bff5e91ea0ea45509532aaa3e1a876d476e3e82e  libinput-1.16.2.tar.xz
-sha256  fc3d8c50fe7abc4dc4406bc01262a3f8149864557f87279adcf300e523c160a9  libinput-1.16.2.tar.xz
-sha512  3394faeb0cdb0a543624e150f04a98f3bce8d67438e47455808bde8eec8ea9cdafb86056e5f8d3431352ae33714e490c55edeb51e0af1972c68fca07c1ef1daa  libinput-1.16.2.tar.xz
+# Locally computed
+sha256  08c003f724f361ed21f4dfbfe755a6c115b85385f1418907bb98f185457273f0  libinput-1.20.1.tar.bz2
 
 # License files
-sha256  70d5b1dfe5a9c50a1f2ea91b1c2b1c85d876c5c92339585edbb85cf69e945e14  COPYING
+sha256  80de50b2022a840db044c56db804ca3565600a692c0714babface587acc6d1b0  COPYING

@@ -4,11 +4,12 @@
 #
 ################################################################################
 
-LIBXKBCOMMON_VERSION = 1.0.1
-LIBXKBCOMMON_SITE = http://xkbcommon.org/download
+LIBXKBCOMMON_VERSION = 1.3.1
+LIBXKBCOMMON_SITE = https://xkbcommon.org/download
 LIBXKBCOMMON_SOURCE = libxkbcommon-$(LIBXKBCOMMON_VERSION).tar.xz
 LIBXKBCOMMON_LICENSE = MIT/X11
 LIBXKBCOMMON_LICENSE_FILES = LICENSE
+LIBXKBCOMMON_CPE_ID_VENDOR = xkbcommon
 LIBXKBCOMMON_INSTALL_STAGING = YES
 LIBXKBCOMMON_DEPENDENCIES = host-bison host-flex
 LIBXKBCOMMON_CONF_OPTS = \

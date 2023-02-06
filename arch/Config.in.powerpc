@@ -11,6 +11,8 @@ choice
 	  Specific CPU variant to use
 config BR2_generic_powerpc
 	bool "generic"
+	# No C library supports this variant on ppc64le
+	depends on !BR2_powerpc64le
 config BR2_powerpc_401
 	bool "401"
 	depends on !BR2_ARCH_IS_64
@@ -44,9 +46,6 @@ config BR2_powerpc_476fp
 config BR2_powerpc_505
 	bool "505"
 	depends on !BR2_ARCH_IS_64
-config BR2_powerpc_601
-	bool "601"
-	depends on !BR2_ARCH_IS_64
 config BR2_powerpc_602
 	bool "602"
 	depends on !BR2_ARCH_IS_64
@@ -64,8 +63,12 @@ config BR2_powerpc_604e
 	depends on !BR2_ARCH_IS_64
 config BR2_powerpc_620
 	bool "620"
+	# No C library supports this variant on ppc64le
+	depends on !BR2_powerpc64le
 config BR2_powerpc_630
 	bool "630"
+	# No C library supports this variant on ppc64le
+	depends on !BR2_powerpc64le
 config BR2_powerpc_740
 	bool "740"
 	depends on !BR2_ARCH_IS_64
@@ -118,8 +121,12 @@ config BR2_powerpc_e6500
 	select BR2_POWERPC_CPU_HAS_ALTIVEC
 config BR2_powerpc_power4
 	bool "power4"
+	# No C library supports this variant on ppc64le
+	depends on !BR2_powerpc64le
 config BR2_powerpc_power5
 	bool "power5"
+	# No C library supports this variant on ppc64le
+	depends on !BR2_powerpc64le
 config BR2_powerpc_power6
 	bool "power6"
 	select BR2_POWERPC_CPU_HAS_ALTIVEC
@@ -160,6 +167,9 @@ config BR2_ARCH
 	default "powerpc64"	if BR2_powerpc64
 	default "powerpc64le"	if BR2_powerpc64le
 
+config BR2_NORMALIZED_ARCH
+	default "powerpc"
+
 config BR2_ENDIAN
 	default "BIG"    if BR2_powerpc || BR2_powerpc64
 	default "LITTLE" if BR2_powerpc64le
@@ -176,7 +186,6 @@ config BR2_GCC_TARGET_CPU
 	default "476"		if BR2_powerpc_476
 	default "476fp"		if BR2_powerpc_476fp
 	default "505"		if BR2_powerpc_505
-	default "601"		if BR2_powerpc_601
 	default "602"		if BR2_powerpc_602
 	default "603"		if BR2_powerpc_603
 	default "603e"		if BR2_powerpc_603e

@@ -1,5 +1,5 @@
 # Locally calculated after checking pgp signature
-sha256	02a4e700f10936f937cd1a4c303cab8687a11abecc6107bd4b706b9329cd5400	krb5-1.18.1.tar.gz
+sha256  704aed49b19eb5a7178b34b2873620ec299db08752d6a8574f95d41879ab8851  krb5-1.20.1.tar.gz
 
 # Hash for license file:
-sha256	b7a5f14a8719bce5e49a761998aa55438fc890fb40f71228d6a49546f6d5690d	NOTICE
+sha256  cfadcf7b2ead2f3af793c25c00638c9908ac0023b101695f40cb9a03b16811dc  NOTICE

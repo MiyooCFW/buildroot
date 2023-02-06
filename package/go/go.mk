@@ -4,12 +4,13 @@
 #
 ################################################################################
 
-GO_VERSION = 1.15.2
+GO_VERSION = 1.18.9
 GO_SITE = https://storage.googleapis.com/golang
 GO_SOURCE = go$(GO_VERSION).src.tar.gz
 
 GO_LICENSE = BSD-3-Clause
 GO_LICENSE_FILES = LICENSE
+GO_CPE_ID_VENDOR = golang
 
 HOST_GO_DEPENDENCIES = host-go-bootstrap
 HOST_GO_GOPATH = $(HOST_DIR)/usr/share/go-path
@@ -24,6 +25,8 @@ HOST_GO_COMMON_ENV = \
 	GOFLAGS=-mod=vendor \
 	GOROOT="$(HOST_GO_ROOT)" \
 	GOPATH="$(HOST_GO_GOPATH)" \
+	GOCACHE="$(HOST_GO_TARGET_CACHE)" \
+	GOMODCACHE="$(HOST_GO_GOPATH)/pkg/mod" \
 	GOPROXY=off \
 	PATH=$(BR_PATH) \
 	GOBIN= \
@@ -39,11 +42,19 @@ else ifeq ($(BR2_ARM_CPU_ARMV6),y)
 GO_GOARM = 6
 else ifeq ($(BR2_ARM_CPU_ARMV7A),y)
 GO_GOARM = 7
+else ifeq ($(BR2_ARM_CPU_ARMV8A),y)
+# Go doesn't support 32-bit GOARM=8 (https://github.com/golang/go/issues/29373)
+# but can still benefit from armv7 optimisations
+GO_GOARM = 7
 endif
 else ifeq ($(BR2_aarch64),y)
 GO_GOARCH = arm64
 else ifeq ($(BR2_i386),y)
 GO_GOARCH = 386
+# i386: use softfloat if no SSE2: https://golang.org/doc/go1.16#386
+ifneq ($(BR2_X86_CPU_HAS_SSE2),y)
+GO_GO386 = softfloat
+endif
 else ifeq ($(BR2_x86_64),y)
 GO_GOARCH = amd64
 else ifeq ($(BR2_powerpc64),y)
@@ -54,6 +65,8 @@ else ifeq ($(BR2_mips64),y)
 GO_GOARCH = mips64
 else ifeq ($(BR2_mips64el),y)
 GO_GOARCH = mips64le
+else ifeq ($(BR2_riscv),y)
+GO_GOARCH = riscv64
 else ifeq ($(BR2_s390x),y)
 GO_GOARCH = s390x
 endif
@@ -62,8 +75,8 @@ endif
 HOST_GO_TOOLDIR = $(HOST_GO_ROOT)/pkg/tool/linux_$(GO_GOARCH)
 HOST_GO_TARGET_ENV = \
 	$(HOST_GO_COMMON_ENV) \
+	GOOS="linux" \
 	GOARCH=$(GO_GOARCH) \
-	GOCACHE="$(HOST_GO_TARGET_CACHE)" \
 	CC="$(TARGET_CC)" \
 	CXX="$(TARGET_CXX)" \
 	CGO_CFLAGS="$(TARGET_CFLAGS)" \
@@ -84,7 +97,9 @@ endif
 HOST_GO_CROSS_ENV = \
 	CC_FOR_TARGET="$(TARGET_CC)" \
 	CXX_FOR_TARGET="$(TARGET_CXX)" \
+	GOOS="linux" \
 	GOARCH=$(GO_GOARCH) \
+	$(if $(GO_GO386),GO386=$(GO_GO386)) \
 	$(if $(GO_GOARM),GOARM=$(GO_GOARM)) \
 	GO_ASSUME_CROSSCOMPILING=1
 
@@ -97,10 +112,11 @@ endif # BR2_PACKAGE_HOST_GO_TARGET_ARCH_SUPPORTS
 # For the convenience of host golang packages
 HOST_GO_HOST_ENV = \
 	$(HOST_GO_COMMON_ENV) \
+	GOOS="" \
 	GOARCH="" \
 	GOCACHE="$(HOST_GO_HOST_CACHE)" \
-	CC="$(HOST_CCNOCCACHE)" \
-	CXX="$(HOST_CXXNOCCACHE)" \
+	CC="$(HOSTCC_NOCCACHE)" \
+	CXX="$(HOSTCXX_NOCCACHE)" \
 	CGO_CFLAGS="$(HOST_CFLAGS)" \
 	CGO_CXXFLAGS="$(HOST_CXXFLAGS)" \
 	CGO_LDFLAGS="$(HOST_LDFLAGS)"
