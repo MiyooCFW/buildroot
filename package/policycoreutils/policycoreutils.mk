@@ -4,23 +4,25 @@
 #
 ################################################################################
 
-POLICYCOREUTILS_VERSION = 3.2
-POLICYCOREUTILS_SITE = https://github.com/SELinuxProject/selinux/releases/download/$(POLICYCOREUTILS_VERSION)
+POLICYCOREUTILS_VERSION = 2.7
+POLICYCOREUTILS_SITE = https://raw.githubusercontent.com/wiki/SELinuxProject/selinux/files/releases/20170804
 POLICYCOREUTILS_LICENSE = GPL-2.0
 POLICYCOREUTILS_LICENSE_FILES = COPYING
-POLICYCOREUTILS_CPE_ID_VENDOR = selinuxproject
 
-POLICYCOREUTILS_DEPENDENCIES = libsemanage libcap-ng $(TARGET_NLS_DEPENDENCIES)
-POLICYCOREUTILS_MAKE_OPTS = LDLIBS=$(TARGET_NLS_LIBS)
+POLICYCOREUTILS_DEPENDENCIES = libsemanage libcap-ng
 
 ifeq ($(BR2_PACKAGE_LINUX_PAM),y)
 POLICYCOREUTILS_DEPENDENCIES += linux-pam
 POLICYCOREUTILS_MAKE_OPTS += NAMESPACE_PRIV=y
+define POLICYCOREUTILS_INSTALL_TARGET_LINUX_PAM_CONFS
+	$(INSTALL) -D -m 0644 $(@D)/newrole/newrole-lspp.pamd $(TARGET_DIR)/etc/pam.d/newrole
+	$(INSTALL) -D -m 0644 $(@D)/run_init/run_init.pamd $(TARGET_DIR)/etc/pam.d/run_init
+endef
 endif
 
 ifeq ($(BR2_PACKAGE_AUDIT),y)
 POLICYCOREUTILS_DEPENDENCIES += audit
-POLICYCOREUTILS_MAKE_OPTS += AUDIT_LOG_PRIV=y USE_AUDIT=y
+POLICYCOREUTILS_MAKE_OPTS += AUDIT_LOG_PRIV=y
 endif
 
 # Enable LSPP_PRIV if both audit and linux pam are enabled
@@ -34,12 +36,13 @@ endif
 POLICYCOREUTILS_MAKE_OPTS += \
 	$(TARGET_CONFIGURE_OPTS) \
 	CFLAGS="$(TARGET_CFLAGS) -U_FILE_OFFSET_BITS" \
-	CPPFLAGS="$(TARGET_CPPFLAGS) -U_FILE_OFFSET_BITS"
+	CPPFLAGS="$(TARGET_CPPFLAGS) -U_FILE_OFFSET_BITS" \
+	ARCH="$(BR2_ARCH)"
 
 POLICYCOREUTILS_MAKE_DIRS = \
 	load_policy newrole run_init \
 	secon semodule sestatus setfiles \
-	setsebool scripts
+	setsebool
 
 # We need to pass DESTDIR at build time because it's used by
 # policycoreutils build system to find headers and libraries.
@@ -57,19 +60,34 @@ define POLICYCOREUTILS_INSTALL_TARGET_CMDS
 	)
 endef
 
-HOST_POLICYCOREUTILS_DEPENDENCIES = host-libsemanage
+HOST_POLICYCOREUTILS_DEPENDENCIES = \
+	host-libsemanage host-dbus-glib host-setools
 
 # Undefining _FILE_OFFSET_BITS here because of a "bug" with glibc fts.h
 # large file support.
 # See https://bugzilla.redhat.com/show_bug.cgi?id=574992 for more information
+# We need to pass DESTDIR at build time because it's used by
+# policycoreutils build system to find headers and libraries.
 # We also need to pass PREFIX because it defaults to $(DESTDIR)/usr
 HOST_POLICYCOREUTILS_MAKE_OPTS = \
 	$(HOST_CONFIGURE_OPTS) \
 	CFLAGS="$(HOST_CFLAGS) -U_FILE_OFFSET_BITS" \
 	CPPFLAGS="$(HOST_CPPFLAGS) -U_FILE_OFFSET_BITS" \
-	PREFIX=$(HOST_DIR) \
-	ETCDIR=$(HOST_DIR)/etc \
-	SBINDIR=$(HOST_DIR)/sbin
+	PYTHON="$(HOST_DIR)/bin/python" \
+	PYTHON_INSTALL_ARGS="$(HOST_PKG_PYTHON_DISTUTILS_INSTALL_OPTS)" \
+	ARCH="$(HOSTARCH)" \
+	DESTDIR=$(HOST_DIR) \
+	PREFIX=$(HOST_DIR)
+
+ifeq ($(BR2_PACKAGE_PYTHON3),y)
+HOST_POLICYCOREUTILS_DEPENDENCIES += host-python3
+HOST_POLICYCOREUTILS_MAKE_OPTS += \
+	PYLIBVER="python$(PYTHON3_VERSION_MAJOR)"
+else
+HOST_POLICYCOREUTILS_DEPENDENCIES += host-python
+HOST_POLICYCOREUTILS_MAKE_OPTS += \
+	PYLIBVER="python$(PYTHON_VERSION_MAJOR)"
+endif
 
 # Note: We are only building the programs required by the refpolicy build
 HOST_POLICYCOREUTILS_MAKE_DIRS = \

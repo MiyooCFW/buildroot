@@ -4,22 +4,15 @@
 #
 ################################################################################
 
-LIBGPGME_VERSION = 1.16.0
+LIBGPGME_VERSION = 1.10.0
 LIBGPGME_SITE = https://gnupg.org/ftp/gcrypt/gpgme
 LIBGPGME_SOURCE = gpgme-$(LIBGPGME_VERSION).tar.bz2
 LIBGPGME_LICENSE = LGPL-2.1+
 LIBGPGME_LICENSE_FILES = COPYING.LESSER
-LIBGPGME_CPE_ID_VENDOR = gnupg
-LIBGPGME_CPE_ID_PRODUCT = gpgme
 LIBGPGME_INSTALL_STAGING = YES
 LIBGPGME_DEPENDENCIES = libassuan libgpg-error
-LIBGPGME_CONFIG_SCRIPTS = gpgme-config
-
 LIBGPGME_LANGUAGE_BINDINGS = cl
-# C++ bindings require a C++11 capable gcc, and -Wsuggest-override support
-ifeq ($(BR2_INSTALL_LIBSTDCPP)$(BR2_TOOLCHAIN_GCC_AT_LEAST_5),yy)
-LIBGPGME_LANGUAGE_BINDINGS += cpp
-endif
+LIBGPGME_CONFIG_SCRIPTS = gpgme-config
 
 LIBGPGME_CONF_OPTS = \
 	--with-gpg-error-prefix=$(STAGING_DIR)/usr \
@@ -28,7 +21,12 @@ LIBGPGME_CONF_OPTS = \
 	--disable-gpgconf-test \
 	--disable-g13-test \
 	--disable-gpg-test \
-	--enable-languages=$(subst $(space),$(comma),$(LIBGPGME_LANGUAGE_BINDINGS))
+	--enable-languages=$(LIBGPGME_LANGUAGE_BINDINGS)
+
+# C++ bindings require a C++11 capable gcc
+ifeq ($(BR2_INSTALL_LIBSTDCPP)$(BR2_TOOLCHAIN_GCC_AT_LEAST_4_8),yy)
+LIBGPGME_LANGUAGE_BINDINGS := $(LIBGPGME_LANGUAGE_BINDINGS),cpp
+endif
 
 # Handle argp-standalone or it errors out during build
 ifeq ($(BR2_PACKAGE_ARGP_STANDALONE),y)

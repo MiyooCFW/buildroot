@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-RESTORECOND_VERSION = 3.3
-RESTORECOND_SITE = https://github.com/SELinuxProject/selinux/releases/download/$(RESTORECOND_VERSION)
+RESTORECOND_VERSION = 2.7
+RESTORECOND_SITE = https://raw.githubusercontent.com/wiki/SELinuxProject/selinux/files/releases/20170804
 RESTORECOND_LICENSE = GPL-2.0
 RESTORECOND_LICENSE_FILES = COPYING
 
@@ -27,8 +27,8 @@ define RESTORECOND_BUILD_CMDS
 endef
 
 define RESTORECOND_INSTALL_INIT_SYSV
-	$(INSTALL) -m 0755 -D package/restorecond/S02restorecond \
-		$(TARGET_DIR)/etc/init.d/S02restorecond
+	$(INSTALL) -m 0755 -D $(@D)/restorecond.init \
+		$(TARGET_DIR)/etc/init.d/S20restorecond
 endef
 
 define RESTORECOND_INSTALL_INIT_SYSTEMD

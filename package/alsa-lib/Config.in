@@ -22,7 +22,7 @@ if BR2_PACKAGE_ALSA_LIB
 
 config BR2_PACKAGE_ALSA_LIB_PYTHON
 	bool "Python support for alsa-lib"
-	depends on BR2_PACKAGE_PYTHON3
+	depends on BR2_PACKAGE_PYTHON
 	help
 	  Add python support for alsa-lib.
 	  Python will be built and libpython will be installed
@@ -65,11 +65,6 @@ config BR2_PACKAGE_ALSA_LIB_HWDEP
 config BR2_PACKAGE_ALSA_LIB_SEQ
 	bool "seq"
 	default y
-
-config BR2_PACKAGE_ALSA_LIB_UCM
-	bool "ucm"
-	default y
-	select BR2_PACKAGE_ALSA_LIB_MIXER
 
 config BR2_PACKAGE_ALSA_LIB_ALISP
 	bool "alisp"

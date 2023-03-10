@@ -4,9 +4,8 @@
 #
 ################################################################################
 
-LSHW_VERSION = 02.19.2
+LSHW_VERSION = B.02.18
 LSHW_SITE = http://ezix.org/software/files
-LSHW_SOURCE = lshw-B.$(LSHW_VERSION).tar.gz
 LSHW_LICENSE = GPL-2.0
 LSHW_LICENSE_FILES = COPYING
 
@@ -24,7 +23,6 @@ endef
 define LSHW_INSTALL_TARGET_CMDS
 	$(LSHW_MAKE_ENV) $(MAKE) -C $(@D)/src DESTDIR=$(TARGET_DIR) \
 		$(LSHW_MAKE_OPTS) install
-	$(RM) -rf $(TARGET_DIR)/usr/share/lshw
 endef
 
 $(eval $(generic-package))

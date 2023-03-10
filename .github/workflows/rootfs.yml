@@ -40,7 +40,7 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
         cd ${{ inputs.submodule || '.' }}
-        make miyoo_uclibc_defconfig
+        make miyoo_defconfig
         make
         cd output/images/
       

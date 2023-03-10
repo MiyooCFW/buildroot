@@ -1,3 +1,4 @@
+# From https://www.python.org/downloads/release/python-363/
+md5 b9c2c36c33fb89bda1fefd37ad5af9be Python-3.6.3.tar.xz
 # Locally computed
-sha256  6a30ecde59c47048013eb5a658c9b5dec277203d2793667f578df7671f7f03f3  Python-3.10.8.tar.xz
-sha256  d4a223f033419313218c9b8444167e91e87a5bebdb43fb8490df441df5220a8b  LICENSE
+sha256 cda7d967c9a4bfa52337cdf551bcc5cff026b6ac50a8834e568ce4a794ca81da Python-3.6.3.tar.xz

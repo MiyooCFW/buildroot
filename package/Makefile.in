@@ -39,9 +39,8 @@ endif
 # Compute GNU_TARGET_NAME
 GNU_TARGET_NAME = $(ARCH)-$(TARGET_VENDOR)-$(TARGET_OS)-$(LIBC)$(ABI)
 
-# FLAT binary format needs uclinux, except RISC-V 64-bits which needs
-# the regular linux name.
-ifeq ($(BR2_BINFMT_FLAT):$(BR2_RISCV_64),y:)
+# FLAT binary format needs uclinux
+ifeq ($(BR2_BINFMT_FLAT),y)
 TARGET_OS = uclinux
 else
 TARGET_OS = linux
@@ -51,12 +50,8 @@ ifeq ($(BR2_TOOLCHAIN_USES_UCLIBC),y)
 LIBC = uclibc
 else ifeq ($(BR2_TOOLCHAIN_USES_MUSL),y)
 LIBC = musl
-else ifeq ($(BR2_TOOLCHAIN_USES_GLIBC),y)
+else
 LIBC = gnu
-else ifeq ($(BR_BUILDING),y)
-# This happens if there is a bug in Buildroot that allows an
-# architecture configuration that isn't supported by any library.
-$(error No C library enabled, this is not possible.)
 endif
 
 # The ABI suffix is a bit special on ARM, as it needs to be
@@ -72,15 +67,6 @@ endif
 
 ifeq ($(BR2_ARM_EABIHF),y)
 ABI := $(ABI)hf
-endif
-endif
-
-# For C-SKY abiv1 & abiv2
-ifeq ($(BR2_csky),y)
-ifeq ($(BR2_ck610),y)
-ABI = abiv1
-else
-ABI = abiv2
 endif
 endif
 
@@ -117,6 +103,10 @@ ifeq ($(BR2_xtensa),y)
 TARGET_ABI += -mlongcalls -mauto-litpools
 endif
 
+ifeq ($(BR2_arc)$(BR2_ARC_ATOMIC_EXT),yy)
+TARGET_ABI += -matomic
+endif
+
 STAGING_SUBDIR = $(GNU_TARGET_NAME)/sysroot
 STAGING_DIR    = $(HOST_DIR)/$(STAGING_SUBDIR)
 
@@ -138,12 +128,6 @@ endif
 ifeq ($(BR2_OPTIMIZE_S),y)
 TARGET_OPTIMIZATION = -Os
 endif
-ifeq ($(BR2_OPTIMIZE_FAST),y)
-TARGET_OPTIMIZATION = -Ofast
-endif
-ifeq ($(BR2_ENABLE_DEBUG),)
-TARGET_DEBUGGING = -g0
-endif
 ifeq ($(BR2_DEBUG_1),y)
 TARGET_DEBUGGING = -g1
 endif
@@ -154,51 +138,46 @@ ifeq ($(BR2_DEBUG_3),y)
 TARGET_DEBUGGING = -g3
 endif
 
+TARGET_CFLAGS_RELRO = -Wl,-z,relro
+TARGET_CFLAGS_RELRO_FULL = -Wl,-z,now $(TARGET_CFLAGS_RELRO)
+
 TARGET_LDFLAGS = $(call qstrip,$(BR2_TARGET_LDFLAGS))
 
-# By design, _FORTIFY_SOURCE requires gcc optimization to be enabled.
-# Therefore, we need to pass _FORTIFY_SOURCE and the optimization level
-# through the same mechanism, i.e currently through CFLAGS. Passing
-# _FORTIFY_SOURCE through the wrapper and the optimization level
-# through CFLAGS would not work, because CFLAGS are sometimes
-# ignored/overridden by packages, but the flags passed by the wrapper
-# are enforced: this would cause _FORTIFY_SOURCE to be used without any
-# optimization level, leading to a build / configure failure. So we keep
-# passing _FORTIFY_SOURCE and the optimization level both through CFLAGS.
+ifeq ($(BR2_SSP_REGULAR),y)
+TARGET_CPPFLAGS += -fstack-protector
+else ifeq ($(BR2_SSP_STRONG),y)
+TARGET_CPPFLAGS += -fstack-protector-strong
+else ifeq ($(BR2_SSP_ALL),y)
+TARGET_CPPFLAGS += -fstack-protector-all
+endif
+
+ifeq ($(BR2_RELRO_PARTIAL),y)
+TARGET_CPPFLAGS += $(TARGET_CFLAGS_RELRO)
+TARGET_LDFLAGS += $(TARGET_CFLAGS_RELRO)
+else ifeq ($(BR2_RELRO_FULL),y)
+TARGET_CPPFLAGS += -fPIE $(TARGET_CFLAGS_RELRO_FULL)
+TARGET_LDFLAGS += -pie
+endif
+
 ifeq ($(BR2_FORTIFY_SOURCE_1),y)
-TARGET_HARDENED += -D_FORTIFY_SOURCE=1
+TARGET_CPPFLAGS += -D_FORTIFY_SOURCE=1
 else ifeq ($(BR2_FORTIFY_SOURCE_2),y)
-TARGET_HARDENED += -D_FORTIFY_SOURCE=2
+TARGET_CPPFLAGS += -D_FORTIFY_SOURCE=2
 endif
 
 TARGET_CPPFLAGS += -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
-TARGET_CFLAGS = $(TARGET_CPPFLAGS) $(TARGET_ABI) $(TARGET_OPTIMIZATION) $(TARGET_DEBUGGING) $(TARGET_HARDENED)
+TARGET_CFLAGS = $(TARGET_CPPFLAGS) $(TARGET_ABI) $(TARGET_OPTIMIZATION) $(TARGET_DEBUGGING)
 TARGET_CXXFLAGS = $(TARGET_CFLAGS)
 TARGET_FCFLAGS = $(TARGET_ABI) $(TARGET_OPTIMIZATION) $(TARGET_DEBUGGING)
 
-# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79509
-ifeq ($(BR2_m68k_cf),y)
-TARGET_CFLAGS += -fno-dwarf2-cfi-asm
-TARGET_CXXFLAGS += -fno-dwarf2-cfi-asm
-endif
-
 ifeq ($(BR2_BINFMT_FLAT),y)
-ifeq ($(BR2_RISCV_64),y)
-TARGET_CFLAGS += -fPIC
-endif
-ifeq ($(BR2_BINFMT_FLAT_ONE),y)
-ELF2FLT_FLAGS = $(if $($(PKG)_FLAT_STACKSIZE),\
-	-Wl$(comma)-elf2flt="-r -s$($(PKG)_FLAT_STACKSIZE)",\
-        -Wl$(comma)-elf2flt=-r)
-else
-ELF2FLT_FLAGS = $(if $($(PKG)_FLAT_STACKSIZE),\
-	-Wl$(comma)-elf2flt=-s$($(PKG)_FLAT_STACKSIZE),\
+TARGET_CFLAGS += $(if $($(PKG)_FLAT_STACKSIZE),-Wl$(comma)-elf2flt=-s$($(PKG)_FLAT_STACKSIZE),\
 	-Wl$(comma)-elf2flt)
-endif
-TARGET_CFLAGS += $(ELF2FLT_FLAGS)
-TARGET_CXXFLAGS += $(ELF2FLT_FLAGS)
-TARGET_FCFLAGS += $(ELF2FLT_FLAGS)
-TARGET_LDFLAGS += $(ELF2FLT_FLAGS)
+TARGET_CXXFLAGS += $(if $($(PKG)_FLAT_STACKSIZE),-Wl$(comma)-elf2flt=-s$($(PKG)_FLAT_STACKSIZE),\
+	-Wl$(comma)-elf2flt)
+TARGET_FCFLAGS += $(if $($(PKG)_FLAT_STACKSIZE),-Wl$(comma)-elf2flt=-s$($(PKG)_FLAT_STACKSIZE),\
+	-Wl$(comma)-elf2flt)
+TARGET_LDFLAGS += $(if $($(PKG)_FLAT_STACKSIZE),-Wl$(comma)-elf2flt=-s$($(PKG)_FLAT_STACKSIZE),-Wl$(comma)-elf2flt)
 endif
 
 ifeq ($(BR2_BINFMT_FLAT_SHARED),y)
@@ -207,6 +186,12 @@ TARGET_CFLAGS += -mid-shared-library -mshared-library-id=0
 TARGET_FCFLAGS += -mid-shared-library -mshared-library-id=0
 TARGET_CXXFLAGS += -mid-shared-library -mshared-library-id=0
 endif
+ifeq ($(BR2_BINFMT_FLAT_SEP_DATA),y)
+TARGET_LDFLAGS += -msep-data
+TARGET_CFLAGS += -msep-data
+TARGET_FCFLAGS += -msep-data
+TARGET_CXXFLAGS += -msep-data
+endif
 
 ifeq ($(BR2_TOOLCHAIN_BUILDROOT),y)
 TARGET_CROSS = $(HOST_DIR)/bin/$(GNU_TARGET_NAME)-
@@ -214,23 +199,16 @@ else
 TARGET_CROSS = $(HOST_DIR)/bin/$(TOOLCHAIN_EXTERNAL_PREFIX)-
 endif
 
-# gcc-4.7 and later ships with wrappers that will automatically pass
-# arguments to the binutils tools. Those are paths to necessary linker
-# plugins.
-ifeq ($(BR2_TOOLCHAIN_GCC_AT_LEAST_4_7),y)
-TARGET_GCC_WRAPPERS_PREFIX = gcc-
-endif
-
 # Define TARGET_xx variables for all common binutils/gcc
-TARGET_AR       = $(TARGET_CROSS)$(TARGET_GCC_WRAPPERS_PREFIX)ar
+TARGET_AR       = $(TARGET_CROSS)ar
 TARGET_AS       = $(TARGET_CROSS)as
 TARGET_CC       = $(TARGET_CROSS)gcc
 TARGET_CPP      = $(TARGET_CROSS)cpp
 TARGET_CXX      = $(TARGET_CROSS)g++
 TARGET_FC       = $(TARGET_CROSS)gfortran
 TARGET_LD       = $(TARGET_CROSS)ld
-TARGET_NM       = $(TARGET_CROSS)$(TARGET_GCC_WRAPPERS_PREFIX)nm
-TARGET_RANLIB   = $(TARGET_CROSS)$(TARGET_GCC_WRAPPERS_PREFIX)ranlib
+TARGET_NM       = $(TARGET_CROSS)nm
+TARGET_RANLIB   = $(TARGET_CROSS)ranlib
 TARGET_READELF  = $(TARGET_CROSS)readelf
 TARGET_OBJCOPY  = $(TARGET_CROSS)objcopy
 TARGET_OBJDUMP  = $(TARGET_CROSS)objdump
@@ -244,6 +222,8 @@ TARGET_STRIP = /bin/true
 STRIPCMD = $(TARGET_STRIP)
 endif
 INSTALL := $(shell which install || type -p install)
+FLEX := $(shell which flex || type -p flex)
+BISON := $(shell which bison || type -p bison)
 UNZIP := $(shell which unzip || type -p unzip) -q
 
 APPLY_PATCHES = PATH=$(HOST_DIR)/bin:$$PATH support/scripts/apply-patches.sh $(if $(QUIET),-s)
@@ -253,6 +233,27 @@ HOST_CFLAGS   ?= -O2
 HOST_CFLAGS   += $(HOST_CPPFLAGS)
 HOST_CXXFLAGS += $(HOST_CFLAGS)
 HOST_LDFLAGS  += -L$(HOST_DIR)/lib -Wl,-rpath,$(HOST_DIR)/lib
+
+# The macros below are taken from linux 4.11 and adapted slightly.
+# Copy more when needed.
+
+# try-run
+# Usage: option = $(call try-run, $(CC)...-o "$$TMP",option-ok,otherwise)
+# Exit code chooses option. "$$TMP" is can be used as temporary file and
+# is automatically cleaned up.
+try-run = $(shell set -e;               \
+	TMP="$$(mktemp)";               \
+	if ($(1)) >/dev/null 2>&1;      \
+	then echo "$(2)";               \
+	else echo "$(3)";               \
+	fi;                             \
+	rm -f "$$TMP")
+
+# host-cc-option
+# Usage: HOST_FOO_CFLAGS += $(call host-cc-option,-no-pie,)
+host-cc-option = $(call try-run,\
+        $(HOSTCC) $(HOST_CFLAGS) $(1) -c -x c /dev/null -o "$$TMP",$(1),$(2))
+
 
 # host-intltool should be executed with the system perl, so we save
 # the path to the system perl, before a host-perl built by Buildroot
@@ -342,7 +343,6 @@ EXTRA_ENV = \
 	PATH=$(BR_PATH) \
 	BR2_DL_DIR=$(BR2_DL_DIR) \
 	BUILD_DIR=$(BUILD_DIR) \
-	CONFIG_DIR=$(CONFIG_DIR) \
 	O=$(CANONICAL_O)
 
 ################################################################################
@@ -449,7 +449,3 @@ include package/pkg-kconfig.mk
 include package/pkg-rebar.mk
 include package/pkg-kernel-module.mk
 include package/pkg-waf.mk
-include package/pkg-golang.mk
-include package/pkg-meson.mk
-include package/pkg-qmake.mk
-include package/pkg-cargo.mk

@@ -36,8 +36,7 @@ endif
 LIBSS7_UTILS = parser_debug ss7test ss7linktest
 
 define LIBSS7_BUILD_CMDS
-	$(TARGET_MAKE_ENV) $(MAKE) $(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -fPIC" -C $(@D) \
+	$(TARGET_MAKE_ENV) $(MAKE) $(TARGET_CONFIGURE_OPTS) -C $(@D) \
 		$(LIBSS7_LIBS) $(LIBSS7_UTILS)
 endef
 

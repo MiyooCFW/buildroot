@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-FMC_VERSION = a079d2c844edd85dff85a317a63198e7988bcd09
-FMC_SITE = $(call github,nxp-qoriq,fmc,$(FMC_VERSION))
+FMC_VERSION = fsl-sdk-v2.0
+FMC_SITE = git://git.freescale.com/ppc/sdk/fmc.git
 FMC_LICENSE = MIT
 FMC_LICENSE_FILES = COPYING
 FMC_DEPENDENCIES = libxml2 tclap fmlib

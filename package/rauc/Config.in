@@ -5,9 +5,7 @@ config BR2_PACKAGE_RAUC
 	depends on BR2_USE_WCHAR # glib2
 	select BR2_PACKAGE_LIBGLIB2
 	select BR2_PACKAGE_OPENSSL
-	select BR2_PACKAGE_SQUASHFS # run-time dependency
-	select BR2_PACKAGE_UBOOT_TOOLS if BR2_TARGET_UBOOT # run-time dependency
-	select BR2_PACKAGE_UBOOT_TOOLS_FWPRINTENV if BR2_TARGET_UBOOT
+	select BR2_PACKAGE_DBUS # run-time dependency
 	help
 	  RAUC is the Robust Auto-Update Controller developed by
 	  Pengutronix. It supports updating embedded Linux
@@ -17,13 +15,6 @@ config BR2_PACKAGE_RAUC
 	  http://rauc.io/
 
 if BR2_PACKAGE_RAUC
-
-config BR2_PACKAGE_RAUC_DBUS
-	bool "dbus support"
-	select BR2_PACKAGE_DBUS
-	help
-	  This option enables support for controlling rauc through
-	  D-Bus.
 
 config BR2_PACKAGE_RAUC_NETWORK
 	bool "network support"

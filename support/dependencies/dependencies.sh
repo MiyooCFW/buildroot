@@ -2,9 +2,6 @@
 # vi: set sw=4 ts=4:
 
 export LC_ALL=C
-TAB="$(printf '\t')"
-NL="
-"
 
 # Verify that grep works
 echo "WORKS" | grep "WORKS" >/dev/null 2>&1
@@ -38,9 +35,10 @@ case ":${PATH:-unset}:" in
 	echo "PATH environment variable. This doesn't work."
 	exit 1
 	;;
-(*" "*|*"${TAB}"*|*"${NL}"*)
-	printf "\n"
-	printf "Your PATH contains spaces, TABs, and/or newline (\\\n) characters.\n"
+(*"
+"*)	printf "\n"
+	# Break the '\n' sequence, or a \n is printed (which is not what we want).
+	printf "Your PATH contains a newline (%sn) character.\n" "\\"
 	printf "This doesn't work. Fix you PATH.\n"
 	exit 1
 	;;
@@ -115,9 +113,9 @@ if [ -z "$COMPILER_VERSION" ] ; then
 fi;
 COMPILER_MAJOR=$(echo $COMPILER_VERSION | sed -e "s/\..*//g")
 COMPILER_MINOR=$(echo $COMPILER_VERSION | sed -e "s/^$COMPILER_MAJOR\.//g" -e "s/\..*//g")
-if [ $COMPILER_MAJOR -lt 4 -o $COMPILER_MAJOR -eq 4 -a $COMPILER_MINOR -lt 8 ] ; then
+if [ $COMPILER_MAJOR -lt 3 -o $COMPILER_MAJOR -eq 2 -a $COMPILER_MINOR -lt 95 ] ; then
 	echo
-	echo "You have gcc '$COMPILER_VERSION' installed.  gcc >= 4.8 is required"
+	echo "You have gcc '$COMPILER_VERSION' installed.  gcc >= 2.95 is required"
 	exit 1;
 fi;
 
@@ -143,9 +141,9 @@ fi
 if [ -n "$CXXCOMPILER_VERSION" ] ; then
 	CXXCOMPILER_MAJOR=$(echo $CXXCOMPILER_VERSION | sed -e "s/\..*//g")
 	CXXCOMPILER_MINOR=$(echo $CXXCOMPILER_VERSION | sed -e "s/^$CXXCOMPILER_MAJOR\.//g" -e "s/\..*//g")
-	if [ $CXXCOMPILER_MAJOR -lt 4 -o $CXXCOMPILER_MAJOR -eq 4 -a $CXXCOMPILER_MINOR -lt 8 ] ; then
+	if [ $CXXCOMPILER_MAJOR -lt 3 -o $CXXCOMPILER_MAJOR -eq 2 -a $CXXCOMPILER_MINOR -lt 95 ] ; then
 		echo
-		echo "You have g++ '$CXXCOMPILER_VERSION' installed.  g++ >= 4.8 is required"
+		echo "You have g++ '$CXXCOMPILER_VERSION' installed.  g++ >= 2.95 is required"
 		exit 1
 	fi
 fi
@@ -163,7 +161,7 @@ fi
 
 # Check that a few mandatory programs are installed
 missing_progs="no"
-for prog in perl tar wget cpio unzip rsync bc cmp find xargs ${DL_TOOLS} ; do
+for prog in patch perl tar wget cpio python unzip rsync bc ${DL_TOOLS} ; do
 	if ! which $prog > /dev/null ; then
 		echo "You must install '$prog' on your build machine";
 		missing_progs="yes"
@@ -175,32 +173,12 @@ for prog in perl tar wget cpio unzip rsync bc cmp find xargs ${DL_TOOLS} ; do
 			echo "  zcat is usually part of the gzip package in your distribution"
 		elif test $prog = "bzcat" ; then
 			echo "  bzcat is usually part of the bzip2 package in your distribution"
-		elif test $prog = "cmp" ; then
-			echo "  cmp is usually part of the diffutils package in your distribution"
-		elif test $prog = "find" ; then
-			echo "  find is usually part of the findutils package in your distribution"
-		elif test $prog = "xargs" ; then
-			echo "  xargs is usually part of the findutils package in your distribution"
 		fi
 	fi
 done
 
 if test "${missing_progs}" = "yes" ; then
 	exit 1
-fi
-
-PATCH_VERSION="$(patch -v 2>/dev/null | sed -n 's/^GNU patch \(.*\)/\1/p')"
-if [ -z "${PATCH_VERSION}" ] ; then
-	echo
-	echo "You must install GNU patch"
-	exit 1
-fi
-PATCH_MAJOR="$(echo "${PATCH_VERSION}" | cut -d . -f 1)"
-PATCH_MINOR="$(echo "${PATCH_VERSION}" | cut -d . -f 2)"
-if [ "${PATCH_MAJOR}" -lt 2 ] || [ "${PATCH_MAJOR}" -eq 2 -a "${PATCH_MINOR}" -lt 7 ] ; then
-	echo
-	echo "You have GNU patch '${PATCH_VERSION}' installed.  GNU patch >= 2.7 is required"
-	exit 1;
 fi
 
 if grep ^BR2_NEEDS_HOST_UTF8_LOCALE=y $BR2_CONFIG > /dev/null; then
@@ -227,6 +205,14 @@ if grep -q ^BR2_NEEDS_HOST_JAVA=y $BR2_CONFIG ; then
 	fi
 fi
 
+if grep -q ^BR2_NEEDS_HOST_JAVAC=y $BR2_CONFIG ; then
+	check_prog_host "javac"
+fi
+
+if grep -q ^BR2_NEEDS_HOST_JAR=y $BR2_CONFIG ; then
+	check_prog_host "jar"
+fi
+
 if grep -q ^BR2_HOSTARCH_NEEDS_IA32_LIBS=y $BR2_CONFIG ; then
 	if test ! -f /lib/ld-linux.so.2 ; then
 		echo
@@ -238,7 +224,6 @@ if grep -q ^BR2_HOSTARCH_NEEDS_IA32_LIBS=y $BR2_CONFIG ; then
 		echo "libstdc++6:i386, and zlib1g:i386)."
 		echo "If you're running a RedHat/Fedora distribution, install the glibc.i686 and"
 		echo "zlib.i686 packages."
-		echo "If you're running an ArchLinux distribution, install lib32-glibc."
 		echo "For other distributions, refer to the documentation on how to install the 32 bits"
 		echo "compatibility libraries."
 		exit 1
@@ -263,16 +248,6 @@ if grep -q ^BR2_HOSTARCH_NEEDS_IA32_COMPILER=y $BR2_CONFIG ; then
 	fi
 fi
 
-if grep ^BR2_NEEDS_HOST_GCC_PLUGIN_SUPPORT=y $BR2_CONFIG ; then
-	if ! echo "#include <gcc-plugin.h>" | $HOSTCXX_NOCCACHE -I$($HOSTCXX_NOCCACHE -print-file-name=plugin)/include -x c++ -c - -o /dev/null ; then
-		echo
-		echo "Your Buildroot configuration needs a host compiler capable of building gcc plugins."
-		echo "If you're running a Debian/Ubuntu distribution, install gcc-X-plugin-dev package."
-		echo "For other distributions, refer to their documentation."
-		exit 1 ;
-	fi
-fi
-
 # Check that the Perl installation is complete enough for Buildroot.
 required_perl_modules="Data::Dumper" # Needed to build host-autoconf
 required_perl_modules="$required_perl_modules ExtUtils::MakeMaker" # Used by host-libxml-parser-perl
@@ -281,14 +256,6 @@ required_perl_modules="$required_perl_modules Thread::Queue" # Used by host-auto
 if grep -q ^BR2_PACKAGE_MPV=y $BR2_CONFIG ; then
     required_perl_modules="$required_perl_modules Math::BigInt"
     required_perl_modules="$required_perl_modules Math::BigRat"
-fi
-
-if grep -q ^BR2_PACKAGE_WHOIS=y $BR2_CONFIG ; then
-    required_perl_modules="$required_perl_modules autodie"
-fi
-
-if grep -q -E '^BR2_PACKAGE_(WEBKITGTK|WPEWEBKIT)=y' $BR2_CONFIG ; then
-    required_perl_modules="${required_perl_modules} JSON::PP"
 fi
 
 # This variable will keep the modules that are missing in your system.
@@ -308,5 +275,10 @@ if [ -n "$missing_perl_modules" ] ; then
 		printf "\t $pm\n"
 	done
 	echo
+	exit 1
+fi
+
+if ! python -c "import argparse" > /dev/null 2>&1 ; then
+	echo "Your Python installation is not complete enough: argparse module is missing"
 	exit 1
 fi

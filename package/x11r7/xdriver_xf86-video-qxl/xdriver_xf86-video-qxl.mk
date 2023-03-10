@@ -16,7 +16,8 @@ XDRIVER_XF86_VIDEO_QXL_CONF_OPTS = \
 XDRIVER_XF86_VIDEO_QXL_DEPENDENCIES = \
 	libpciaccess \
 	spice-protocol \
-	xorgproto \
+	xproto_fontsproto \
+	xproto_xproto \
 	xserver_xorg-server
 
 # configure doesn't look for drm headers in the appropiate place, so help it

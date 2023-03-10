@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-LIBKCAPI_VERSION = 1.1.5
+LIBKCAPI_VERSION = 0.14.0
 LIBKCAPI_SOURCE = libkcapi-$(LIBKCAPI_VERSION).tar.xz
 LIBKCAPI_SITE = http://www.chronox.de/libkcapi
 LIBKCAPI_AUTORECONF = YES
@@ -15,36 +15,19 @@ LIBKCAPI_CONF_ENV = \
 	ac_cv_path_DB2PDF="" \
 	ac_cv_path_DB2PS="" \
 	ac_cv_path_XMLTO=""
-LIBKCAPI_MAKE_OPTS = CPPFLAGS="$(TARGET_CPPFLAGS)"
 
-ifeq ($(BR2_PACKAGE_LIBKCAPI_ENCAPP),y)
-LIBKCAPI_CONF_OPTS += --enable-kcapi-encapp
+ifeq ($(BR2_PACKAGE_LIBKCAPI_APPS),y)
+LIBKCAPI_CONF_OPTS += \
+	--enable-kcapi-speed \
+	--enable-kcapi-test \
+	--enable-kcapi-hasher \
+	--enable-kcapi-rngapp
 else
-LIBKCAPI_CONF_OPTS += --disable-kcapi-encapp
-endif
-
-ifeq ($(BR2_PACKAGE_LIBKCAPI_HASHER),y)
-LIBKCAPI_CONF_OPTS += --enable-kcapi-hasher
-else
-LIBKCAPI_CONF_OPTS += --disable-kcapi-hasher
-endif
-
-ifeq ($(BR2_PACKAGE_LIBKCAPI_RNGAPP),y)
-LIBKCAPI_CONF_OPTS += --enable-kcapi-rngapp
-else
-LIBKCAPI_CONF_OPTS += --disable-kcapi-rngapp
-endif
-
-ifeq ($(BR2_PACKAGE_LIBKCAPI_SPEED),y)
-LIBKCAPI_CONF_OPTS += --enable-kcapi-speed
-else
-LIBKCAPI_CONF_OPTS += --disable-kcapi-speed
-endif
-
-ifeq ($(BR2_PACKAGE_LIBKCAPI_TEST),y)
-LIBKCAPI_CONF_OPTS += --enable-kcapi-test
-else
-LIBKCAPI_CONF_OPTS += --disable-kcapi-test
+LIBKCAPI_CONF_OPTS += \
+	--disable-kcapi-speed \
+	--disable-kcapi-test \
+	--disable-kcapi-hasher \
+	--disable-kcapi-rngapp
 endif
 
 $(eval $(autotools-package))

@@ -4,21 +4,18 @@
 #
 ################################################################################
 
-WOLFSSL_VERSION = 5.5.3
-WOLFSSL_SITE = $(call github,wolfSSL,wolfssl,v$(WOLFSSL_VERSION)-stable)
-WOLFSSL_INSTALL_STAGING = YES
+WOLFSSL_VERSION = 3.13.0
+WOLFSSL_SITE = https://github.com/wolfSSL/wolfssl/archive
+WOLFSSL_SOURCE = v$(WOLFSSL_VERSION)-stable.tar.gz
 
-WOLFSSL_LICENSE = GPL-2.0+
+WOLFSSL_LICENSE = GPL-2.0
 WOLFSSL_LICENSE_FILES = COPYING LICENSING
-WOLFSSL_CPE_ID_VENDOR = wolfssl
-WOLFSSL_CONFIG_SCRIPTS = wolfssl-config
+
 WOLFSSL_DEPENDENCIES = host-pkgconf
 
 # wolfssl's source code is released without a configure
 # script, so we need autoreconf
 WOLFSSL_AUTORECONF = YES
-
-WOLFSSL_CONF_OPTS = --disable-examples --disable-crypttests
 
 ifeq ($(BR2_PACKAGE_WOLFSSL_ALL),y)
 WOLFSSL_CONF_OPTS += --enable-all
@@ -32,17 +29,7 @@ else
 WOLFSSL_CONF_OPTS += --disable-sslv3
 endif
 
-# enable ARMv8 hardware acceleration
-ifeq ($(BR2_ARM_CPU_ARMV8A),y)
-WOLFSSL_CONF_OPTS += --enable-armasm
-# the flag -mstrict-align is needed to prevent build errors caused by
-# some inline assembly in parts of the AES structure using the "m"
-# constraint
-ifeq ($(BR2_aarch64),y)
-WOLFSSL_CONF_ENV += CPPFLAGS="$(TARGET_CPPFLAGS) -mstrict-align"
-endif
-else
+# build fails when ARMv8 hardware acceleration is enabled
 WOLFSSL_CONF_OPTS += --disable-armasm
-endif
 
 $(eval $(autotools-package))

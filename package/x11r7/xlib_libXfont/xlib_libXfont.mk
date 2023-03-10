@@ -11,11 +11,11 @@ XLIB_LIBXFONT_LICENSE = MIT
 XLIB_LIBXFONT_LICENSE_FILES = COPYING
 XLIB_LIBXFONT_INSTALL_STAGING = YES
 
-XLIB_LIBXFONT_DEPENDENCIES = freetype xlib_libfontenc xlib_xtrans xorgproto
+XLIB_LIBXFONT_DEPENDENCIES = freetype xlib_libfontenc xlib_xtrans xproto_fontsproto xproto_xproto xfont_encodings
 
 HOST_XLIB_LIBXFONT_DEPENDENCIES = \
 	host-freetype host-xlib_libfontenc host-xlib_xtrans \
-	host-xorgproto
+	host-xproto_fontsproto host-xproto_xproto host-xfont_encodings
 
 XLIB_LIBXFONT_CONF_OPTS = --disable-devel-docs
 HOST_XLIB_LIBXFONT_CONF_OPTS = --disable-devel-docs
@@ -29,14 +29,6 @@ ifeq ($(BR2_microblaze),y)
 # Work around it by defining the symbol here as well.
 XLIB_LIBXFONT_CONF_ENV += CFLAGS="$(TARGET_CFLAGS) -D__ELF__"
 endif
-
-XLIB_LIBXFONT_CFLAGS = $(TARGET_CFLAGS)
-
-ifeq ($(BR2_TOOLCHAIN_HAS_GCC_BUG_85180),y)
-XLIB_LIBXFONT_CFLAGS += -O0
-endif
-
-XLIB_LIBXFONT_CONF_ENV += CFLAGS="$(XLIB_LIBXFONT_CFLAGS)"
 
 $(eval $(autotools-package))
 $(eval $(host-autotools-package))

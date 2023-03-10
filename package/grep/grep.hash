@@ -1,5 +1,4 @@
 # Locally calculated after checking signature
-# http://ftp.gnu.org/gnu/grep/grep-3.7.tar.xz.sig
-# using key 155D3FC500C834486D1EEA677FD9FCCB000BEEEE
-sha256  5c10da312460aec721984d5d83246d24520ec438dd48d7ab5a05dbc0d6d6823c  grep-3.7.tar.xz
-sha256  3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986  COPYING
+# http://ftp.gnu.org/gnu/grep/grep-3.1.tar.xz.sig
+sha256 db625c7ab3bb3ee757b3926a5cfa8d9e1c3991ad24707a83dde8a5ef2bf7a07e  grep-3.1.tar.xz
+sha256 ca372a7d92560b1fa9f6d832b440e8bcd62d9adfa8870c98287deab66d98310e  COPYING

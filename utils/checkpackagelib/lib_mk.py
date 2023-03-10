@@ -4,30 +4,22 @@
 # menu options using "make menuconfig" and by running "make" with appropriate
 # packages enabled.
 
-import os
 import re
 
-from checkpackagelib.base import _CheckFunction
-from checkpackagelib.lib import ConsecutiveEmptyLines  # noqa: F401
-from checkpackagelib.lib import EmptyLastLine          # noqa: F401
-from checkpackagelib.lib import NewlineAtEof           # noqa: F401
-from checkpackagelib.lib import TrailingSpace          # noqa: F401
-from checkpackagelib.lib import Utf8Characters         # noqa: F401
-from checkpackagelib.tool import NotExecutable         # noqa: F401
-
-# used in more than one check
-start_conditional = ["ifdef", "ifeq", "ifndef", "ifneq"]
-continue_conditional = ["elif", "else"]
-end_conditional = ["endif"]
+from base import _CheckFunction
+from lib import ConsecutiveEmptyLines  # noqa: F401
+from lib import EmptyLastLine          # noqa: F401
+from lib import NewlineAtEof           # noqa: F401
+from lib import TrailingSpace          # noqa: F401
 
 
 class Indent(_CheckFunction):
-    COMMENT = re.compile(r"^\s*#")
-    CONDITIONAL = re.compile(r"^\s*({})\s".format("|".join(start_conditional + end_conditional + continue_conditional)))
+    COMMENT = re.compile("^\s*#")
+    CONDITIONAL = re.compile("^\s*(ifeq|ifneq|endif)\s")
     ENDS_WITH_BACKSLASH = re.compile(r"^[^#].*\\$")
-    END_DEFINE = re.compile(r"^\s*endef\s")
-    MAKEFILE_TARGET = re.compile(r"^[^# \t]+:\s")
-    START_DEFINE = re.compile(r"^\s*define\s")
+    END_DEFINE = re.compile("^\s*endef\s")
+    MAKEFILE_TARGET = re.compile("^[^# \t]+:\s")
+    START_DEFINE = re.compile("^\s*define\s")
 
     def before(self):
         self.define = False
@@ -45,7 +37,7 @@ class Indent(_CheckFunction):
         expect_tabs = False
         if self.define or self.backslash or self.makefile_target:
             expect_tabs = True
-        if not self.backslash and self.CONDITIONAL.search(text):
+        if self.CONDITIONAL.search(text):
             expect_tabs = False
 
         # calculate for next line
@@ -74,75 +66,6 @@ class Indent(_CheckFunction):
             if text.startswith("\t"):
                 return ["{}:{}: unexpected indent with tabs"
                         .format(self.filename, lineno),
-                        text]
-
-
-class OverriddenVariable(_CheckFunction):
-    CONCATENATING = re.compile(r"^([A-Z0-9_]+)\s*(\+|:|)=\s*\$\(\1\)")
-    END_CONDITIONAL = re.compile(r"^\s*({})".format("|".join(end_conditional)))
-    OVERRIDING_ASSIGNMENTS = [':=', "="]
-    START_CONDITIONAL = re.compile(r"^\s*({})".format("|".join(start_conditional)))
-    VARIABLE = re.compile(r"^([A-Z0-9_]+)\s*((\+|:|)=)")
-    USUALLY_OVERRIDDEN = re.compile(r"^[A-Z0-9_]+({})".format("|".join([
-        r"_ARCH\s*=\s*",
-        r"_CPU\s*=\s*",
-        r"_SITE\s*=\s*",
-        r"_SOURCE\s*=\s*",
-        r"_VERSION\s*=\s*"])))
-    FORBIDDEN_OVERRIDDEN = re.compile(r"^[A-Z0-9_]+({})".format("|".join([
-        r"_CONF_OPTS\s*=\s*",
-        r"_DEPENDENCIES\s*=\s*"])))
-
-    def before(self):
-        self.conditional = 0
-        self.unconditionally_set = []
-        self.conditionally_set = []
-
-    def check_line(self, lineno, text):
-        if self.START_CONDITIONAL.search(text):
-            self.conditional += 1
-            return
-        if self.END_CONDITIONAL.search(text):
-            self.conditional -= 1
-            return
-
-        m = self.VARIABLE.search(text)
-        if m is None:
-            return
-        variable, assignment = m.group(1, 2)
-
-        if self.conditional == 0:
-            if variable in self.conditionally_set:
-                self.unconditionally_set.append(variable)
-                if assignment in self.OVERRIDING_ASSIGNMENTS:
-                    return ["{}:{}: unconditional override of variable {} previously conditionally set"
-                            .format(self.filename, lineno, variable),
-                            text]
-
-            if variable not in self.unconditionally_set:
-                self.unconditionally_set.append(variable)
-                return
-            if assignment in self.OVERRIDING_ASSIGNMENTS:
-                return ["{}:{}: unconditional override of variable {}"
-                        .format(self.filename, lineno, variable),
-                        text]
-        else:
-            if self.FORBIDDEN_OVERRIDDEN.search(text):
-                return ["{}:{}: conditional override of variable {}"
-                        .format(self.filename, lineno, variable),
-                        text]
-            if variable not in self.unconditionally_set:
-                self.conditionally_set.append(variable)
-                return
-            if self.CONCATENATING.search(text):
-                return ["{}:{}: immediate assignment to append to variable {}"
-                        .format(self.filename, lineno, variable),
-                        text]
-            if self.USUALLY_OVERRIDDEN.search(text):
-                return
-            if assignment in self.OVERRIDING_ASSIGNMENTS:
-                return ["{}:{}: conditional override of variable {}"
-                        .format(self.filename, lineno, variable),
                         text]
 
 
@@ -177,13 +100,14 @@ class PackageHeader(_CheckFunction):
 
 class RemoveDefaultPackageSourceVariable(_CheckFunction):
     packages_that_may_contain_default_source = ["binutils", "gcc", "gdb"]
+    PACKAGE_NAME = re.compile("/([^/]+)\.mk")
 
     def before(self):
-        package, _ = os.path.splitext(os.path.basename(self.filename))
+        package = self.PACKAGE_NAME.search(self.filename).group(1)
         package_upper = package.replace("-", "_").upper()
         self.package = package
         self.FIND_SOURCE = re.compile(
-            r"^{}_SOURCE\s*=\s*{}-\$\({}_VERSION\)\.tar\.gz"
+            "^{}_SOURCE\s*=\s*{}-\$\({}_VERSION\)\.tar\.gz"
             .format(package_upper, package, package_upper))
 
     def check_line(self, lineno, text):
@@ -199,7 +123,7 @@ class RemoveDefaultPackageSourceVariable(_CheckFunction):
 
 
 class SpaceBeforeBackslash(_CheckFunction):
-    TAB_OR_MULTIPLE_SPACES_BEFORE_BACKSLASH = re.compile(r"^.*(  |\t ?)\\$")
+    TAB_OR_MULTIPLE_SPACES_BEFORE_BACKSLASH = re.compile(r"^.*(  |\t)\\$")
 
     def check_line(self, lineno, text):
         if self.TAB_OR_MULTIPLE_SPACES_BEFORE_BACKSLASH.match(text.rstrip()):
@@ -231,39 +155,31 @@ class TrailingBackslash(_CheckFunction):
 
 
 class TypoInPackageVariable(_CheckFunction):
-    ALLOWED = re.compile(r"|".join([
+    ALLOWED = re.compile("|".join([
         "ACLOCAL_DIR",
         "ACLOCAL_HOST_DIR",
-        "ACLOCAL_PATH",
         "BR_CCACHE_INITIAL_SETUP",
-        "BR_LIBC",
         "BR_NO_CHECK_HASH_FOR",
-        "GCC_TARGET",
-        "LINUX_EXTENSIONS",
         "LINUX_POST_PATCH_HOOKS",
         "LINUX_TOOLS",
         "LUA_RUN",
         "MKFS_JFFS2",
         "MKIMAGE_ARCH",
-        "PACKAGES_PERMISSIONS_TABLE",
         "PKG_CONFIG_HOST_BINARY",
-        "SUMTOOL",
         "TARGET_FINALIZE_HOOKS",
-        "TARGETS_ROOTFS",
         "XTENSA_CORE_NAME"]))
-    VARIABLE = re.compile(r"^(define\s+)?([A-Z0-9_]+_[A-Z0-9_]+)")
+    PACKAGE_NAME = re.compile("/([^/]+)\.mk")
+    VARIABLE = re.compile("^([A-Z0-9_]+_[A-Z0-9_]+)\s*(\+|)=")
 
     def before(self):
-        package, _ = os.path.splitext(os.path.basename(self.filename))
+        package = self.PACKAGE_NAME.search(self.filename).group(1)
         package = package.replace("-", "_").upper()
         # linux tools do not use LINUX_TOOL_ prefix for variables
         package = package.replace("LINUX_TOOL_", "")
-        # linux extensions do not use LINUX_EXT_ prefix for variables
-        package = package.replace("LINUX_EXT_", "")
         self.package = package
-        self.REGEX = re.compile(r"(HOST_|ROOTFS_)?({}_[A-Z0-9_]+)".format(package))
+        self.REGEX = re.compile("^(HOST_)?({}_[A-Z0-9_]+)".format(package))
         self.FIND_VIRTUAL = re.compile(
-            r"^{}_PROVIDES\s*(\+|)=\s*(.*)".format(package))
+            "^{}_PROVIDES\s*(\+|)=\s*(.*)".format(package))
         self.virtual = []
 
     def check_line(self, lineno, text):
@@ -271,7 +187,7 @@ class TypoInPackageVariable(_CheckFunction):
         if m is None:
             return
 
-        variable = m.group(2)
+        variable = m.group(1)
 
         # allow to set variables for virtual package this package provides
         v = self.FIND_VIRTUAL.search(text)
@@ -291,16 +207,16 @@ class TypoInPackageVariable(_CheckFunction):
 
 
 class UselessFlag(_CheckFunction):
-    DEFAULT_AUTOTOOLS_FLAG = re.compile(r"^.*{}".format("|".join([
-        r"_AUTORECONF\s*=\s*NO",
-        r"_LIBTOOL_PATCH\s*=\s*YES"])))
-    DEFAULT_GENERIC_FLAG = re.compile(r"^.*{}".format("|".join([
-        r"_INSTALL_IMAGES\s*=\s*NO",
-        r"_INSTALL_REDISTRIBUTE\s*=\s*YES",
-        r"_INSTALL_STAGING\s*=\s*NO",
-        r"_INSTALL_TARGET\s*=\s*YES"])))
-    END_CONDITIONAL = re.compile(r"^\s*({})".format("|".join(end_conditional)))
-    START_CONDITIONAL = re.compile(r"^\s*({})".format("|".join(start_conditional)))
+    DEFAULT_AUTOTOOLS_FLAG = re.compile("^.*{}".format("|".join([
+        "_AUTORECONF\s*=\s*NO",
+        "_LIBTOOL_PATCH\s*=\s*YES"])))
+    DEFAULT_GENERIC_FLAG = re.compile("^.*{}".format("|".join([
+        "_INSTALL_IMAGES\s*=\s*NO",
+        "_INSTALL_REDISTRIBUTE\s*=\s*YES",
+        "_INSTALL_STAGING\s*=\s*NO",
+        "_INSTALL_TARGET\s*=\s*YES"])))
+    END_CONDITIONAL = re.compile("^\s*(endif)")
+    START_CONDITIONAL = re.compile("^\s*(ifeq|ifneq)")
 
     def before(self):
         self.conditional = 0
@@ -327,14 +243,4 @@ class UselessFlag(_CheckFunction):
             return ["{}:{}: useless default value "
                     "({}#_infrastructure_for_autotools_based_packages)"
                     .format(self.filename, lineno, self.url_to_manual),
-                    text]
-
-
-class VariableWithBraces(_CheckFunction):
-    VARIABLE_WITH_BRACES = re.compile(r"^[^#].*[^$]\${\w+}")
-
-    def check_line(self, lineno, text):
-        if self.VARIABLE_WITH_BRACES.match(text.rstrip()):
-            return ["{}:{}: use $() to delimit variables, not ${{}}"
-                    .format(self.filename, lineno),
                     text]

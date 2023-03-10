@@ -5,7 +5,7 @@
 ################################################################################
 
 KVMTOOL_VERSION = f77d646ba01d04be5aad9449ac00719c043fe36e
-KVMTOOL_SITE = https://git.kernel.org/pub/scm/linux/kernel/git/will/kvmtool.git
+KVMTOOL_SITE = $(BR2_KERNEL_MIRROR)/scm/linux/kernel/git/will/kvmtool.git
 KVMTOOL_SITE_METHOD = git
 KVMTOOL_DEPENDENCIES = \
 	$(if $(BR2_PACKAGE_BINUTILS),binutils) \
@@ -25,11 +25,11 @@ KVMTOOL_MAKE_OPTS = \
 	WERROR=0
 
 define KVMTOOL_BUILD_CMDS
-	$(TARGET_MAKE_ENV) ARCH=$(NORMALIZED_ARCH) $(MAKE) -C $(@D) $(KVMTOOL_MAKE_OPTS)
+	$(TARGET_MAKE_ENV) ARCH=$(KERNEL_ARCH) $(MAKE) -C $(@D) $(KVMTOOL_MAKE_OPTS)
 endef
 
 define KVMTOOL_INSTALL_TARGET_CMDS
-	$(TARGET_MAKE_ENV) ARCH=$(NORMALIZED_ARCH) $(MAKE) -C $(@D) \
+	$(TARGET_MAKE_ENV) ARCH=$(KERNEL_ARCH) $(MAKE) -C $(@D) \
 		$(KVMTOOL_MAKE_OPTS) install DESTDIR=$(TARGET_DIR) prefix=/usr
 endef
 

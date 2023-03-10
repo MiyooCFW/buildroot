@@ -12,14 +12,11 @@ endif
 
 # Not possible to directly refer to mesa3d variables, because of
 # first/second expansion trickery...
-MESA3D_HEADERS_VERSION = 21.3.5
+MESA3D_HEADERS_VERSION = 17.3.6
 MESA3D_HEADERS_SOURCE = mesa-$(MESA3D_HEADERS_VERSION).tar.xz
-MESA3D_HEADERS_SITE = https://archive.mesa3d.org
-MESA3D_HEADERS_DL_SUBDIR = mesa3d
+MESA3D_HEADERS_SITE = https://mesa.freedesktop.org/archive
 MESA3D_HEADERS_LICENSE = MIT, SGI, Khronos
-MESA3D_HEADERS_LICENSE_FILES = docs/license.rst
-MESA3D_HEADERS_CPE_ID_VENDOR = mesa3d
-MESA3D_HEADERS_CPE_ID_PRODUCT = mesa
+MESA3D_HEADERS_LICENSE_FILES = docs/license.html
 
 # Only installs header files
 MESA3D_HEADERS_INSTALL_STAGING = YES
@@ -36,8 +33,13 @@ ifeq ($(BR2_PACKAGE_XORG7),y)
 # Not using $(SED) because we do not want to work in-place, and $(SED)
 # contains -i.
 define MESA3D_HEADERS_BUILD_DRI_PC
-	sed -e 's:@VERSION@:$(MESA3D_HEADERS_VERSION):' \
-	    package/mesa3d-headers/dri.pc \
+	sed -e 's:@\(exec_\)\?prefix@:/usr:' \
+	    -e 's:@libdir@:$${exec_prefix}/lib:' \
+	    -e 's:@includedir@:$${prefix}/include:' \
+	    -e 's:@DRI_DRIVER_INSTALL_DIR@:$${libdir}/dri:' \
+	    -e 's:@VERSION@:$(MESA3D_HEADERS_VERSION):' \
+	    -e 's:@DRI_PC_REQ_PRIV@::' \
+	    $(@D)/src/mesa/drivers/dri/dri.pc.in \
 	    >$(@D)/src/mesa/drivers/dri/dri.pc
 endef
 
@@ -58,10 +60,6 @@ endif
 
 ifeq ($(BR2_PACKAGE_HAS_LIBGLES),y)
 MESA3D_HEADERS_DIRS += GLES GLES2
-endif
-
-ifeq ($(BR2_PACKAGE_HAS_LIBOPENCL),y)
-MESA3D_HEADERS_DIRS += CL
 endif
 
 define MESA3D_HEADERS_BUILD_CMDS

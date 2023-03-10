@@ -6,18 +6,15 @@ config BR2_PACKAGE_DHCP
 	help
 	  DHCP relay agent from the ISC DHCP distribution.
 
-	  https://www.isc.org/downloads/dhcp/
+	  http://www.isc.org/products/DHCP
 
 if BR2_PACKAGE_DHCP
 
 config BR2_PACKAGE_DHCP_SERVER
 	bool "dhcp server"
+	select BR2_PACKAGE_SYSTEMD_TMPFILES if BR2_PACKAGE_SYSTEMD
 	help
 	  DHCP server from the ISC DHCP distribution.
-
-	  This also installs omshell, an interactive tool to connect to,
-	  query, and possibly change, the server's state via the Object
-	  Management API (OMAPI).
 
 config BR2_PACKAGE_DHCP_SERVER_DELAYED_ACK
 	bool "Enable delayed ACK feature"

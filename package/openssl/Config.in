@@ -11,6 +11,7 @@ if BR2_PACKAGE_OPENSSL
 
 choice
 	prompt "ssl library"
+	default BR2_PACKAGE_LIBOPENSSL
 	help
 	  Select OpenSSL or LibreSSL.
 
@@ -28,14 +29,27 @@ config BR2_PACKAGE_LIBOPENSSL
 
 	  Note: Some helper scripts need perl.
 
-source "package/libopenssl/Config.in"
+if BR2_PACKAGE_LIBOPENSSL
+
+config BR2_PACKAGE_LIBOPENSSL_BIN
+	bool "openssl binary"
+	help
+	  Install the openssl binary and the associated helper scripts
+	  to the target file system. This is a command line tool for
+	  doing various cryptographic stuff.
+
+config BR2_PACKAGE_LIBOPENSSL_ENGINES
+	bool "openssl additional engines"
+	help
+	  Install additional encryption engine libraries.
+
+endif
 
 config BR2_PACKAGE_LIBRESSL
 	bool "libressl"
 	depends on !BR2_PACKAGE_OPENSSL_FORCE_LIBOPENSSL
-	depends on BR2_TOOLCHAIN_HAS_THREADS
-	# uClibc doesn't provide __register_atfork() without NPTL
-	depends on !BR2_TOOLCHAIN_USES_UCLIBC || BR2_TOOLCHAIN_HAS_THREADS_NPTL
+	# uClibc on noMMU doesn't provide __register_atfork()
+	depends on !(BR2_TOOLCHAIN_USES_UCLIBC && !BR2_USE_MMU)
 	help
 	  LibreSSL is a version of the TLS/crypto stack forked from
 	  OpenSSL in 2014, with goals of modernizing the codebase,
@@ -44,10 +58,15 @@ config BR2_PACKAGE_LIBRESSL
 
 	  http://www.libressl.org/
 
-source "package/libressl/Config.in"
+if BR2_PACKAGE_LIBRESSL
 
-# openssl from br2-external trees, if any
-source "$BR2_BASE_DIR/.br2-external.in.openssl"
+config BR2_PACKAGE_LIBRESSL_BIN
+	bool "openssl binary"
+	help
+	  Install the openssl binary to the target file system. This is
+	  a command line tool for doing various cryptographic stuff.
+
+endif
 
 endchoice
 
@@ -56,8 +75,8 @@ config BR2_PACKAGE_HAS_OPENSSL
 
 config BR2_PACKAGE_PROVIDES_OPENSSL
 	string
-	default "libopenssl" if BR2_PACKAGE_LIBOPENSSL
-	default "libressl" if BR2_PACKAGE_LIBRESSL
+	default "libopenssl"  if BR2_PACKAGE_LIBOPENSSL
+	default "libressl"  if BR2_PACKAGE_LIBRESSL
 
 endif
 

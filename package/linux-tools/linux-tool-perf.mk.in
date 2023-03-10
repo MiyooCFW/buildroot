@@ -8,10 +8,10 @@ LINUX_TOOLS += perf
 
 PERF_DEPENDENCIES = host-flex host-bison
 
-ifeq ($(NORMALIZED_ARCH),x86_64)
+ifeq ($(KERNEL_ARCH),x86_64)
 PERF_ARCH=x86
 else
-PERF_ARCH=$(NORMALIZED_ARCH)
+PERF_ARCH=$(KERNEL_ARCH)
 endif
 
 PERF_MAKE_FLAGS = \
@@ -20,6 +20,9 @@ PERF_MAKE_FLAGS = \
 	ARCH=$(PERF_ARCH) \
 	DESTDIR=$(TARGET_DIR) \
 	prefix=/usr \
+	WERROR=0 \
+	NO_LIBAUDIT=1 \
+	NO_NEWT=1 \
 	NO_GTK2=1 \
 	NO_LIBPERL=1 \
 	NO_LIBPYTHON=1 \
@@ -56,20 +59,10 @@ ifeq ($(BR2_arc),y)
 PERF_MAKE_FLAGS += NO_BACKTRACE=1
 endif
 
-ifeq ($(BR2_PACKAGE_LINUX_TOOLS_PERF_TUI),y)
+ifeq ($(BR2_PACKAGE_SLANG),y)
 PERF_DEPENDENCIES += slang
 else
-PERF_MAKE_FLAGS += NO_NEWT=1 NO_SLANG=1
-endif
-
-ifeq ($(BR2_PACKAGE_AUDIT),y)
-PERF_DEPENDENCIES += audit
-else
-PERF_MAKE_FLAGS += NO_LIBAUDIT=1
-endif
-
-ifeq ($(BR2_PACKAGE_ZSTD),y)
-PERF_DEPENDENCIES += zstd
+PERF_MAKE_FLAGS += NO_SLANG=1
 endif
 
 ifeq ($(BR2_PACKAGE_LIBUNWIND),y)
@@ -88,18 +81,6 @@ ifeq ($(BR2_PACKAGE_ELFUTILS),y)
 PERF_DEPENDENCIES += elfutils
 else
 PERF_MAKE_FLAGS += NO_LIBELF=1 NO_DWARF=1
-endif
-
-ifeq ($(BR2_PACKAGE_BINUTILS),y)
-PERF_DEPENDENCIES += binutils
-else
-PERF_MAKE_FLAGS += NO_DEMANGLE=1
-endif
-
-ifeq ($(BR2_PACKAGE_OPENSSL),y)
-PERF_DEPENDENCIES += openssl
-else
-PERF_MAKE_FLAGS += NO_LIBCRYPTO=1
 endif
 
 ifeq ($(BR2_PACKAGE_ZLIB),y)
@@ -126,7 +107,7 @@ define PERF_DISABLE_DOCUMENTATION
 		printf "%%:\n\t@:\n" >$(LINUX_DIR)/tools/perf/Documentation/GNUmakefile; \
 	fi
 endef
-LINUX_TOOLS_POST_PATCH_HOOKS += PERF_DISABLE_DOCUMENTATION
+LINUX_POST_PATCH_HOOKS += PERF_DISABLE_DOCUMENTATION
 
 # O must be redefined here to overwrite the one used by Buildroot for
 # out of tree build. We build perf in $(LINUX_DIR)/tools/perf/ and not just
@@ -147,13 +128,6 @@ define PERF_BUILD_CMDS
 			fi \
 		fi \
 	fi
-	$(Q)if test "$(BR2_PACKAGE_LINUX_TOOLS_PERF_TUI)" = "y" ; then \
-		if ! grep -q NO_SLANG $(LINUX_DIR)/tools/perf/Makefile* ; then \
-			echo "The perf tool in your kernel cannot be build with the TUI." ; \
-			echo "Either upgrade your kernel to >= 3.10, or disable the TUI." ; \
-			exit 1 ; \
-		fi \
-	fi
 	$(TARGET_MAKE_ENV) $(MAKE1) $(PERF_MAKE_FLAGS) \
 		-C $(LINUX_DIR)/tools/perf O=$(LINUX_DIR)/tools/perf/
 endef
@@ -165,8 +139,4 @@ define PERF_INSTALL_TARGET_CMDS
 		-C $(LINUX_DIR)/tools/perf O=$(LINUX_DIR)/tools/perf/ install
 	$(RM) -rf $(TARGET_DIR)/usr/libexec/perf-core/scripts/
 	$(RM) -rf $(TARGET_DIR)/usr/libexec/perf-core/tests/
-endef
-
-define PERF_LINUX_CONFIG_FIXUPS
-	$(call KCONFIG_ENABLE_OPT,CONFIG_PERF_EVENTS)
 endef

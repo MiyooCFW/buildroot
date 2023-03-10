@@ -4,23 +4,12 @@
 #
 ################################################################################
 
-MTD_VERSION = 2.1.3
+MTD_VERSION = 2.0.2
 MTD_SOURCE = mtd-utils-$(MTD_VERSION).tar.bz2
 MTD_SITE = ftp://ftp.infradead.org/pub/mtd-utils
 MTD_LICENSE = GPL-2.0
 MTD_LICENSE_FILES = COPYING
-MTD_CPE_ID_VENDOR = mtd-utils_project
-MTD_CPE_ID_PRODUCT = mtd-utils
 MTD_INSTALL_STAGING = YES
-
-MTD_LDFLAGS = $(TARGET_LDFLAGS)
-
-ifeq ($(BR2_PACKAGE_LIBEXECINFO),y)
-MTD_DEPENDENCIES += libexecinfo
-MTD_LDFLAGS += -lexecinfo
-endif
-
-MTD_CONF_ENV += LDFLAGS="$(MTD_LDFLAGS)"
 
 ifeq ($(BR2_PACKAGE_MTD_JFFS_UTILS),y)
 MTD_DEPENDENCIES += zlib lzo host-pkgconf
@@ -32,33 +21,18 @@ endif
 ifeq ($(BR2_PACKAGE_MTD_UBIFS_UTILS),y)
 MTD_DEPENDENCIES += util-linux zlib lzo host-pkgconf
 MTD_CONF_OPTS += --with-ubifs
-# crypto needs linux/hash_info.h
-ifeq ($(BR2_TOOLCHAIN_HEADERS_AT_LEAST_4_12)$(BR2_PACKAGE_OPENSSL),yy)
-MTD_DEPENDENCIES += openssl
-MTD_CONF_OPTS += --with-crypto
-else
-MTD_CONF_OPTS += --without-crypto
-endif
-ifeq ($(BR2_PACKAGE_ZSTD),y)
-MTD_DEPENDENCIES += zstd
-MTD_CONF_OPTS += --with-zstd
-else
-MTD_CONF_OPTS += --without-zstd
-endif
 else
 MTD_CONF_OPTS += --without-ubifs
 endif
 
-ifeq ($(BR2_PACKAGE_MTD_UBIHEALTHD),y)
-MTD_CONF_OPTS += --enable-ubihealthd
+ifeq ($(BR2_PACKAGE_MTD_TESTS),y)
+MTD_CONF_OPTS += --enable-tests --enable-install-tests
 else
-MTD_CONF_OPTS += --disable-ubihealthd
+MTD_CONF_OPTS += --disable-tests --disable-install-tests
 endif
 
-ifeq ($(BR2_PACKAGE_MTD_TESTS),y)
-MTD_CONF_OPTS += --enable-tests
-else
-MTD_CONF_OPTS += --disable-tests
+ifeq ($(BR2_PACKAGE_BUSYBOX),y)
+MTD_DEPENDENCIES += busybox
 endif
 
 # If extended attributes are required, the acl package must
@@ -70,11 +44,10 @@ else
 MTD_CONF_OPTS += --without-xattr
 endif
 
-HOST_MTD_DEPENDENCIES = host-acl host-zlib host-lzo host-util-linux host-zstd
+HOST_MTD_DEPENDENCIES = host-zlib host-lzo host-util-linux
 HOST_MTD_CONF_OPTS = \
 	--with-jffs \
 	--with-ubifs \
-	--without-crypto \
 	--disable-tests
 
 MKFS_JFFS2 = $(HOST_DIR)/sbin/mkfs.jffs2
@@ -89,7 +62,6 @@ MTD_TARGETS_$(BR2_PACKAGE_MTD_FLASH_OTP_DUMP)	+= flash_otp_dump
 MTD_TARGETS_$(BR2_PACKAGE_MTD_FLASH_OTP_INFO)	+= flash_otp_info
 MTD_TARGETS_$(BR2_PACKAGE_MTD_FLASH_OTP_LOCK)	+= flash_otp_lock
 MTD_TARGETS_$(BR2_PACKAGE_MTD_FLASH_OTP_WRITE)	+= flash_otp_write
-MTD_TARGETS_$(BR2_PACKAGE_MTD_FLASH_OTP_ERASE)	+= flash_otp_erase
 MTD_TARGETS_$(BR2_PACKAGE_MTD_FLASH_UNLOCK)	+= flash_unlock
 MTD_TARGETS_$(BR2_PACKAGE_MTD_FTL_CHECK)	+= ftl_check
 MTD_TARGETS_$(BR2_PACKAGE_MTD_FTL_FORMAT)	+= ftl_format
@@ -112,7 +84,6 @@ MTD_TARGETS_$(BR2_PACKAGE_MTD_UBIATTACH)	+= ubiattach
 MTD_TARGETS_$(BR2_PACKAGE_MTD_UBICRC32)		+= ubicrc32
 MTD_TARGETS_$(BR2_PACKAGE_MTD_UBIDETACH)	+= ubidetach
 MTD_TARGETS_$(BR2_PACKAGE_MTD_UBIFORMAT)	+= ubiformat
-MTD_TARGETS_$(BR2_PACKAGE_MTD_UBIHEALTHD)	+= ubihealthd
 MTD_TARGETS_$(BR2_PACKAGE_MTD_UBIMKVOL)		+= ubimkvol
 MTD_TARGETS_$(BR2_PACKAGE_MTD_UBINFO)		+= ubinfo
 MTD_TARGETS_$(BR2_PACKAGE_MTD_UBINIZE)		+= ubinize
@@ -130,7 +101,6 @@ MTD_TARGETS_$(BR2_PACKAGE_MTD_INTEGCK)		+= integck
 MTD_TARGETS_$(BR2_PACKAGE_MTD_NANDBITERRS)	+= nandbiterrs
 MTD_TARGETS_$(BR2_PACKAGE_MTD_NANDPAGETEST)	+= nandpagetest
 MTD_TARGETS_$(BR2_PACKAGE_MTD_NANDSUBPAGETEST)	+= nandsubpagetest
-MTD_TARGETS_$(BR2_PACKAGE_MTD_NANDFLIPBITS)	+= nandflipbits
 
 define MTD_INSTALL_TARGET_CMDS
 	$(foreach f,$(MTD_TARGETS_y), \
@@ -141,8 +111,8 @@ endef
 # Those libraries are not installed by "make install", but are needed
 # by other packages, such as swupdate.
 define MTD_INSTALL_LIBS
-	$(INSTALL) -D -m 0755 $(@D)/include/libmtd.h $(STAGING_DIR)/usr/include/libmtd.h
-	$(INSTALL) -D -m 0755 $(@D)/include/libubi.h $(STAGING_DIR)/usr/include/libubi.h
+	$(INSTALL) -D -m 0755 $(@D)/include/libmtd.h $(STAGING_DIR)/usr/include/mtd/libmtd.h
+	$(INSTALL) -D -m 0755 $(@D)/include/libubi.h $(STAGING_DIR)/usr/include/mtd/libubi.h
 	$(INSTALL) -D -m 0755 $(@D)/include/mtd/ubi-media.h $(STAGING_DIR)/usr/include/mtd/ubi-media.h
 	$(INSTALL) -D -m 0755 $(@D)/libmtd.a $(STAGING_DIR)/usr/lib/libmtd.a
 	$(INSTALL) -D -m 0755 $(@D)/libubi.a $(STAGING_DIR)/usr/lib/libubi.a

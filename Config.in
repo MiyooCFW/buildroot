@@ -14,21 +14,38 @@ config BR2_HOSTARCH
 	string
 	option env="HOSTARCH"
 
-config BR2_BASE_DIR
+config BR2_BUILD_DIR
 	string
-	option env="BASE_DIR"
-
-# br2-external paths definitions
-source "$BR2_BASE_DIR/.br2-external.in.paths"
+	option env="BUILD_DIR"
 
 # Hidden config symbols for packages to check system gcc version
 config BR2_HOST_GCC_VERSION
 	string
 	option env="HOST_GCC_VERSION"
 
+config BR2_HOST_GCC_AT_LEAST_4_5
+	bool
+	default y if BR2_HOST_GCC_VERSION = "4 5"
+
+config BR2_HOST_GCC_AT_LEAST_4_6
+	bool
+	default y if BR2_HOST_GCC_VERSION = "4 6"
+	select BR2_HOST_GCC_AT_LEAST_4_5
+
+config BR2_HOST_GCC_AT_LEAST_4_7
+	bool
+	default y if BR2_HOST_GCC_VERSION = "4 7"
+	select BR2_HOST_GCC_AT_LEAST_4_6
+
+config BR2_HOST_GCC_AT_LEAST_4_8
+	bool
+	default y if BR2_HOST_GCC_VERSION = "4 8"
+	select BR2_HOST_GCC_AT_LEAST_4_7
+
 config BR2_HOST_GCC_AT_LEAST_4_9
 	bool
 	default y if BR2_HOST_GCC_VERSION = "4 9"
+	select BR2_HOST_GCC_AT_LEAST_4_8
 
 config BR2_HOST_GCC_AT_LEAST_5
 	bool
@@ -50,17 +67,22 @@ config BR2_HOST_GCC_AT_LEAST_8
 	default y if BR2_HOST_GCC_VERSION = "8"
 	select BR2_HOST_GCC_AT_LEAST_7
 
-config BR2_HOST_GCC_AT_LEAST_9
-	bool
-	default y if BR2_HOST_GCC_VERSION = "9"
-	select BR2_HOST_GCC_AT_LEAST_8
-
 # When adding new entries above, be sure to update
 # the HOSTCC_MAX_VERSION variable in the Makefile.
 
 # Hidden boolean selected by packages in need of Java in order to build
 # (example: kodi)
 config BR2_NEEDS_HOST_JAVA
+	bool
+
+# Hidden boolean selected by packages in need of javac in order to build
+# (example: classpath)
+config BR2_NEEDS_HOST_JAVAC
+	bool
+
+# Hidden boolean selected by packages in need of jar in order to build
+# (example: classpath)
+config BR2_NEEDS_HOST_JAR
 	bool
 
 # Hidden boolean selected by pre-built packages for x86, when they
@@ -78,11 +100,6 @@ config BR2_HOSTARCH_NEEDS_IA32_COMPILER
 # Hidden boolean selected by packages that need the host to have an
 # UTF8 locale.
 config BR2_NEEDS_HOST_UTF8_LOCALE
-	bool
-
-# Hidden boolean selected by packages that need the host to have
-# support for building gcc plugins
-config BR2_NEEDS_HOST_GCC_PLUGIN_SUPPORT
 	bool
 
 source "arch/Config.in"
@@ -119,9 +136,9 @@ config BR2_SCP
 	string "Secure copy (scp) command"
 	default "scp"
 
-config BR2_SFTP
-	string "Secure file transfer (sftp) command"
-	default "sftp"
+config BR2_SSH
+	string "Secure shell (ssh) command"
+	default "ssh"
 
 config BR2_HG
 	string "Mercurial (hg) command"
@@ -166,8 +183,8 @@ config BR2_TAR_OPTIONS
 	default ""
 	help
 	  Options to pass to tar when extracting the sources.
-	  E.g. " -v --exclude='*.svn*'" to exclude all .svn internal
-	  files and to be verbose.
+	  E.g. " -v --exclude='*.svn*'" to exclude all .svn internal files
+	  and to be verbose.
 
 endmenu
 
@@ -191,9 +208,6 @@ config BR2_DL_DIR
 	  If the Linux shell environment has defined the BR2_DL_DIR
 	  environment variable, then this overrides this configuration
 	  item.
-	  The directory is organized with a subdirectory for each
-	  package. Each package has its own $(LIBFOO_DL_DIR) variable
-	  that can be used to find the correct path.
 
 	  The default is $(TOPDIR)/dl
 
@@ -285,15 +299,14 @@ config BR2_LUAROCKS_MIRROR
 
 config BR2_CPAN_MIRROR
 	string "CPAN mirror (Perl packages)"
-	default "https://cpan.metacpan.org"
+	default "http://cpan.metacpan.org"
 	help
 	  CPAN (Comprehensive Perl Archive Network) is a repository of
 	  Perl packages. It has multiple software mirrors scattered
 	  around the world. This option allows you to select a mirror.
 
 	  The list of mirrors is available at:
-	  http://mirrors.cpan.org/          (tabular)
-	  http://mirrors.cpan.org/map.html  (clickable world map)
+	  http://search.cpan.org/mirror
 
 endif
 
@@ -417,23 +430,10 @@ config BR2_DEBUG_3
 endchoice
 endif
 
-config BR2_ENABLE_RUNTIME_DEBUG
-	bool "build packages with runtime debugging info"
-	help
-	  Some packages may have runtime assertions, extra traces, and
-	  similar runtime elements that can help debugging. However,
-	  these elements may negatively influence performance so should
-	  normally not be enabled on production systems.
-
-	  Enable this option to enable such runtime debugging.
-
-	  Note: disabling this option is not a guarantee that all
-	  packages effectively removed these runtime debugging elements.
-
 config BR2_STRIP_strip
 	bool "strip target binaries"
-	default y
 	depends on !BR2_PACKAGE_HOST_ELF2FLT
+	default y
 	help
 	  Binaries and libraries in the target filesystem will be
 	  stripped using the normal 'strip' command. This allows to save
@@ -443,16 +443,16 @@ config BR2_STRIP_strip
 
 config BR2_STRIP_EXCLUDE_FILES
 	string "executables that should not be stripped"
-	default ""
 	depends on BR2_STRIP_strip
+	default ""
 	help
 	  You may specify a space-separated list of binaries and
 	  libraries here that should not be stripped on the target.
 
 config BR2_STRIP_EXCLUDE_DIRS
 	string "directories that should be skipped when stripping"
-	default ""
 	depends on BR2_STRIP_strip
+	default ""
 	help
 	  You may specify a space-separated list of directories that
 	  should be skipped when stripping. Binaries and libraries in
@@ -538,30 +538,19 @@ config BR2_OPTIMIZE_S
 	  -ftree-vect-loop-version
 	  This is the default.
 
-config BR2_OPTIMIZE_FAST
-	bool "optimize for fast (may break packages!)"
-	depends on BR2_TOOLCHAIN_GCC_AT_LEAST_4_6
-	help
-	  Optimize for fast. Disregard strict standards
-	  compliance. -Ofast enables all -O3 optimizations. It also
-	  enables optimizations that are not valid for all
-	  standard-compliant programs, so be careful, as it may break
-	  some packages. It turns on -ffast-math and the
-	  Fortran-specific -fstack-arrays, unless -fmax-stack-var-size
-	  is specified, and -fno-protect-parens.
-
 endchoice
 
 config BR2_GOOGLE_BREAKPAD_ENABLE
 	bool "Enable google-breakpad support"
+	select BR2_PACKAGE_GOOGLE_BREAKPAD
 	depends on BR2_INSTALL_LIBSTDCPP
+	depends on BR2_HOST_GCC_AT_LEAST_4_8 # C++11
 	depends on BR2_TOOLCHAIN_GCC_AT_LEAST_4_8 # C++11
 	depends on BR2_USE_WCHAR
 	depends on BR2_TOOLCHAIN_HAS_THREADS
 	depends on (BR2_TOOLCHAIN_USES_GLIBC || BR2_TOOLCHAIN_USES_UCLIBC)
 	depends on BR2_PACKAGE_GOOGLE_BREAKPAD_ARCH_SUPPORTS
 	depends on BR2_PACKAGE_HOST_GOOGLE_BREAKPAD_ARCH_SUPPORTS
-	select BR2_PACKAGE_GOOGLE_BREAKPAD
 	help
 	  This option will enable the use of google breakpad, a library
 	  and tool suite that allows you to distribute an application to
@@ -628,6 +617,7 @@ config BR2_SHARED_STATIC_LIBS
 
 endchoice
 
+
 config BR2_PACKAGE_OVERRIDE_FILE
 	string "location of a package override file"
 	default "$(CONFIG_DIR)/local.mk"
@@ -675,20 +665,7 @@ config BR2_COMPILER_PARANOID_UNSAFE_PATH
 
 	  Note that this mechanism is available for both the internal
 	  toolchain (through the toolchain wrapper and binutils patches)
-	  and external toolchain backends (through the toolchain
-	  wrapper).
-
-config BR2_FORCE_HOST_BUILD
-	bool "Force the building of host dependencies"
-	help
-	  Build all available host dependencies, even if they are
-	  already installed on the system.
-
-	  This option can be used to ensure that the download cache of
-	  source archives for packages remain consistent between
-	  different build hosts.
-
-	  This option will increase build time.
+	  and external toolchain backends (through the toolchain wrapper).
 
 config BR2_REPRODUCIBLE
 	bool "Make the build reproducible (experimental)"
@@ -709,56 +686,13 @@ config BR2_REPRODUCIBLE
 	  This is labeled as an experimental feature, as not all
 	  packages behave properly to ensure reproducibility.
 
-config BR2_PER_PACKAGE_DIRECTORIES
-	bool "Use per-package directories (experimental)"
-	help
-	  This option will change the build process of Buildroot
-	  package to use per-package target and host directories.
-
-	  This is useful for two related purposes:
-
-	    - Cleanly isolate the build of each package, so that a
-	      given package only "sees" the dependencies it has
-	      explicitly expressed, and not other packages that may
-	      have by chance been built before.
-
-	    - Enable top-level parallel build.
-
-	  This is labeled as an experimental feature, as not all
-	  packages behave properly with per-package directories.
-
 endmenu
 
 comment "Security Hardening Options"
 
-config BR2_PIC_PIE_ARCH_SUPPORTS
-	bool
-	default y
-	# Microblaze glibc toolchains don't work with PIC/PIE enabled
-	depends on !BR2_microblaze
-	# Nios2 toolchains produce non working binaries with -fPIC
-	depends on !BR2_nios2
-
-config BR2_PIC_PIE
-	bool "Build code with PIC/PIE"
-	default y
-	depends on BR2_PIC_PIE_ARCH_SUPPORTS
-	depends on BR2_SHARED_LIBS
-	depends on BR2_TOOLCHAIN_SUPPORTS_PIE
-	help
-	  Generate Position-Independent Code (PIC) and link
-	  Position-Independent Executables (PIE).
-
-comment "PIC/PIE needs a toolchain w/ PIE"
-	depends on BR2_PIC_PIE_ARCH_SUPPORTS
-	depends on BR2_SHARED_LIBS
-	depends on !BR2_TOOLCHAIN_SUPPORTS_PIE
-
 choice
 	bool "Stack Smashing Protection"
 	default BR2_SSP_ALL if BR2_ENABLE_SSP # legacy
-	default BR2_SSP_STRONG if BR2_TOOLCHAIN_HAS_SSP_STRONG
-	default BR2_SSP_REGULAR
 	depends on BR2_TOOLCHAIN_HAS_SSP
 	help
 	  Enable stack smashing protection support using GCC's
@@ -790,15 +724,14 @@ config BR2_SSP_REGULAR
 
 config BR2_SSP_STRONG
 	bool "-fstack-protector-strong"
-	depends on BR2_TOOLCHAIN_HAS_SSP_STRONG
+	depends on BR2_TOOLCHAIN_GCC_AT_LEAST_4_9
 	help
 	  Like -fstack-protector but includes additional functions to be
 	  protected - those that have local array definitions, or have
 	  references to local frame addresses.
 
-	  -fstack-protector-strong officially appeared in gcc 4.9, but
-	  some vendors have backported -fstack-protector-strong to older
-	  versions of gcc.
+comment "Stack Smashing Protection strong needs a toolchain w/ gcc >= 4.9"
+	depends on !BR2_TOOLCHAIN_GCC_AT_LEAST_4_9
 
 config BR2_SSP_ALL
 	bool "-fstack-protector-all"
@@ -809,24 +742,16 @@ config BR2_SSP_ALL
 
 endchoice
 
-config BR2_SSP_OPTION
-	string
-	default "-fstack-protector"        if BR2_SSP_REGULAR
-	default "-fstack-protector-strong" if BR2_SSP_STRONG
-	default "-fstack-protector-all"    if BR2_SSP_ALL
-
 comment "Stack Smashing Protection needs a toolchain w/ SSP"
 	depends on !BR2_TOOLCHAIN_HAS_SSP
 
 choice
 	bool "RELRO Protection"
-	default BR2_RELRO_FULL if BR2_TOOLCHAIN_SUPPORTS_PIE
-	default BR2_RELRO_PARTIAL
 	depends on BR2_SHARED_LIBS
 	help
-	  Enable a link-time protection know as RELRO (RELocation Read
-	  Only) which helps to protect from certain type of exploitation
-	  techniques altering the content of some ELF sections.
+	  Enable a link-time protection know as RELRO (RELocation Read Only)
+	  which helps to protect from certain type of exploitation techniques
+	  altering the content of some ELF sections.
 
 config BR2_RELRO_NONE
 	bool "None"
@@ -841,41 +766,26 @@ config BR2_RELRO_PARTIAL
 
 config BR2_RELRO_FULL
 	bool "Full"
-	depends on BR2_PIC_PIE_ARCH_SUPPORTS
-	depends on BR2_TOOLCHAIN_SUPPORTS_PIE
-	select BR2_PIC_PIE
 	help
-	  This option includes the partial configuration, but also marks
-	  the GOT as read-only at the cost of initialization time during
-	  program loading, i.e every time an executable is started.
-
-comment "RELRO Full needs a toolchain w/ PIE"
-	depends on BR2_PIC_PIE_ARCH_SUPPORTS
-	depends on !BR2_TOOLCHAIN_SUPPORTS_PIE
+	  This option includes the partial configuration, but also
+	  marks the GOT as read-only at the cost of initialization time
+	  during program loading, i.e every time an executable is started.
 
 endchoice
 
 comment "RELocation Read Only (RELRO) needs shared libraries"
 	depends on !BR2_SHARED_LIBS
 
-config BR2_FORTIFY_SOURCE_ARCH_SUPPORTS
-	bool
-	default y
-	# Microblaze glibc toolchains don't work with Fortify Source enabled
-	depends on !BR2_microblaze
-
 choice
 	bool "Buffer-overflow Detection (FORTIFY_SOURCE)"
-	default BR2_FORTIFY_SOURCE_1
-	depends on BR2_FORTIFY_SOURCE_ARCH_SUPPORTS
 	depends on BR2_TOOLCHAIN_USES_GLIBC
 	depends on !BR2_OPTIMIZE_0
 	help
 	  Enable the _FORTIFY_SOURCE macro which introduces additional
-	  checks to detect buffer-overflows in the following standard
-	  library functions: memcpy, mempcpy, memmove, memset, strcpy,
-	  stpcpy, strncpy, strcat, strncat, sprintf, vsprintf, snprintf,
-	  vsnprintf, gets.
+	  checks to detect buffer-overflows in the following standard library
+	  functions: memcpy, mempcpy, memmove, memset, strcpy, stpcpy,
+	  strncpy, strcat, strncat, sprintf, vsprintf, snprintf, vsnprintf,
+	  gets.
 
 	  NOTE: This feature requires an optimization level of s/1/2/3/g
 
@@ -908,7 +818,6 @@ config BR2_FORTIFY_SOURCE_2
 endchoice
 
 comment "Fortify Source needs a glibc toolchain and optimization"
-	depends on BR2_FORTIFY_SOURCE_ARCH_SUPPORTS
 	depends on (!BR2_TOOLCHAIN_USES_GLIBC || BR2_OPTIMIZE_0)
 endmenu
 
@@ -928,5 +837,4 @@ source "package/Config.in.host"
 
 source "Config.in.legacy"
 
-# br2-external menus definitions
-source "$BR2_BASE_DIR/.br2-external.in.menus"
+source "$BR2_BUILD_DIR/.br2-external.in"

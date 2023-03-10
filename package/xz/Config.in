@@ -12,4 +12,4 @@ config BR2_PACKAGE_XZ
 	  invoked via appropriate symlinks will emulate the behavior
 	  of the commands in the lzma package.
 
-	  https://tukaani.org/xz/
+	  http://tukaani.org/xz/

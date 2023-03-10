@@ -4,12 +4,11 @@
 #
 ################################################################################
 
-PYTHON_PYELFTOOLS_VERSION = 0.27
+PYTHON_PYELFTOOLS_VERSION = 0.24
 PYTHON_PYELFTOOLS_SOURCE = pyelftools-$(PYTHON_PYELFTOOLS_VERSION).tar.gz
-PYTHON_PYELFTOOLS_SITE = https://files.pythonhosted.org/packages/6b/b5/f7022f2d950327ba970ec85fb8f85c79244031092c129b6f34ab17514ae0
+PYTHON_PYELFTOOLS_SITE = https://pypi.python.org/packages/ba/78/d4a186a2e38731286c99dc3e3ca8123b6f55cf2e28608e8daf2d84b65494
 PYTHON_PYELFTOOLS_LICENSE = Public domain
 PYTHON_PYELFTOOLS_LICENSE_FILES = LICENSE
-PYTHON_PYELFTOOLS_SETUP_TYPE = setuptools
+PYTHON_PYELFTOOLS_SETUP_TYPE = distutils
 
 $(eval $(python-package))
-$(eval $(host-python-package))

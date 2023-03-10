@@ -4,14 +4,11 @@
 #
 ################################################################################
 
-PYTHON_URLLIB3_VERSION = 1.26.9
+PYTHON_URLLIB3_VERSION = 1.21.1
 PYTHON_URLLIB3_SOURCE = urllib3-$(PYTHON_URLLIB3_VERSION).tar.gz
-PYTHON_URLLIB3_SITE = https://files.pythonhosted.org/packages/1b/a5/4eab74853625505725cefdf168f48661b2cd04e7843ab836f3f63abf81da
+PYTHON_URLLIB3_SITE = https://pypi.python.org/packages/96/d9/40e4e515d3e17ed0adbbde1078e8518f8c4e3628496b56eb8f026a02b9e4
 PYTHON_URLLIB3_LICENSE = MIT
 PYTHON_URLLIB3_LICENSE_FILES = LICENSE.txt
-PYTHON_URLLIB3_CPE_ID_VENDOR = python
-PYTHON_URLLIB3_CPE_ID_PRODUCT = urllib3
 PYTHON_URLLIB3_SETUP_TYPE = setuptools
 
 $(eval $(python-package))
-$(eval $(host-python-package))

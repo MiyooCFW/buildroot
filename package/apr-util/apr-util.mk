@@ -6,11 +6,9 @@
 
 APR_UTIL_VERSION = 1.6.1
 APR_UTIL_SOURCE = apr-util-$(APR_UTIL_VERSION).tar.bz2
-APR_UTIL_SITE = https://archive.apache.org/dist/apr
+APR_UTIL_SITE = http://archive.apache.org/dist/apr
 APR_UTIL_LICENSE = Apache-2.0
 APR_UTIL_LICENSE_FILES = LICENSE
-APR_UTIL_CPE_ID_VENDOR = apache
-APR_UTIL_CPE_ID_PRODUCT = portable_runtime_utility
 APR_UTIL_INSTALL_STAGING = YES
 APR_UTIL_DEPENDENCIES = apr expat
 APR_UTIL_CONF_OPTS = \

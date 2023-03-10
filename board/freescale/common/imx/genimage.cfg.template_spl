@@ -9,7 +9,6 @@
 
 image boot.vfat {
   vfat {
-    label = "boot"
     files = {
       %FILES%
     }
@@ -27,9 +26,9 @@ image sdcard.img {
     offset = 1024
   }
 
-  partition u-boot {
+  partition u-boot-img {
     in-partition-table = "no"
-    image = "%UBOOTBIN%"
+    image = "u-boot.img"
     offset = 69K
   }
 

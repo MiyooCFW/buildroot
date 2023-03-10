@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-MTOOLS_VERSION = 4.0.38
-MTOOLS_SOURCE = mtools-$(MTOOLS_VERSION).tar.lz
+MTOOLS_VERSION = 4.0.18
+MTOOLS_SOURCE = mtools-$(MTOOLS_VERSION).tar.bz2
 MTOOLS_SITE = $(BR2_GNU_MIRROR)/mtools
 MTOOLS_LICENSE = GPL-3.0+
 MTOOLS_LICENSE_FILES = COPYING

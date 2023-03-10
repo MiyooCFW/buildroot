@@ -1,4 +1,5 @@
-# From https://ftp.postgresql.org/pub/source/v14.6/postgresql-14.6.tar.bz2.sha256
-sha256  508840fc1809d39ab72274d5f137dabb9fd7fb4f933da4168aeebb20069edf22  postgresql-14.6.tar.bz2
+# From https://ftp.postgresql.org/pub/source/v10.6/postgresql-10.6.tar.bz2.sha256
+sha256	68a8276f08bda8fbefe562faaf8831cb20664a7a1d3ffdbbcc5b83e08637624b	postgresql-10.6.tar.bz2
+
 # License file, Locally calculated
-sha256  f6d6616acdb598742e2a7c64fa0551c1c72c309d279fd2d90370e5fdd41c8945  COPYRIGHT
+sha256	24cfc70cf16b3a23242c49ffce39510683bdd48cbedb8a46fe03976ee5f5c21e	COPYRIGHT

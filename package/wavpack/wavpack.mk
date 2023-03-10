@@ -4,28 +4,16 @@
 #
 ################################################################################
 
-WAVPACK_VERSION = 5.4.0
-WAVPACK_SITE = \
-	https://github.com/dbry/WavPack/releases/download/$(WAVPACK_VERSION)
-WAVPACK_SOURCE = wavpack-$(WAVPACK_VERSION).tar.xz
+WAVPACK_VERSION = 5.1.0
+WAVPACK_SITE = http://www.wavpack.com
+WAVPACK_SOURCE = wavpack-$(WAVPACK_VERSION).tar.bz2
 WAVPACK_INSTALL_STAGING = YES
 WAVPACK_DEPENDENCIES = $(if $(BR2_ENABLE_LOCALE),,libiconv)
 WAVPACK_LICENSE = BSD-3-Clause
 WAVPACK_LICENSE_FILES = COPYING
-WAVPACK_CPE_ID_VENDOR = wavpack
-
-# 0001-issue-110-sanitize-DSD-file-types-for-invalid-lengths.patch
-WAVPACK_IGNORE_CVES += CVE-2021-44269
 
 ifeq ($(BR2_PACKAGE_LIBICONV),y)
 WAVPACK_CONF_OPTS += LIBS=-liconv
-endif
-
-ifeq ($(BR2_PACKAGE_OPENSSL),y)
-WAVPACK_DEPENDENCIES += openssl
-WAVPACK_CONF_OPTS += --enable-libcrypto
-else
-WAVPACK_CONF_OPTS += --disable-libcrypto
 endif
 
 # WavPack "autodetects" CPU type to enable ASM code. However, the assembly code

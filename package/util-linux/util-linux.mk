@@ -4,54 +4,42 @@
 #
 ################################################################################
 
-# When making changes to this file, please check if
-# util-linux-libs/util-linux-libs.mk needs to be updated accordingly as well.
-
-UTIL_LINUX_VERSION_MAJOR = 2.37
-UTIL_LINUX_VERSION = $(UTIL_LINUX_VERSION_MAJOR).4
+UTIL_LINUX_VERSION_MAJOR = 2.31
+UTIL_LINUX_VERSION_MINOR = 1
+UTIL_LINUX_VERSION = $(UTIL_LINUX_VERSION_MAJOR).$(UTIL_LINUX_VERSION_MINOR)
 UTIL_LINUX_SOURCE = util-linux-$(UTIL_LINUX_VERSION).tar.xz
 UTIL_LINUX_SITE = $(BR2_KERNEL_MIRROR)/linux/utils/util-linux/v$(UTIL_LINUX_VERSION_MAJOR)
 
-# README.licensing claims that some files are GPL-2.0 only, but this is not
-# true. Some files are GPL-3.0+ but only in tests and optionally in hwclock
-# (but we disable that option). rfkill uses an ISC-style license.
-UTIL_LINUX_LICENSE = GPL-2.0+, BSD-4-Clause, LGPL-2.1+ (libblkid, libfdisk, libmount), BSD-3-Clause (libuuid), ISC (rfkill)
-UTIL_LINUX_LICENSE_FILES = README.licensing \
-	Documentation/licenses/COPYING.BSD-3-Clause \
-	Documentation/licenses/COPYING.BSD-4-Clause-UC \
-	Documentation/licenses/COPYING.GPL-2.0-or-later \
-	Documentation/licenses/COPYING.ISC \
-	Documentation/licenses/COPYING.LGPL-2.1-or-later
-
-UTIL_LINUX_CPE_ID_VENDOR = kernel
+# README.licensing claims that some files are GPL-2.0 only, but this is not true.
+# Some files are GPL-3.0+ but only in tests. rfkill uses an ISC-style license.
+UTIL_LINUX_LICENSE = GPL-2.0+, BSD-4-Clause, LGPL-2.1+ (libblkid, libfdisk, libmount), BSD-3-Clause (libuuid) ISC (rfkill)
+UTIL_LINUX_LICENSE_FILES = README.licensing Documentation/licenses/COPYING.GPLv2 Documentation/licenses/COPYING.UCB Documentation/licenses/COPYING.LGPLv2.1 Documentation/licenses/COPYING.BSD-3 Documentation/licenses/COPYING.ISC
 UTIL_LINUX_INSTALL_STAGING = YES
-UTIL_LINUX_DEPENDENCIES = \
-	host-pkgconf \
-	$(if $(BR2_PACKAGE_UTIL_LINUX_LIBS),util-linux-libs) \
-	$(TARGET_NLS_DEPENDENCIES)
+UTIL_LINUX_DEPENDENCIES = host-pkgconf $(TARGET_NLS_DEPENDENCIES)
+# uClibc needs NTP_LEGACY for sys/timex.h -> ntp_gettime() support
+# (used in logger.c), and the common default is N.
+UTIL_LINUX_CONF_ENV = scanf_cv_type_modifier=no \
+	$(if $(BR2_TOOLCHAIN_USES_UCLIBC),ac_cv_header_sys_timex_h=no)
 UTIL_LINUX_CONF_OPTS += \
 	--disable-rpath \
 	--disable-makeinstall-chown
+UTIL_LINUX_LIBS = $(TARGET_NLS_LIBS)
 
-UTIL_LINUX_LINK_LIBS = $(TARGET_NLS_LIBS)
-
-# workaround missing disk-utils/raw.8 file in util-linux-2.37.3
-# release download package
-define UTIL_LINUX_FIX_DISK_UTILS_COMPILE
-	touch $(@D)/disk-utils/raw.8
-endef
-UTIL_LINUX_POST_PATCH_HOOKS += UTIL_LINUX_FIX_DISK_UTILS_COMPILE
+# system depends on util-linux so we enable systemd support
+# (which needs systemd to be installed)
+UTIL_LINUX_CONF_OPTS += \
+	--without-systemd \
+	--with-systemdsystemunitdir=no
 
 HOST_UTIL_LINUX_DEPENDENCIES = host-pkgconf
 
 # We also don't want the host-python dependency
-HOST_UTIL_LINUX_CONF_OPTS = \
-	--without-systemd \
-	--with-systemdsystemunitdir=no \
-	--without-python
+HOST_UTIL_LINUX_CONF_OPTS = --without-python
 
-ifneq ($(BR2_PACKAGE_UTIL_LINUX_BINARIES)$(BR2_PACKAGE_UTIL_LINUX_CRAMFS)$(BR2_PACKAGE_UTIL_LINUX_FSCK)$(BR2_PACKAGE_UTIL_LINUX_LOSETUP),)
-UTIL_LINUX_SELINUX_MODULES = fstools
+# If both util-linux and busybox are selected, make certain util-linux
+# wins the fight over who gets to have their utils actually installed
+ifeq ($(BR2_PACKAGE_BUSYBOX),y)
+UTIL_LINUX_DEPENDENCIES += busybox
 endif
 
 # Prevent the installation from attempting to move shared libraries from
@@ -59,20 +47,6 @@ endif
 # the same when merged usr is in use.
 ifeq ($(BR2_ROOTFS_MERGED_USR),y)
 UTIL_LINUX_CONF_OPTS += --bindir=/usr/bin --sbindir=/usr/sbin --libdir=/usr/lib
-endif
-
-ifeq ($(BR2_PACKAGE_SYSTEMD),y)
-UTIL_LINUX_CONF_OPTS += --with-systemd --with-systemdsystemunitdir=/usr/lib/systemd/system
-UTIL_LINUX_DEPENDENCIES += systemd
-else
-UTIL_LINUX_CONF_OPTS += --without-systemd --with-systemdsystemunitdir=no
-endif
-
-ifeq ($(BR2_PACKAGE_HAS_UDEV),y)
-UTIL_LINUX_CONF_OPTS += --with-udev
-UTIL_LINUX_DEPENDENCIES += udev
-else
-UTIL_LINUX_CONF_OPTS += --without-udev
 endif
 
 ifeq ($(BR2_PACKAGE_NCURSES),y)
@@ -93,37 +67,35 @@ endif
 UTIL_LINUX_CONF_OPTS += --without-ncursesw --without-ncurses
 endif
 
+ifeq ($(BR2_PACKAGE_LIBCAP_NG),y)
+UTIL_LINUX_DEPENDENCIES += libcap-ng
+endif
+
 # Unfortunately, the util-linux does LIBS="" at the end of its
 # configure script. So we have to pass the proper LIBS value when
 # calling the configure script to make configure tests pass properly,
 # and then pass it again at build time.
-UTIL_LINUX_CONF_ENV += LIBS="$(UTIL_LINUX_LINK_LIBS)"
-UTIL_LINUX_MAKE_OPTS += LIBS="$(UTIL_LINUX_LINK_LIBS)"
+UTIL_LINUX_CONF_ENV += LIBS="$(UTIL_LINUX_LIBS)"
+UTIL_LINUX_MAKE_OPTS += LIBS="$(UTIL_LINUX_LIBS)"
 
 ifeq ($(BR2_PACKAGE_LIBSELINUX),y)
 UTIL_LINUX_DEPENDENCIES += libselinux
 UTIL_LINUX_CONF_OPTS += --with-selinux
-else
-UTIL_LINUX_CONF_OPTS += --without-selinux
 define UTIL_LINUX_SELINUX_PAMFILES_TWEAK
 	$(foreach f,su su-l,
-		$(SED) '/^.*pam_selinux.so.*$$/d' \
+		$(SED) 's/^# \(.*pam_selinux.so.*\)$$/\1/' \
 			$(TARGET_DIR)/etc/pam.d/$(f)
 	)
 endef
+else
+UTIL_LINUX_CONF_OPTS += --without-selinux
 endif
-
-# Used by setpriv
-UTIL_LINUX_DEPENDENCIES += $(if $(BR2_PACKAGE_LIBCAP_NG),libcap-ng)
 
 # Used by cramfs utils
 UTIL_LINUX_DEPENDENCIES += $(if $(BR2_PACKAGE_ZLIB),zlib)
 
 # Used by login-utils
 UTIL_LINUX_DEPENDENCIES += $(if $(BR2_PACKAGE_LINUX_PAM),linux-pam)
-
-# Used by hardlink
-UTIL_LINUX_DEPENDENCIES += $(if $(BR2_PACKAGE_PCRE2),pcre2)
 
 # Disable/Enable utilities
 UTIL_LINUX_CONF_OPTS += \
@@ -138,8 +110,7 @@ UTIL_LINUX_CONF_OPTS += \
 	$(if $(BR2_PACKAGE_UTIL_LINUX_FALLOCATE),--enable-fallocate,--disable-fallocate) \
 	$(if $(BR2_PACKAGE_UTIL_LINUX_FDFORMAT),--enable-fdformat,--disable-fdformat) \
 	$(if $(BR2_PACKAGE_UTIL_LINUX_FSCK),--enable-fsck,--disable-fsck) \
-	$(if $(BR2_PACKAGE_UTIL_LINUX_HARDLINK),--enable-hardlink,--disable-hardlink) \
-	$(if $(BR2_PACKAGE_UTIL_LINUX_HWCLOCK),--enable-hwclock --disable-hwclock-gplv3,--disable-hwclock) \
+	$(if $(BR2_PACKAGE_UTIL_LINUX_HWCLOCK),--enable-hwclock,--disable-hwclock) \
 	$(if $(BR2_PACKAGE_UTIL_LINUX_IPCRM),--enable-ipcrm,--disable-ipcrm) \
 	$(if $(BR2_PACKAGE_UTIL_LINUX_IPCS),--enable-ipcs,--disable-ipcs) \
 	$(if $(BR2_PACKAGE_UTIL_LINUX_KILL),--enable-kill,--disable-kill) \
@@ -184,7 +155,6 @@ UTIL_LINUX_CONF_OPTS += \
 	$(if $(BR2_PACKAGE_UTIL_LINUX_VIPW),--enable-vipw,--disable-vipw) \
 	$(if $(BR2_PACKAGE_UTIL_LINUX_WALL),--enable-wall,--disable-wall) \
 	$(if $(BR2_PACKAGE_UTIL_LINUX_WDCTL),--enable-wdctl,--disable-wdctl) \
-	$(if $(BR2_PACKAGE_UTIL_LINUX_WIPEFS),--enable-wipefs,--disable-wipefs) \
 	$(if $(BR2_PACKAGE_UTIL_LINUX_WRITE),--enable-write,--disable-write) \
 	$(if $(BR2_PACKAGE_UTIL_LINUX_ZRAMCTL),--enable-zramctl,--disable-zramctl)
 
@@ -196,15 +166,9 @@ HOST_UTIL_LINUX_CONF_OPTS += \
 	--enable-libblkid \
 	--enable-libmount \
 	--enable-libuuid \
-	--without-libmagic \
 	--without-ncurses \
 	--without-ncursesw \
 	--without-tinfo
-
-# Disable raw command since starting from version 2.37 needs a
-# work-around to build but in the end we don't need at all.
-HOST_UTIL_LINUX_CONF_OPTS += \
-	--disable-raw
 
 ifeq ($(BR2_PACKAGE_HOST_UTIL_LINUX),y)
 HOST_UTIL_LINUX_CONF_OPTS += --disable-makeinstall-chown
@@ -223,7 +187,6 @@ HOST_UTIL_LINUX_CONF_OPTS += \
 	--disable-nsenter \
 	--disable-pg \
 	--disable-rfkill \
-	--disable-runuser \
 	--disable-schedutils \
 	--disable-setpriv \
 	--disable-setterm \
@@ -245,9 +208,9 @@ HOST_UTIL_LINUX_CONF_OPTS += --disable-all-programs
 endif
 
 # Install libmount Python bindings
-ifeq ($(BR2_PACKAGE_PYTHON3),y)
+ifeq ($(BR2_PACKAGE_PYTHON)$(BR2_PACKAGE_PYTHON3),y)
 UTIL_LINUX_CONF_OPTS += --with-python
-UTIL_LINUX_DEPENDENCIES += python3
+UTIL_LINUX_DEPENDENCIES += $(if $(BR2_PACKAGE_PYTHON),python,python3)
 ifeq ($(BR2_PACKAGE_UTIL_LINUX_LIBMOUNT),y)
 UTIL_LINUX_CONF_OPTS += --enable-pylibmount
 else
@@ -259,7 +222,7 @@ endif
 
 ifeq ($(BR2_PACKAGE_READLINE),y)
 UTIL_LINUX_CONF_OPTS += --with-readline
-UTIL_LINUX_LINK_LIBS += $(if $(BR2_STATIC_LIBS),-lcurses)
+UTIL_LINUX_LIBS += $(if $(BR2_STATIC_LIBS),-lcurses)
 UTIL_LINUX_DEPENDENCIES += readline
 else
 UTIL_LINUX_CONF_OPTS += --without-readline
@@ -272,19 +235,12 @@ else
 UTIL_LINUX_CONF_OPTS += --without-audit
 endif
 
-ifeq ($(BR2_PACKAGE_FILE),y)
-UTIL_LINUX_CONF_OPTS += --with-libmagic
-UTIL_LINUX_DEPENDENCIES += file
-else
-UTIL_LINUX_CONF_OPTS += --without-libmagic
-endif
-
 # Install PAM configuration files
 ifeq ($(BR2_PACKAGE_UTIL_LINUX_SU)$(BR2_PACKAGE_LINUX_PAM),yy)
 define UTIL_LINUX_INSTALL_PAMFILES
-	$(INSTALL) -D -m 0644 package/util-linux/su.pam \
+	$(INSTALL) -m 0644 package/util-linux/su.pam \
 		$(TARGET_DIR)/etc/pam.d/su
-	$(INSTALL) -D -m 0644 package/util-linux/su.pam \
+	$(INSTALL) -m 0644 package/util-linux/su.pam \
 		$(TARGET_DIR)/etc/pam.d/su-l
 	$(UTIL_LINUX_SELINUX_PAMFILES_TWEAK)
 endef
@@ -304,7 +260,3 @@ UTIL_LINUX_POST_INSTALL_TARGET_HOOKS += UTIL_LINUX_GETTY_SYMLINK
 
 $(eval $(autotools-package))
 $(eval $(host-autotools-package))
-
-# Must be included after the autotools-package call, to make sure all variables
-# are available
-include package/util-linux/util-linux-libs/util-linux-libs.mk

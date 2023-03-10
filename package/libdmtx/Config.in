@@ -4,4 +4,4 @@ config BR2_PACKAGE_LIBDMTX
 	  libdmtx is a software library that enables programs to read
 	  and write Data Matrix barcodes of the modern ECC200 variety.
 
-	  https://github.com/dmtx/libdmtx
+	  http://www.libdmtx.org/

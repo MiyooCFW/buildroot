@@ -1,18 +1,13 @@
-from io import open
 import os
 import re
 import glob
 import subprocess
-import sys
-import unittest
-
-brpath = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 
 #
 # Patch parsing functions
 #
 
-FIND_INFRA_IN_PATCH = re.compile(r"^\+\$\(eval \$\((host-)?([^-]*)-package\)\)$")
+FIND_INFRA_IN_PATCH = re.compile("^\+\$\(eval \$\((host-)?([^-]*)-package\)\)$")
 
 
 def analyze_patch(patch):
@@ -35,7 +30,7 @@ def analyze_patch(patch):
     return (files, infras)
 
 
-FIND_INFRA_IN_MK = re.compile(r"^\$\(eval \$\((host-)?([^-]*)-package\)\)$")
+FIND_INFRA_IN_MK = re.compile("^\$\(eval \$\((host-)?([^-]*)-package\)\)$")
 
 
 def fname_get_package_infra(fname):
@@ -56,6 +51,17 @@ def fname_get_package_infra(fname):
     return None
 
 
+def get_infras(files):
+    """Search in the list of files for .mk files, and collect the package
+    infrastructures used by those .mk files."""
+    infras = set()
+    for fname in files:
+        infra = fname_get_package_infra(fname)
+        if infra:
+            infras.add(infra)
+    return infras
+
+
 def analyze_patches(patches):
     """Parse a list of patches and returns the list of files modified,
     added or removed by the patches, as well as the list of package
@@ -66,37 +72,8 @@ def analyze_patches(patches):
         (files, infras) = analyze_patch(patch)
         allfiles = allfiles | files
         allinfras = allinfras | infras
+    allinfras = allinfras | get_infras(allfiles)
     return (allfiles, allinfras)
-
-
-#
-# Unit-test parsing functions
-#
-
-def get_all_test_cases(suite):
-    """Generate all test-cases from a given test-suite.
-    :return: (test.module, test.name)"""
-    if issubclass(type(suite), unittest.TestSuite):
-        for test in suite:
-            for res in get_all_test_cases(test):
-                yield res
-    else:
-        yield (suite.__module__, suite.__class__.__name__)
-
-
-def list_unittests():
-    """Use the unittest module to retreive all test cases from a given
-    directory"""
-    loader = unittest.TestLoader()
-    suite = loader.discover(os.path.join(brpath, "support", "testing"))
-    tests = {}
-    for module, test in get_all_test_cases(suite):
-        module_path = os.path.join("support", "testing", *module.split('.'))
-        tests.setdefault(module_path, []).append('%s.%s' % (module, test))
-    return tests
-
-
-unittests = {}
 
 
 #
@@ -110,34 +87,13 @@ class Developer:
         self.packages = parse_developer_packages(files)
         self.architectures = parse_developer_architectures(files)
         self.infras = parse_developer_infras(files)
-        self.runtime_tests = parse_developer_runtime_tests(files)
-        self.defconfigs = parse_developer_defconfigs(files)
 
     def hasfile(self, f):
+        f = os.path.abspath(f)
         for fs in self.files:
             if f.startswith(fs):
                 return True
         return False
-
-    def __repr__(self):
-        name = '\'' + self.name.split(' <')[0][:20] + '\''
-        things = []
-        if len(self.files):
-            things.append('{} files'.format(len(self.files)))
-        if len(self.packages):
-            things.append('{} pkgs'.format(len(self.packages)))
-        if len(self.architectures):
-            things.append('{} archs'.format(len(self.architectures)))
-        if len(self.infras):
-            things.append('{} infras'.format(len(self.infras)))
-        if len(self.runtime_tests):
-            things.append('{} tests'.format(len(self.runtime_tests)))
-        if len(self.defconfigs):
-            things.append('{} defconfigs'.format(len(self.defconfigs)))
-        if things:
-            return 'Developer <{} ({})>'.format(name, ', '.join(things))
-        else:
-            return 'Developer <' + name + '>'
 
 
 def parse_developer_packages(fnames):
@@ -146,7 +102,7 @@ def parse_developer_packages(fnames):
     patterns, and return a list of those packages."""
     packages = set()
     for fname in fnames:
-        for root, dirs, files in os.walk(os.path.join(brpath, fname)):
+        for root, dirs, files in os.walk(fname):
             for f in files:
                 path = os.path.join(root, f)
                 if fname_get_package_infra(path):
@@ -167,7 +123,7 @@ def parse_arches_from_config_in(fname):
                 parsing_arches = True
                 continue
             if parsing_arches:
-                m = re.match(r"^\s*default \"([^\"]*)\".*", line)
+                m = re.match("^\s*default \"([^\"]*)\".*", line)
                 if m:
                     arches.add(m.group(1))
                 else:
@@ -181,7 +137,7 @@ def parse_developer_architectures(fnames):
     developer is working on."""
     arches = set()
     for fname in fnames:
-        if not re.match(r"^.*/arch/Config\.in\..*$", fname):
+        if not re.match("^.*/arch/Config\.in\..*$", fname):
             continue
         arches = arches | parse_arches_from_config_in(fname)
     return arches
@@ -190,49 +146,21 @@ def parse_developer_architectures(fnames):
 def parse_developer_infras(fnames):
     infras = set()
     for fname in fnames:
-        m = re.match(r"^package/pkg-([^.]*).mk$", fname)
+        m = re.match("^package/pkg-([^.]*).mk$", fname)
         if m:
             infras.add(m.group(1))
     return infras
 
 
-def parse_developer_defconfigs(fnames):
-    """Given a list of file names, returns the config names
-    corresponding to defconfigs."""
-    return {os.path.basename(fname[:-10])
-            for fname in fnames
-            if fname.endswith('_defconfig')}
-
-
-def parse_developer_runtime_tests(fnames):
-    """Given a list of file names, returns the runtime tests
-    corresponding to the file."""
-    all_files = []
-    # List all files recursively
-    for fname in fnames:
-        if os.path.isdir(fname):
-            for root, _dirs, files in os.walk(os.path.join(brpath, fname)):
-                all_files += [os.path.join(root, f) for f in files]
-        else:
-            all_files.append(fname)
-
-    # Get all runtime tests
-    runtimes = set()
-    for f in all_files:
-        name = os.path.splitext(f)[0]
-        if name in unittests:
-            runtimes |= set(unittests[name])
-    return runtimes
-
-
-def parse_developers():
+def parse_developers(basepath=None):
     """Parse the DEVELOPERS file and return a list of Developer objects."""
     developers = []
     linen = 0
-    global unittests
-    unittests = list_unittests()
-    developers_fname = os.path.join(brpath, 'DEVELOPERS')
-    with open(developers_fname, mode='r', encoding='utf_8') as f:
+    if basepath is None:
+        basepath = os.getcwd()
+    else:
+        basepath = os.path.abspath(basepath)
+    with open(os.path.join(basepath, "DEVELOPERS"), "r") as f:
         files = []
         name = None
         for line in f:
@@ -241,21 +169,14 @@ def parse_developers():
                 continue
             elif line.startswith("N:"):
                 if name is not None or len(files) != 0:
-                    print("Syntax error in DEVELOPERS file, line %d" % linen,
-                          file=sys.stderr)
+                    print("Syntax error in DEVELOPERS file, line %d" % linen)
                 name = line[2:].strip()
             elif line.startswith("F:"):
                 fname = line[2:].strip()
-                dev_files = glob.glob(os.path.join(brpath, fname))
+                dev_files = glob.glob(os.path.join(basepath, fname))
                 if len(dev_files) == 0:
-                    print("WARNING: '%s' doesn't match any file" % fname,
-                          file=sys.stderr)
-                for f in dev_files:
-                    dev_file = os.path.relpath(f, brpath)
-                    dev_file = dev_file.replace(os.sep, '/')  # force unix sep
-                    if f[-1] == '/':  # relpath removes the trailing /
-                        dev_file = dev_file + '/'
-                    files.append(dev_file)
+                    print("WARNING: '%s' doesn't match any file" % fname)
+                files += dev_files
             elif line == "":
                 if not name:
                     continue
@@ -263,8 +184,7 @@ def parse_developers():
                 files = []
                 name = None
             else:
-                print("Syntax error in DEVELOPERS file, line %d: '%s'" % (linen, line),
-                      file=sys.stderr)
+                print("Syntax error in DEVELOPERS file, line %d: '%s'" % (linen, line))
                 return None
             linen += 1
     # handle last developer
@@ -279,12 +199,12 @@ def check_developers(developers, basepath=None):
     if basepath is None:
         basepath = os.getcwd()
     cmd = ["git", "--git-dir", os.path.join(basepath, ".git"), "ls-files"]
-    files = subprocess.check_output(cmd).decode(sys.stdout.encoding).strip().split("\n")
+    files = subprocess.check_output(cmd).strip().split("\n")
     unhandled_files = []
     for f in files:
         handled = False
         for d in developers:
-            if d.hasfile(f):
+            if d.hasfile(os.path.join(basepath, f)):
                 handled = True
                 break
         if not handled:

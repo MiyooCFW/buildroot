@@ -4,28 +4,24 @@
 #
 ################################################################################
 
-PULSEAUDIO_VERSION = 14.2
+PULSEAUDIO_VERSION = 11.1
 PULSEAUDIO_SOURCE = pulseaudio-$(PULSEAUDIO_VERSION).tar.xz
-PULSEAUDIO_SITE = https://freedesktop.org/software/pulseaudio/releases
+PULSEAUDIO_SITE = http://freedesktop.org/software/pulseaudio/releases
 PULSEAUDIO_INSTALL_STAGING = YES
 PULSEAUDIO_LICENSE = LGPL-2.1+ (specific license for modules, see LICENSE file)
 PULSEAUDIO_LICENSE_FILES = LICENSE GPL LGPL
-PULSEAUDIO_CPE_ID_VENDOR = pulseaudio
-PULSEAUDIO_SELINUX_MODULES = pulseaudio xdg
 PULSEAUDIO_CONF_OPTS = \
 	--disable-default-build-tests \
 	--disable-legacy-database-entry-format \
-	--disable-manpages \
-	--disable-running-from-build-tree
+	--disable-manpages
 
 PULSEAUDIO_DEPENDENCIES = \
-	host-pkgconf libtool libsndfile speex \
-	$(TARGET_NLS_DEPENDENCIES) \
+	host-pkgconf libtool libsndfile speex host-intltool \
 	$(if $(BR2_PACKAGE_LIBGLIB2),libglib2) \
 	$(if $(BR2_PACKAGE_AVAHI_DAEMON),avahi) \
 	$(if $(BR2_PACKAGE_DBUS),dbus) \
 	$(if $(BR2_PACKAGE_OPENSSL),openssl) \
-	$(if $(BR2_PACKAGE_FFTW_SINGLE),fftw-single) \
+	$(if $(BR2_PACKAGE_FFTW),fftw) \
 	$(if $(BR2_PACKAGE_SYSTEMD),systemd)
 
 ifeq ($(BR2_PACKAGE_LIBSAMPLERATE),y)
@@ -84,6 +80,13 @@ PULSEAUDIO_CONF_OPTS += --with-soxr
 PULSEAUDIO_DEPENDENCIES += libsoxr
 else
 PULSEAUDIO_CONF_OPTS += --without-soxr
+endif
+
+ifeq ($(BR2_PACKAGE_BLUEZ_UTILS)$(BR2_PACKAGE_SBC),yy)
+PULSEAUDIO_CONF_OPTS += --enable-bluez4
+PULSEAUDIO_DEPENDENCIES += bluez_utils sbc
+else
+PULSEAUDIO_CONF_OPTS += --disable-bluez4
 endif
 
 ifeq ($(BR2_PACKAGE_BLUEZ5_UTILS)$(BR2_PACKAGE_SBC),yy)
@@ -170,6 +173,9 @@ endef
 define PULSEAUDIO_INSTALL_INIT_SYSTEMD
 	$(INSTALL) -D -m 644 package/pulseaudio/pulseaudio.service \
 		$(TARGET_DIR)/usr/lib/systemd/system/pulseaudio.service
+	mkdir -p $(TARGET_DIR)/etc/systemd/system/multi-user.target.wants
+	ln -sf ../../../../usr/lib/systemd/system/pulseaudio.service \
+		$(TARGET_DIR)/etc/systemd/system/multi-user.target.wants/pulseaudio.service
 endef
 
 endif
