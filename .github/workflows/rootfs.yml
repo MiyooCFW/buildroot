@@ -11,10 +11,8 @@ on:
         type: string
 
 jobs:   
-  rootfs:
-    runs-on: ubuntu-20.04
-    container:
-      image: miyoocfw/toolchain:master
+  rootfs-uclibc:
+    runs-on: ubuntu-22.04
     env:
       FORCE_UNSAFE_CONFIGURE: 1
     steps:
@@ -40,12 +38,66 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
         cd ${{ inputs.submodule || '.' }}
+        apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         make miyoo_uclibc_defconfig
         make
-        cd output/images/
+        cd /opt
+        tar cf sdk.tar miyoo
+
       
     - uses: actions/upload-artifact@v2
       with:
-        name: rootfs.tar.xz
+        name: rootfs (uClibc)
         path: ${{ inputs.submodule || '.' }}/output/images/rootfs.tar.xz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+        
+    - uses: actions/upload-artifact@v2
+      with:
+        name: SDK (uClibc)
+        path: /opt/sdk.tar
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`    
+
+  rootfs-musl:
+    runs-on: ubuntu-22.04
+    env:
+      FORCE_UNSAFE_CONFIGURE: 1
+    steps:
+    - uses: actions/checkout@v3
+    - if: inputs.submodule
+      run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}
+    
+    - name: Generate cache key
+      if: inputs.submodule
+      id: cache-key
+      run: |
+        cd ${{ inputs.submodule }}
+        echo "::set-output name=key::${{ inputs.submodule }}-$(git rev-parse --short HEAD)"
+      
+    - uses: actions/cache@v3
+      if: inputs.submodule
+      with:
+        path: ${{ inputs.submodule || '.' }}/output/images/rootfs.tar.xz
+        key: ${{ steps.cache-key.outputs.key }}
+      id: cache
+        
+    - name: build
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        cd ${{ inputs.submodule || '.' }}
+        apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
+        make miyoo_defconfig
+        make
+        cd /opt
+        tar cf sdk.tar miyoo 
+      
+    - uses: actions/upload-artifact@v2
+      with:
+        name: rootfs (musl)
+        path: ${{ inputs.submodule || '.' }}/output/images/rootfs.tar.xz
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+        
+    - uses: actions/upload-artifact@v2
+      with:
+        name: SDK (musl)
+        path: /opt/sdk.tar
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
