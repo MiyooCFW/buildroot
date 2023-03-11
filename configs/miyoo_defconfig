@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Buildroot 2018.02 Configuration
+# Buildroot 2018.02.9 Configuration
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_HOST_GCC_AT_LEAST_4_5=y
@@ -10,6 +10,7 @@ BR2_HOST_GCC_AT_LEAST_4_8=y
 BR2_HOST_GCC_AT_LEAST_4_9=y
 BR2_HOST_GCC_AT_LEAST_5=y
 BR2_HOST_GCC_AT_LEAST_6=y
+BR2_HOST_GCC_AT_LEAST_7=y
 
 #
 # Target options
@@ -229,7 +230,7 @@ BR2_KERNEL_HEADERS_4_9=y
 # BR2_KERNEL_HEADERS_4_14 is not set
 # BR2_KERNEL_HEADERS_4_15 is not set
 # BR2_KERNEL_HEADERS_VERSION is not set
-BR2_DEFAULT_KERNEL_HEADERS="4.9.86"
+BR2_DEFAULT_KERNEL_HEADERS="4.9.143"
 BR2_PACKAGE_LINUX_HEADERS=y
 
 #
@@ -251,6 +252,7 @@ BR2_UCLIBC_TARGET_ARCH="arm"
 #
 # Binutils Options
 #
+BR2_PACKAGE_HOST_BINUTILS_SUPPORTS_CFI=y
 # BR2_BINUTILS_VERSION_2_28_X is not set
 # BR2_BINUTILS_VERSION_2_29_X is not set
 BR2_BINUTILS_VERSION_2_30_X=y
@@ -394,7 +396,7 @@ BR2_ENABLE_LOCALE_WHITELIST="C en_US"
 # BR2_SYSTEM_ENABLE_NLS is not set
 # BR2_TARGET_TZ_INFO is not set
 BR2_ROOTFS_USERS_TABLES=""
-BR2_ROOTFS_OVERLAY=""
+BR2_ROOTFS_OVERLAY="board/miyoo/rootfs"
 BR2_ROOTFS_POST_BUILD_SCRIPT=""
 BR2_ROOTFS_POST_FAKEROOT_SCRIPT=""
 BR2_ROOTFS_POST_IMAGE_SCRIPT=""
@@ -744,6 +746,7 @@ BR2_PACKAGE_VORBIS_TOOLS=y
 #
 # Compressors and decompressors
 #
+# BR2_PACKAGE_BROTLI is not set
 BR2_PACKAGE_BZIP2=y
 BR2_PACKAGE_LZ4=y
 # BR2_PACKAGE_LZIP is not set
@@ -787,6 +790,7 @@ BR2_PACKAGE_GOOGLE_BREAKPAD_ARCH_SUPPORTS=y
 # BR2_PACKAGE_LMBENCH is not set
 BR2_PACKAGE_LTP_TESTSUITE_ARCH_SUPPORTS=y
 # BR2_PACKAGE_LTP_TESTSUITE is not set
+BR2_PACKAGE_LTRACE_ARCH_SUPPORTS=y
 BR2_PACKAGE_LTRACE=y
 # BR2_PACKAGE_LTTNG_BABELTRACE is not set
 
@@ -1394,7 +1398,7 @@ BR2_PACKAGE_XDATA_XBITMAPS=y
 # BR2_PACKAGE_FEH is not set
 
 #
-# midori needs libgtk3 and a glibc toolchain w/ C++, gcc >= 5, host gcc >= 4.8
+# midori needs libgtk3 and a glibc toolchain w/ C++, gcc >= 6, host gcc >= 4.8
 #
 
 #
@@ -1472,11 +1476,7 @@ BR2_PACKAGE_XKEYBOARD_CONFIG=y
 #
 
 #
-# dahdi-tools needs a toolchain w/ threads
-#
-
-#
-# dahdi-tools needs a Linux kernel to be built
+# dahdi-tools needs a toolchain w/ threads and a Linux kernel to be built
 #
 BR2_PACKAGE_DBUS=y
 # BR2_PACKAGE_DBUS_CPP is not set
@@ -1686,6 +1686,7 @@ BR2_PACKAGE_GAUCHE_ARCH_SUPPORTS=y
 # BR2_PACKAGE_GAUCHE is not set
 # BR2_PACKAGE_GUILE is not set
 # BR2_PACKAGE_HASERL is not set
+BR2_PACKAGE_JAMVM_ARCH_SUPPORTS=y
 # BR2_PACKAGE_JAMVM is not set
 # BR2_PACKAGE_JIMTCL is not set
 BR2_PACKAGE_LUA=y
@@ -2081,11 +2082,12 @@ BR2_PACKAGE_TIFF_JBIG=y
 BR2_PACKAGE_WEBKITGTK_ARCH_SUPPORTS=y
 
 #
-# webkitgtk needs libgtk3 and a glibc toolchain w/ C++, gcc >= 5, host gcc >= 4.8
+# webkitgtk needs libgtk3 and a glibc toolchain w/ C++, gcc >= 6, host gcc >= 4.8
 #
 BR2_PACKAGE_WEBP=y
 # BR2_PACKAGE_WEBP_DEMUX is not set
 # BR2_PACKAGE_WEBP_MUX is not set
+# BR2_PACKAGE_WOFF2 is not set
 # BR2_PACKAGE_ZBAR is not set
 # BR2_PACKAGE_ZXING_CPP is not set
 
@@ -2681,10 +2683,6 @@ BR2_PACKAGE_XUTIL_UTIL_MACROS=y
 # BR2_PACKAGE_EBTABLES is not set
 
 #
-# ebtables needs a glibc or uClibc toolchain
-#
-
-#
 # ejabberd needs erlang, toolchain w/ C++
 #
 # BR2_PACKAGE_ETHTOOL is not set
@@ -2768,7 +2766,7 @@ BR2_PACKAGE_MONGREL2_LIBC_SUPPORTS=y
 # BR2_PACKAGE_NETSTAT_NAT is not set
 
 #
-# NetworkManager needs udev /dev management and a glibc toolchain w/ headers >= 3.7, dynamic library
+# NetworkManager needs udev /dev management and a glibc toolchain w/ headers >= 3.2, dynamic library
 #
 # BR2_PACKAGE_NFACCT is not set
 # BR2_PACKAGE_NFTABLES is not set
@@ -3016,6 +3014,7 @@ BR2_PACKAGE_AUDIT_ARCH_SUPPORTS=y
 # BR2_PACKAGE_DDRESCUE is not set
 # BR2_PACKAGE_DOCKER_CONTAINERD is not set
 # BR2_PACKAGE_DOCKER_ENGINE is not set
+# BR2_PACKAGE_DOCKER_PROXY is not set
 # BR2_PACKAGE_EFIBOOTMGR is not set
 BR2_PACKAGE_EFIVAR_ARCH_SUPPORTS=y
 # BR2_PACKAGE_EFIVAR is not set
@@ -3241,6 +3240,9 @@ BR2_PACKAGE_HOST_PATCHELF=y
 # BR2_PACKAGE_HOST_PWGEN is not set
 # BR2_PACKAGE_HOST_PYTHON_LXML is not set
 # BR2_PACKAGE_HOST_PYTHON_SIX is not set
+BR2_PACKAGE_HOST_QEMU_ARCH_SUPPORTS=y
+BR2_PACKAGE_HOST_QEMU_SYSTEM_ARCH_SUPPORTS=y
+BR2_PACKAGE_HOST_QEMU_USER_ARCH_SUPPORTS=y
 # BR2_PACKAGE_HOST_QEMU is not set
 # BR2_PACKAGE_HOST_RASPBERRYPI_USBBOOT is not set
 # BR2_PACKAGE_HOST_RAUC is not set
@@ -3265,6 +3267,7 @@ BR2_PACKAGE_HOST_TI_CGT_PRU_ARCH_SUPPORTS=y
 #
 # Legacy options removed in 2018.02
 #
+# BR2_PACKAGE_TRANSMISSION_REMOTE is not set
 # BR2_KERNEL_HEADERS_3_4 is not set
 # BR2_KERNEL_HEADERS_3_10 is not set
 # BR2_KERNEL_HEADERS_3_12 is not set

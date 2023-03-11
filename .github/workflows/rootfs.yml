@@ -14,7 +14,7 @@ jobs:
   rootfs:
     runs-on: ubuntu-20.04
     container:
-      image: miyoocfw/toolchain:master
+      image: ubuntu:18.04
     env:
       FORCE_UNSAFE_CONFIGURE: 1
     steps:
@@ -40,7 +40,7 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
         cd ${{ inputs.submodule || '.' }}
-        rm -R /opt/miyoo
+        apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio python rsync
         make miyoo_defconfig
         make
         cd output/images/
