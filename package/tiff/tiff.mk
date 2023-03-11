@@ -4,21 +4,13 @@
 #
 ################################################################################
 
-TIFF_VERSION = 4.5.0
+TIFF_VERSION = 4.0.8
 TIFF_SITE = http://download.osgeo.org/libtiff
 TIFF_LICENSE = tiff license
-TIFF_LICENSE_FILES = LICENSE.md
-TIFF_CPE_ID_VENDOR = libtiff
-TIFF_CPE_ID_PRODUCT = libtiff
+TIFF_LICENSE_FILES = COPYRIGHT
 TIFF_INSTALL_STAGING = YES
-
-# webp has a (optional) dependency on tiff, so we can't have webp
-# support in tiff, or that would create a circular dependency.
 TIFF_CONF_OPTS = \
-	--disable-contrib \
 	--disable-cxx \
-	--disable-tests \
-	--disable-webp \
 	--without-x
 
 TIFF_DEPENDENCIES = host-pkgconf
@@ -27,12 +19,8 @@ HOST_TIFF_CONF_OPTS = \
 	--disable-cxx \
 	--without-x \
 	--disable-zlib \
-	--disable-libdeflate \
 	--disable-lzma \
-	--disable-jpeg \
-	--disable-tests \
-	--disable-webp \
-	--disable-zstd
+	--disable-jpeg
 HOST_TIFF_DEPENDENCIES = host-pkgconf
 
 ifneq ($(BR2_PACKAGE_TIFF_CCITT),y)
@@ -93,18 +81,12 @@ ifneq ($(BR2_PACKAGE_TIFF_JBIG),y)
 TIFF_CONF_OPTS += --disable-jbig
 endif
 
+TIFF_SUBDIRS = port libtiff
 ifeq ($(BR2_PACKAGE_TIFF_UTILITIES),y)
-TIFF_CONF_OPTS += --enable-tools
-else
-TIFF_CONF_OPTS += --disable-tools
+TIFF_SUBDIRS += tools
 endif
 
-ifeq ($(BR2_PACKAGE_TIFF_ZSTD),y)
-TIFF_CONF_OPTS += --enable-zstd
-TIFF_DEPENDENCIES += zstd
-else
-TIFF_CONF_OPTS += --disable-zstd
-endif
+TIFF_MAKE = $(MAKE) SUBDIRS="$(TIFF_SUBDIRS)"
 
 $(eval $(autotools-package))
 $(eval $(host-autotools-package))

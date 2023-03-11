@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-NMON_VERSION = 16n
+NMON_VERSION = 16g
 NMON_SITE = https://sourceforge.net/projects/nmon/files
 NMON_SOURCE = lmon$(NMON_VERSION).c
 NMON_LICENSE = GPL-3.0+
@@ -13,7 +13,7 @@ NMON_DEPENDENCIES = ncurses
 NMON_CFLAGS = $(TARGET_CFLAGS) -D JFS -D GETUSER -D LARGEMEM -D DEBIAN
 
 define NMON_EXTRACT_CMDS
-	cp $(NMON_DL_DIR)/$(NMON_SOURCE) $(@D)
+	cp $(DL_DIR)/$(NMON_SOURCE) $(@D)
 endef
 
 define NMON_BUILD_CMDS

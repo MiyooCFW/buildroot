@@ -3,16 +3,9 @@ import re
 import sys
 import tempfile
 import subprocess
-from urllib.request import urlopen
-from urllib.error import HTTPError, URLError
+from urllib2 import urlopen, HTTPError, URLError
 
 ARTIFACTS_URL = "http://autobuild.buildroot.net/artefacts/"
-BASE_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), "../../.."))
-
-
-def log_file_path(builddir, stage, logtofile=True):
-    """Return path to log file"""
-    return "{}-{}.log".format(builddir, stage) if logtofile else None
 
 
 def open_log_file(builddir, stage, logtofile=True):
@@ -21,16 +14,15 @@ def open_log_file(builddir, stage, logtofile=True):
     If logtofile is True, returns sys.stdout. Otherwise opens a file
     with a suitable name in the build directory.
     """
-    return open(log_file_path(builddir, stage, logtofile), 'a+') if logtofile else sys.stdout
-
-
-def basepath(relpath=""):
-    """Return the absolute path for a file or directory relative to the Buildroot top directory."""
-    return os.path.join(BASE_DIR, relpath)
+    if logtofile:
+        fhandle = open("{}-{}.log".format(builddir, stage), 'a+')
+    else:
+        fhandle = sys.stdout
+    return fhandle
 
 
 def filepath(relpath):
-    return os.path.join(BASE_DIR, "support/testing", relpath)
+    return os.path.join(os.getcwd(), "support/testing", relpath)
 
 
 def download(dldir, filename):
@@ -42,29 +34,19 @@ def download(dldir, filename):
         os.makedirs(dldir)
 
     tmpfile = tempfile.mktemp(dir=dldir)
-    print("Downloading to {}".format(tmpfile))
+    print "Downloading to {}".format(tmpfile)
 
     try:
         url_fh = urlopen(os.path.join(ARTIFACTS_URL, filename))
-        with open(tmpfile, "w+b") as tmpfile_fh:
+        with open(tmpfile, "w+") as tmpfile_fh:
             tmpfile_fh.write(url_fh.read())
-    except (HTTPError, URLError) as err:
+    except (HTTPError, URLError), err:
         os.unlink(tmpfile)
         raise err
 
-    print("Renaming from {} to {}".format(tmpfile, finalpath))
+    print "Renaming from %s to %s" % (tmpfile, finalpath)
     os.rename(tmpfile, finalpath)
     return finalpath
-
-
-def run_cmd_on_host(builddir, cmd):
-    """Call subprocess.check_output and return the text output."""
-    out = subprocess.check_output(cmd,
-                                  stderr=open(os.devnull, "w"),
-                                  cwd=builddir,
-                                  env={"LANG": "C"},
-                                  universal_newlines=True)
-    return out
 
 
 def get_elf_arch_tag(builddir, prefix, fpath, tag):
@@ -78,8 +60,8 @@ def get_elf_arch_tag(builddir, prefix, fpath, tag):
     """
     cmd = ["host/bin/{}-readelf".format(prefix),
            "-A", os.path.join("target", fpath)]
-    out = run_cmd_on_host(builddir, cmd)
-    regexp = re.compile(r"^  {}: (.*)$".format(tag))
+    out = subprocess.check_output(cmd, cwd=builddir, env={"LANG": "C"})
+    regexp = re.compile("^  {}: (.*)$".format(tag))
     for line in out.splitlines():
         m = regexp.match(line)
         if not m:
@@ -105,23 +87,11 @@ def get_elf_prog_interpreter(builddir, prefix, fpath):
     """
     cmd = ["host/bin/{}-readelf".format(prefix),
            "-l", os.path.join("target", fpath)]
-    out = run_cmd_on_host(builddir, cmd)
-    regexp = re.compile(r"^ *\[Requesting program interpreter: (.*)\]$")
+    out = subprocess.check_output(cmd, cwd=builddir, env={"LANG": "C"})
+    regexp = re.compile("^ *\[Requesting program interpreter: (.*)\]$")
     for line in out.splitlines():
         m = regexp.match(line)
         if not m:
             continue
         return m.group(1)
     return None
-
-
-def img_round_power2(img):
-    """
-    Rounds up the size of an image file to the next power of 2
-    """
-    sz = os.stat(img).st_size
-    pow2 = 1
-    while pow2 < sz:
-        pow2 = pow2 << 1
-    with open(img, 'ab') as f:
-        f.truncate(pow2)

@@ -7,26 +7,13 @@ offset=0x400
 erase_size=0xC0000
 qspi_offset=0x0
 a_base=0x12000000
-block_size=0x200
 
-#grab 1st 2/3 characters of string
-setexpr cpu2 sub "^(..?).*" "\\1" "${imx_cpu}"
-setexpr cpu3 sub "^(..?.?).*" "\\1" "${imx_cpu}"
-if itest.s x51 == "x${cpu2}"; then
+if itest.s x51 == "x${imx_cpu}"; then
 	a_base=0x92000000
-elif itest.s x53 == "x${cpu2}"; then
+elif itest.s x53 == "x${imx_cpu}"; then
 	a_base=0x72000000
-elif itest.s x6SX == "x${cpu3}" || itest.s x6U == "x${cpu2}" || itest.s x7D == "x${cpu2}"; then
+elif itest.s x6SX == "x${imx_cpu}" || itest.s x7D == "x${imx_cpu}"; then
 	a_base=0x82000000
-elif itest.s x8M == "x${cpu2}"; then
-	a_base=0x42000000
-	offset=0x8400
-	if itest.s x8MN == "x${cpu3}" || itest.s x8MP == "x${cpu3}"; then
-		offset=0x8000
-		if itest ${env_part} != 0 ; then
-			offset=0x0
-		fi
-	fi
 fi
 
 qspi_match=1
@@ -36,60 +23,8 @@ setexpr a_uImage1 ${a_qspi1} + 0x400
 setexpr a_uImage2 ${a_qspi2} + 0x400
 setexpr a_script ${a_base}
 
-if itest.s "x${vidconsole}" == "x" ; then
-	vidconsole=vga
-fi
-setenv stdout serial,${vidconsole}
+setenv stdout serial,vga
 
-if itest.s "x${sfname}" == "x" ; then
-# U-Boot resides in (e)MMC
-if itest.s "x${env_dev}" == "x" || itest.s "x${env_part}" == "x"; then
-        echo "Please set env_dev/part to the appropriate values"
-        exit
-fi
-
-# Load bootloader binary for this board
-if ${fs}load ${devtype} ${devnum}:${distro_bootpart} ${a_uImage1} u-boot.$uboot_defconfig ; then
-else
-	echo "File u-boot.$uboot_defconfig not found on SD card" ;
-	exit
-fi
-
-# Compute block count for filesize and offset
-setexpr cntoffset ${offset} / ${block_size}
-setexpr cntfile ${filesize} / ${block_size}
-# Add 1 in case the $filesize is not a multiple of $block_size
-setexpr cntfile ${cntfile} + 1
-
-# Select media partition (if different from main partition)
-mmc dev ${env_dev} ${env_part}
-
-# Read and compare current U-Boot
-mmc read ${a_uImage2} ${cntoffset} ${cntfile}
-if cmp.b ${a_uImage1} ${a_uImage2} ${filesize} ; then
-	echo "------- U-Boot versions match" ;
-	echo "------- U-Boot upgrade NOT needed" ;
-	exit ;
-fi
-
-echo "Need U-Boot upgrade" ;
-echo "Program in 5 seconds" ;
-for n in 5 4 3 2 1 ; do
-	echo $n ;
-	sleep 1 ;
-done
-mmc write ${a_uImage1} ${cntoffset} ${cntfile}
-
-# Make sure to boot from the proper partition
-if itest ${env_part} != 0 ; then
-	mmc partconf ${env_dev} 1 ${env_part} 0
-fi
-
-# Switch back to main eMMC partition (to avoid confusion)
-mmc dev ${env_dev}
-
-else
-# U-Boot resides in NOR flash
 if sf probe || sf probe || sf probe 1 27000000 || sf probe 1 27000000 ; then
 	echo "probed SPI ROM" ;
 else
@@ -97,13 +32,9 @@ else
 	exit
 fi
 
-if itest.s "x${sfname}" == "xat45db041d" ; then
-	erase_size=0x7e000
-fi
-
 if itest.s x7D == "x${imx_cpu}"; then
 	echo "check qspi parameter block" ;
-	if ${fs}load ${devtype} ${devnum}:${distro_bootpart} ${a_qspi1} qspi-${sfname}.${uboot_defconfig} ; then
+	if ${fs}load ${devtype} ${devnum}:1 ${a_qspi1} qspi-${sfname}.${uboot_defconfig} ; then
 	else
 		echo "parameter file qspi-${sfname}.${uboot_defconfig} not found on SD card"
 		exit
@@ -132,7 +63,7 @@ fi
 
 echo "check U-Boot" ;
 
-if ${fs}load ${devtype} ${devnum}:${distro_bootpart} ${a_uImage1} u-boot.$uboot_defconfig ; then
+if ${fs}load ${devtype} ${devnum}:1 ${a_uImage1} u-boot.$uboot_defconfig ; then
 else
 	echo "File u-boot.$uboot_defconfig not found on SD card" ;
 	exit
@@ -147,9 +78,9 @@ fi
 if cmp.b ${a_uImage1} ${a_uImage2} $filesize ; then
 	echo "------- U-Boot versions match" ;
 	if itest.s "${qspi_match}" == "1" ; then
-		echo "------- U-Boot upgrade NOT needed" ;
+		echo "------- upgrade not needed" ;
 		if itest.s "x" != "x${next}" ; then
-			if ${fs}load ${devtype} ${devnum}:${distro_bootpart} ${a_script} ${next} ; then
+			if ${fs}load ${devtype} ${devnum}:1 ${a_script} ${next} ; then
 				source ${a_script}
 			else
 				echo "${next} not found on SD card"
@@ -211,20 +142,13 @@ if itest.s x7D == "x${imx_cpu}"; then
 fi
 
 if itest.s "x" != "x${next}" ; then
-	if ${fs}load ${devtype} ${devnum}:${distro_bootpart} ${a_script} ${next} ; then
+	if ${fs}load ${devtype} ${devnum}:1 ${a_script} ${next} ; then
 		source ${a_script}
 	else
-		echo "${next} not found on ${devtype} ${devnum}:${distro_bootpart}"
+		echo "${next} not found on ${devtype} ${devnum}"
 	fi
 fi
-fi
 
-if itest.s "xno" == "x${reset}" ; then
-	while echo "---- U-Boot upgraded. Please reset the board" ; do
-		sleep 120
-	done
-fi
-echo "---- U-Boot upgraded. The board will now reset."
-sleep 1
-reset
+while echo "---- U-Boot upgraded. reset" ; do
+	sleep 120
 done

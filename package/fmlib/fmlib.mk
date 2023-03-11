@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-FMLIB_VERSION = 43fa98fdbf0c697167e415c3f060896d5b482791
-FMLIB_SITE = $(call github,nxp-qoriq,fmlib,$(FMLIB_VERSION))
+FMLIB_VERSION = fsl-sdk-v2.0
+FMLIB_SITE = git://git.freescale.com/ppc/sdk/fmlib.git
 FMLIB_LICENSE = BSD-3-Clause, GPL-2.0+
 FMLIB_LICENSE_FILES = COPYING
 FMLIB_DEPENDENCIES = linux

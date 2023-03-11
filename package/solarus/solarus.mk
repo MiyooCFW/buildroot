@@ -4,39 +4,20 @@
 #
 ################################################################################
 
-SOLARUS_VERSION = 1.6.5
-SOLARUS_SITE = \
-	https://gitlab.com/solarus-games/solarus/-/archive/v$(SOLARUS_VERSION)
-SOLARUS_SOURCE = solarus-v$(SOLARUS_VERSION).tar.bz2
+SOLARUS_VERSION = v1.5.3
+SOLARUS_SITE = $(call github,solarus-games,solarus,$(SOLARUS_VERSION))
 
 SOLARUS_LICENSE = GPL-3.0 (code), CC-BY-SA-4.0 (Solarus logos and icons), \
 	CC-BY-SA-3.0 (GUI icons)
-SOLARUS_LICENSE_FILES = license.txt
+SOLARUS_LICENSE_FILES = license.txt license_gpl.txt
 
 # Install libsolarus.so
 SOLARUS_INSTALL_STAGING = YES
 
-SOLARUS_DEPENDENCIES = glm libmodplug libogg libvorbis openal physfs \
-	sdl2 sdl2_image sdl2_ttf
+SOLARUS_DEPENDENCIES = libmodplug libogg libvorbis luajit openal physfs sdl2 \
+	sdl2_image sdl2_ttf
 
 # Disable launcher GUI (requires Qt5)
-SOLARUS_CONF_OPTS = \
-	-DSOLARUS_GUI=OFF \
-	-DSOLARUS_TESTS=OFF
-
-ifeq ($(BR2_PACKAGE_HAS_LIBGL),y)
-SOLARUS_DEPENDENCIES += libgl
-else
-SOLARUS_CONF_OPTS += -DSOLARUS_GL_ES=ON
-SOLARUS_DEPENDENCIES += libgles
-endif
-
-ifeq ($(BR2_PACKAGE_LUAJIT),y)
-SOLARUS_CONF_OPTS += -DSOLARUS_USE_LUAJIT=ON
-SOLARUS_DEPENDENCIES += luajit
-else
-SOLARUS_CONF_OPTS += -DSOLARUS_USE_LUAJIT=OFF
-SOLARUS_DEPENDENCIES += lua
-endif
+SOLARUS_CONF_OPTS = -DSOLARUS_GUI=OFF
 
 $(eval $(cmake-package))

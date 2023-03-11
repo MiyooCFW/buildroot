@@ -3,26 +3,24 @@
 # functions don't need to check for things already checked by running
 # "make package-dirclean package-patch".
 
-import os
 import re
 
-from checkpackagelib.base import _CheckFunction
-from checkpackagelib.lib import NewlineAtEof           # noqa: F401
-from checkpackagelib.tool import NotExecutable         # noqa: F401
+from base import _CheckFunction
+from lib import NewlineAtEof           # noqa: F401
 
 
 class ApplyOrder(_CheckFunction):
-    APPLY_ORDER = re.compile(r"\d{1,4}-[^/]*$")
+    APPLY_ORDER = re.compile("/\d{1,4}-[^/]*$")
 
     def before(self):
-        if not self.APPLY_ORDER.match(os.path.basename(self.filename)):
+        if not self.APPLY_ORDER.search(self.filename):
             return ["{}:0: use name <number>-<description>.patch "
                     "({}#_providing_patches)"
                     .format(self.filename, self.url_to_manual)]
 
 
 class NumberedSubject(_CheckFunction):
-    NUMBERED_PATCH = re.compile(r"Subject:\s*\[PATCH\s*\d+/\d+\]")
+    NUMBERED_PATCH = re.compile("Subject:\s*\[PATCH\s*\d+/\d+\]")
 
     def before(self):
         self.git_patch = False
@@ -45,7 +43,7 @@ class NumberedSubject(_CheckFunction):
 
 
 class Sob(_CheckFunction):
-    SOB_ENTRY = re.compile(r"^Signed-off-by: .*$")
+    SOB_ENTRY = re.compile("^Signed-off-by: .*$")
 
     def before(self):
         self.found = False

@@ -1,5 +1,4 @@
-# Upstream .sha256 from GitHub
-sha256  2569cd97fa2047df14203a7144be53a1b32928cb460421a302bbcce381b42bc3  smcroute-2.5.5.tar.gz
-
 # Locally generated
-sha256  ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6  COPYING
+sha256  cd6c5cc2edfa1348acb07ed026180ebfc8dd0f87153f5382cb27cb5557724c56  smcroute-2.3.1.tar.xz
+# From https://github.com/troglobit/smcroute/releases/download/2.3.1/smcroute-2.3.1.tar.xz.md5
+md5     d8080828b7730bffb86969afd2bf94cb  smcroute-2.3.1.tar.xz

@@ -9,12 +9,10 @@ menuconfig BR2_PACKAGE_UTIL_LINUX
 
 if BR2_PACKAGE_UTIL_LINUX
 
-config BR2_PACKAGE_UTIL_LINUX_LIBS
-	bool
-
 config BR2_PACKAGE_UTIL_LINUX_LIBBLKID
 	bool "libblkid"
 	depends on BR2_USE_MMU # fork()
+	select BR2_PACKAGE_UTIL_LINUX_LIBUUID
 	help
 	  Install libblkid.
 
@@ -55,14 +53,14 @@ config BR2_PACKAGE_UTIL_LINUX_BINARIES
 	help
 	  Install the basic set of util-linux binaries.
 
-	  blkdiscard, blkid, blockdev, chcpu, choom, col, colcrt, colrm,
+	  blkdiscard, blkid, blockdev, chcpu, col, colcrt, colrm,
 	  column, ctrlaltdel, dmesg, fdisk, fincore, findfs, findmnt,
 	  flock, fsfreeze, fstrim, getopt, hexdump, ipcmk, isosize,
 	  ldattach, look, lsblk, lscpu, lsipc, lslocks, lsns, mcookie,
 	  mkfs, mkswap, namei, prlimit, readprofile, renice, rev,
-	  rtcwake, script, scriptlive, scriptreplay, setarch, setsid,
-	  sfdisk, swaplabel, swapoff, swapon, uuidgen, uuidparse,
-	  whereis, wipefs
+	  rtcwake, script, scriptreplay, setarch, setsid, sfdisk,
+	  swaplabel, swapoff, swapon, uuidgen, uuidparse, whereis,
+	  wipefs
 
 	  The setarch utility also installs architecture-specific
 	  symlinks like linux32, linux64, uname26, i386 and x86_64.
@@ -87,14 +85,15 @@ config BR2_PACKAGE_UTIL_LINUX_CHFN_CHSH
 	bool "chfn/chsh"
 	depends on (BR2_ENABLE_LOCALE && BR2_USE_WCHAR) # linux-pam
 	depends on !BR2_STATIC_LIBS
+	depends on !BR2_TOOLCHAIN_USES_MUSL # linux-pam
 	depends on BR2_USE_MMU # linux-pam
 	select BR2_PACKAGE_LINUX_PAM
 	help
 	  Change login shell, real user name and information
 
-comment "chfn/chsh needs a toolchain w/ wchar, locale, dynamic library"
+comment "chfn/chsh needs a uClibc or glibc toolchain w/ wchar, locale, dynamic library"
 	depends on !(BR2_ENABLE_LOCALE && BR2_USE_WCHAR) \
-		|| BR2_STATIC_LIBS
+		|| BR2_STATIC_LIBS || BR2_TOOLCHAIN_USES_MUSL
 
 config BR2_PACKAGE_UTIL_LINUX_CHMEM
 	bool "chmem"
@@ -135,11 +134,6 @@ config BR2_PACKAGE_UTIL_LINUX_FSCK
 	select BR2_PACKAGE_UTIL_LINUX_LIBUUID
 	help
 	  Check and repair a linux filesystem
-
-config BR2_PACKAGE_UTIL_LINUX_HARDLINK
-	bool "hardlink"
-	help
-	  Consolidate duplicate files via hardlinks
 
 config BR2_PACKAGE_UTIL_LINUX_HWCLOCK
 	bool "hwclock"
@@ -219,7 +213,6 @@ config BR2_PACKAGE_UTIL_LINUX_MESG
 
 config BR2_PACKAGE_UTIL_LINUX_MINIX
 	bool "minix"
-	depends on BR2_USE_MMU # fork()
 	help
 	  Minix filesystem support
 
@@ -291,12 +284,8 @@ config BR2_PACKAGE_UTIL_LINUX_PIVOT_ROOT
 
 config BR2_PACKAGE_UTIL_LINUX_RAW
 	bool "raw"
-	depends on !BR2_TOOLCHAIN_HEADERS_AT_LEAST_5_14
 	help
 	  Build a linux raw character device
-
-comment "raw needs a toolchain w/ headers < 5.14"
-	depends on BR2_TOOLCHAIN_HEADERS_AT_LEAST_5_14
 
 config BR2_PACKAGE_UTIL_LINUX_RENAME
 	bool "rename"
@@ -330,12 +319,8 @@ comment "runuser needs a uClibc or glibc toolchain w/ wchar, locale, dynamic lib
 
 config BR2_PACKAGE_UTIL_LINUX_SCHEDUTILS
 	bool "scheduling utilities"
-	depends on BR2_TOOLCHAIN_HEADERS_AT_LEAST_3_14
 	help
-	  Scheduling utilities (chrt, ionice, taskset, uclampset)
-
-comment "scheduling utilities need a toolchain w/ headers >= 3.14"
-	depends on !BR2_TOOLCHAIN_HEADERS_AT_LEAST_3_14
+	  Scheduling utilities (chrt, ionice, taskset)
 
 config BR2_PACKAGE_UTIL_LINUX_SETPRIV
 	bool "setpriv"
@@ -416,18 +401,6 @@ config BR2_PACKAGE_UTIL_LINUX_WALL
 	depends on BR2_USE_MMU # fork()
 	help
 	  Send a message to everybody's terminal
-
-config BR2_PACKAGE_UTIL_LINUX_WIPEFS
-	bool "wipefs"
-	depends on BR2_USE_MMU # fork()
-	select BR2_PACKAGE_UTIL_LINUX_LIBBLKID
-	select BR2_PACKAGE_UTIL_LINUX_LIBSMARTCOLS
-	help
-	  wipefs can erase filesystem, raid or partition-table
-	  signatures (magic strings) from the specified device
-	  to make the signatures invisible for libblkid. wipefs
-	  does not erase the filesystem itself nor any other data
-	  from the device.
 
 config BR2_PACKAGE_UTIL_LINUX_WDCTL
 	bool "wdctl"

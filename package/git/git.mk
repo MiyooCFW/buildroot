@@ -4,21 +4,17 @@
 #
 ################################################################################
 
-GIT_VERSION = 2.31.5
+GIT_VERSION = 2.16.5
 GIT_SOURCE = git-$(GIT_VERSION).tar.xz
 GIT_SITE = $(BR2_KERNEL_MIRROR)/software/scm/git
 GIT_LICENSE = GPL-2.0, LGPL-2.1+
 GIT_LICENSE_FILES = COPYING LGPL-2.1
-GIT_CPE_ID_VENDOR = git-scm
-GIT_SELINUX_MODULES = apache git xdg
 GIT_DEPENDENCIES = zlib $(TARGET_NLS_DEPENDENCIES)
-# We're patching configure.ac
-GIT_AUTORECONF = YES
 
 ifeq ($(BR2_PACKAGE_OPENSSL),y)
-GIT_DEPENDENCIES += host-pkgconf openssl
+GIT_DEPENDENCIES += openssl
 GIT_CONF_OPTS += --with-openssl
-GIT_MAKE_OPTS += LIB_4_CRYPTO="`$(PKG_CONFIG_HOST_BINARY) --libs libssl libcrypto`"
+GIT_CONF_ENV_LIBS += $(if $(BR2_STATIC_LIBS),-lz)
 else
 GIT_CONF_OPTS += --without-openssl
 endif
@@ -26,15 +22,19 @@ endif
 ifeq ($(BR2_PACKAGE_PCRE2),y)
 GIT_DEPENDENCIES += pcre2
 GIT_CONF_OPTS += --with-libpcre2
+else ifeq ($(BR2_PACKAGE_PCRE),y)
+GIT_DEPENDENCIES += pcre
+GIT_CONF_OPTS += --with-libpcre1
+GIT_MAKE_OPTS += NO_LIBPCRE1_JIT=1
 else
-GIT_CONF_OPTS += --without-libpcre2
+GIT_CONF_OPTS += --without-libpcre
 endif
 
 ifeq ($(BR2_PACKAGE_LIBCURL),y)
 GIT_DEPENDENCIES += libcurl
 GIT_CONF_OPTS += --with-curl
 GIT_CONF_ENV += \
-	ac_cv_prog_CURL_CONFIG=$(STAGING_DIR)/usr/bin/$(LIBCURL_CONFIG_SCRIPTS)
+	ac_cv_prog_curl_config=$(STAGING_DIR)/usr/bin/$(LIBCURL_CONFIG_SCRIPTS)
 else
 GIT_CONF_OPTS += --without-curl
 endif
@@ -49,8 +49,7 @@ endif
 ifeq ($(BR2_PACKAGE_LIBICONV),y)
 GIT_DEPENDENCIES += libiconv
 GIT_CONF_ENV_LIBS += -liconv
-GIT_CONF_OPTS += --with-iconv=$(STAGING_DIR)/usr
-GIT_CONF_ENV += ac_cv_iconv_omits_bom=no
+GIT_CONF_OPTS += --with-iconv=/usr/lib
 else
 GIT_CONF_OPTS += --without-iconv
 endif
@@ -65,14 +64,6 @@ endif
 ifeq ($(BR2_SYSTEM_ENABLE_NLS),)
 GIT_MAKE_OPTS += NO_GETTEXT=1
 endif
-
-GIT_CFLAGS = $(TARGET_CFLAGS)
-
-ifneq ($(BR2_TOOLCHAIN_HAS_GCC_BUG_85180)$(BR2_TOOLCHAIN_HAS_GCC_BUG_93847),)
-GIT_CFLAGS += -O0
-endif
-
-GIT_CONF_OPTS += CFLAGS="$(GIT_CFLAGS)"
 
 GIT_INSTALL_TARGET_OPTS = $(GIT_MAKE_OPTS) DESTDIR=$(TARGET_DIR) install
 

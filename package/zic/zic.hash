@@ -1,4 +1,2 @@
-# From https://mm.icann.org/pipermail/tz-announce/2021-October/000069.html
-sha512  87b0335129ea41c5f42f687f548712e5da892baa8494cecf5d34851beceecf6ae52f22104696ed187713cf9e502570eb2041e277dfd3c043c11d0253bfde685a  tzcode2021e.tar.gz
-# Locally computed:
-sha256  0613408568889f5739e5ae252b722a2659c02002839ad970a63dc5e9174b27cf  LICENSE
+# From http://mm.icann.org/pipermail/tz-announce/2018-January/000048.html
+sha512 21988e876479e38661d41ea4c7b5218ba14b979739d7ba8d49a2d343bb9f37c654056ab21c046a6652715f012e4ca33c4aa109b1ec3ac5d0244dd3a7ea9ed6d2	tzcode2018c.tar.gz

@@ -1,3 +1,2 @@
-# From https://go.dev/dl
-sha256  fbe7f09b96aca3db6faeaf180da8bb632868ec049731e355ff61695197c0e3ea  go1.18.9.src.tar.gz
-sha256  2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067  LICENSE
+# From https://golang.org/dl/
+sha256	582814fa45e8ecb0859a208e517b48aa0ad951e3b36c7fff203d834e0ef27722	go1.9.7.src.tar.gz

@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 import infra.basetest
 
@@ -16,7 +17,7 @@ class TestJffs2(infra.basetest.BRTest):
         """
         BR2_TARGET_ROOTFS_JFFS2=y
         BR2_TARGET_ROOTFS_JFFS2_CUSTOM=y
-        BR2_TARGET_ROOTFS_JFFS2_CUSTOM_EBSIZE=0x40000
+        BR2_TARGET_ROOTFS_JFFS2_CUSTOM_EBSIZE=0x80000
         BR2_TARGET_ROOTFS_JFFS2_NOCLEANMARKER=y
         BR2_TARGET_ROOTFS_JFFS2_PAD=y
         BR2_TARGET_ROOTFS_JFFS2_PADSIZE=0x4000000
@@ -29,8 +30,9 @@ class TestJffs2(infra.basetest.BRTest):
 
     def test_run(self):
         img = os.path.join(self.builddir, "images", "rootfs.jffs2")
-        cmd = ["host/sbin/jffs2dump", "-c", img]
-        out = infra.run_cmd_on_host(self.builddir, cmd)
+        out = subprocess.check_output(["host/sbin/jffs2dump", "-c", img],
+                                      cwd=self.builddir,
+                                      env={"LANG": "C"})
         out = out.splitlines()
         self.assertTrue(jffs2dump_find_file(out, "busybox"))
 
@@ -41,4 +43,5 @@ class TestJffs2(infra.basetest.BRTest):
                            options=["-drive", "file={},if=pflash".format(img)])
         self.emulator.login()
         cmd = "mount | grep '/dev/root on / type jffs2'"
-        self.assertRunOk(cmd)
+        _, exit_code = self.emulator.run(cmd)
+        self.assertEqual(exit_code, 0)

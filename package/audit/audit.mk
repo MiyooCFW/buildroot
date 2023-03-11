@@ -4,12 +4,10 @@
 #
 ################################################################################
 
-AUDIT_VERSION = 3.0.7
+AUDIT_VERSION = 2.8.4
 AUDIT_SITE = http://people.redhat.com/sgrubb/audit
 AUDIT_LICENSE = GPL-2.0+ (programs), LGPL-2.1+ (libraries)
 AUDIT_LICENSE_FILES = COPYING COPYING.LIB
-AUDIT_CPE_ID_VENDOR = linux_audit_project
-AUDIT_CPE_ID_PRODUCT = linux_audit
 
 AUDIT_INSTALL_STAGING = YES
 
@@ -44,6 +42,10 @@ define AUDIT_INSTALL_INIT_SYSV
 endef
 
 define AUDIT_INSTALL_INIT_SYSTEMD
+	mkdir -p $(TARGET_DIR)/etc/systemd/system/multi-user.target.wants
+	ln -fs ../../../../usr/lib/systemd/system/auditd.service \
+		$(TARGET_DIR)/etc/systemd/system/multi-user.target.wants/auditd.service
+
 	$(INSTALL) -D -m 644 package/audit/audit_tmpfiles.conf \
 		$(TARGET_DIR)/usr/lib/tmpfiles.d/audit.conf
 endef
@@ -53,11 +55,6 @@ define AUDIT_INSTALL_CLEANUP
 	$(RM) $(TARGET_DIR)/etc/sysconfig/auditd
 endef
 AUDIT_POST_INSTALL_TARGET_HOOKS += AUDIT_INSTALL_CLEANUP
-
-define AUDIT_LINUX_CONFIG_FIXUPS
-	$(call KCONFIG_ENABLE_OPT,CONFIG_NET)
-	$(call KCONFIG_ENABLE_OPT,CONFIG_AUDIT)
-endef
 
 HOST_AUDIT_CONF_OPTS = \
 	--without-python \

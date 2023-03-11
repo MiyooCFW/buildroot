@@ -6,21 +6,12 @@ config BR2_ARM_CPU_HAS_NEON
 config BR2_ARM_CPU_MAYBE_HAS_NEON
 	bool
 
-# For some cores, the FPU is optional
-config BR2_ARM_CPU_MAYBE_HAS_FPU
-	bool
-
-config BR2_ARM_CPU_HAS_FPU
-	bool
-
 # for some cores, VFPv2 is optional
 config BR2_ARM_CPU_MAYBE_HAS_VFPV2
 	bool
-	select BR2_ARM_CPU_MAYBE_HAS_FPU
 
 config BR2_ARM_CPU_HAS_VFPV2
 	bool
-	select BR2_ARM_CPU_HAS_FPU
 
 # for some cores, VFPv3 is optional
 config BR2_ARM_CPU_MAYBE_HAS_VFPV3
@@ -39,24 +30,6 @@ config BR2_ARM_CPU_MAYBE_HAS_VFPV4
 config BR2_ARM_CPU_HAS_VFPV4
 	bool
 	select BR2_ARM_CPU_HAS_VFPV3
-
-# FPv4 is always optional
-config BR2_ARM_CPU_MAYBE_HAS_FPV4
-	bool
-	select BR2_ARM_CPU_MAYBE_HAS_FPU
-
-config BR2_ARM_CPU_HAS_FPV4
-	bool
-	select BR2_ARM_CPU_HAS_FPU
-
-# FPv5 is always optional
-config BR2_ARM_CPU_MAYBE_HAS_FPV5
-	bool
-	select BR2_ARM_CPU_MAYBE_HAS_FPV4
-
-config BR2_ARM_CPU_HAS_FPV5
-	bool
-	select BR2_ARM_CPU_HAS_FPV4
 
 config BR2_ARM_CPU_HAS_FP_ARMV8
 	bool
@@ -259,8 +232,6 @@ config BR2_pj4
 	select BR2_ARM_CPU_ARMV7A
 	select BR2_ARCH_HAS_MMU_OPTIONAL
 
-# Cortex-M cores are only supported for little endian configurations
-if BR2_arm
 comment "armv7m cores"
 config BR2_cortex_m3
 	bool "cortex-M3"
@@ -269,15 +240,7 @@ config BR2_cortex_m3
 config BR2_cortex_m4
 	bool "cortex-M4"
 	select BR2_ARM_CPU_HAS_THUMB2
-	select BR2_ARM_CPU_MAYBE_HAS_FPV4
 	select BR2_ARM_CPU_ARMV7M
-config BR2_cortex_m7
-	bool "cortex-M7"
-	select BR2_ARM_CPU_HAS_THUMB2
-	select BR2_ARM_CPU_MAYBE_HAS_FPV5
-	select BR2_ARM_CPU_ARMV7M
-	select BR2_ARCH_NEEDS_GCC_AT_LEAST_5
-endif # BR2_arm
 endif # !BR2_ARCH_IS_64
 
 comment "armv8 cores"
@@ -370,13 +333,6 @@ config BR2_cortex_a73_a53
 	select BR2_ARM_CPU_ARMV8A
 	select BR2_ARCH_HAS_MMU_OPTIONAL
 	select BR2_ARCH_NEEDS_GCC_AT_LEAST_7
-config BR2_emag
-	bool "emag"
-	depends on BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_FP_ARMV8
-	select BR2_ARM_CPU_ARMV8A
-	select BR2_ARCH_HAS_MMU_OPTIONAL
-	select BR2_ARCH_NEEDS_GCC_AT_LEAST_9
 config BR2_exynos_m1
 	bool "exynos-m1"
 	select BR2_ARM_CPU_HAS_ARM if !BR2_ARCH_IS_64
@@ -388,60 +344,54 @@ config BR2_exynos_m1
 	select BR2_ARCH_NEEDS_GCC_AT_LEAST_5
 config BR2_falkor
 	bool "falkor"
-	depends on BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_ARM if !BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_NEON if !BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_THUMB2 if !BR2_ARCH_IS_64
 	select BR2_ARM_CPU_HAS_FP_ARMV8
 	select BR2_ARM_CPU_ARMV8A
 	select BR2_ARCH_HAS_MMU_OPTIONAL
 	select BR2_ARCH_NEEDS_GCC_AT_LEAST_7
-config BR2_phecda
-	bool "phecda"
-	depends on BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_FP_ARMV8
-	select BR2_ARM_CPU_ARMV8A
-	select BR2_ARCH_HAS_MMU_OPTIONAL
-	select BR2_ARCH_NEEDS_GCC_AT_LEAST_9
 config BR2_qdf24xx
 	bool "qdf24xx"
-	depends on BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_ARM if !BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_NEON if !BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_THUMB2 if !BR2_ARCH_IS_64
 	select BR2_ARM_CPU_HAS_FP_ARMV8
 	select BR2_ARM_CPU_ARMV8A
 	select BR2_ARCH_HAS_MMU_OPTIONAL
 	select BR2_ARCH_NEEDS_GCC_AT_LEAST_6
+if BR2_ARCH_IS_64
 config BR2_thunderx
-	bool "thunderx (aka octeontx)"
-	depends on BR2_ARCH_IS_64
+	bool "thunderx"
 	select BR2_ARM_CPU_HAS_FP_ARMV8
 	select BR2_ARM_CPU_ARMV8A
 	select BR2_ARCH_HAS_MMU_OPTIONAL
 	select BR2_ARCH_NEEDS_GCC_AT_LEAST_5
 config BR2_thunderxt81
-	bool "thunderxt81 (aka octeontx81)"
-	depends on BR2_ARCH_IS_64
+	bool "thunderxt81"
 	select BR2_ARM_CPU_HAS_FP_ARMV8
 	select BR2_ARM_CPU_ARMV8A
 	select BR2_ARCH_HAS_MMU_OPTIONAL
 	select BR2_ARCH_NEEDS_GCC_AT_LEAST_7
 config BR2_thunderxt83
-	bool "thunderxt83 (aka octeontx83)"
-	depends on BR2_ARCH_IS_64
+	bool "thunderxt83"
 	select BR2_ARM_CPU_HAS_FP_ARMV8
 	select BR2_ARM_CPU_ARMV8A
 	select BR2_ARCH_HAS_MMU_OPTIONAL
 	select BR2_ARCH_NEEDS_GCC_AT_LEAST_7
 config BR2_thunderxt88
 	bool "thunderxt88"
-	depends on BR2_ARCH_IS_64
 	select BR2_ARM_CPU_HAS_FP_ARMV8
 	select BR2_ARM_CPU_ARMV8A
 	select BR2_ARCH_HAS_MMU_OPTIONAL
 	select BR2_ARCH_NEEDS_GCC_AT_LEAST_7
 config BR2_thunderxt88p1
 	bool "thunderxt88p1"
-	depends on BR2_ARCH_IS_64
 	select BR2_ARM_CPU_HAS_FP_ARMV8
 	select BR2_ARM_CPU_ARMV8A
 	select BR2_ARCH_HAS_MMU_OPTIONAL
 	select BR2_ARCH_NEEDS_GCC_AT_LEAST_7
+endif # BR2_ARCH_IS_64
 config BR2_xgene1
 	bool "xgene1"
 	select BR2_ARM_CPU_HAS_ARM if !BR2_ARCH_IS_64
@@ -452,94 +402,36 @@ config BR2_xgene1
 	select BR2_ARCH_HAS_MMU_OPTIONAL
 	select BR2_ARCH_NEEDS_GCC_AT_LEAST_5
 
+if BR2_ARCH_IS_64
 comment "armv8.1a cores"
 config BR2_thunderx2t99
 	bool "thunderx2t99"
-	depends on BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_ARM if !BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_NEON if !BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_THUMB2 if !BR2_ARCH_IS_64
 	select BR2_ARM_CPU_HAS_FP_ARMV8
 	select BR2_ARM_CPU_ARMV8A
 	select BR2_ARCH_HAS_MMU_OPTIONAL
 	select BR2_ARCH_NEEDS_GCC_AT_LEAST_7
 config BR2_thunderx2t99p1
 	bool "thunderx2t99p1"
-	depends on BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_ARM if !BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_NEON if !BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_THUMB2 if !BR2_ARCH_IS_64
 	select BR2_ARM_CPU_HAS_FP_ARMV8
 	select BR2_ARM_CPU_ARMV8A
 	select BR2_ARCH_HAS_MMU_OPTIONAL
 	select BR2_ARCH_NEEDS_GCC_AT_LEAST_7
 config BR2_vulcan
 	bool "vulcan"
-	depends on BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_ARM if !BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_NEON if !BR2_ARCH_IS_64
+	select BR2_ARM_CPU_HAS_THUMB2 if !BR2_ARCH_IS_64
 	select BR2_ARM_CPU_HAS_FP_ARMV8
 	select BR2_ARM_CPU_ARMV8A
 	select BR2_ARCH_HAS_MMU_OPTIONAL
 	select BR2_ARCH_NEEDS_GCC_AT_LEAST_7
-
-comment "armv8.2a cores"
-config BR2_cortex_a55
-	bool "cortex-A55"
-	depends on BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_FP_ARMV8
-	select BR2_ARM_CPU_ARMV8A
-	select BR2_ARCH_HAS_MMU_OPTIONAL
-	select BR2_ARCH_NEEDS_GCC_AT_LEAST_8
-config BR2_cortex_a75
-	bool "cortex-A75"
-	depends on BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_FP_ARMV8
-	select BR2_ARM_CPU_ARMV8A
-	select BR2_ARCH_HAS_MMU_OPTIONAL
-	select BR2_ARCH_NEEDS_GCC_AT_LEAST_8
-config BR2_cortex_a75_a55
-	bool "cortex-A75/A55 big.LITTLE"
-	depends on BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_FP_ARMV8
-	select BR2_ARM_CPU_ARMV8A
-	select BR2_ARCH_HAS_MMU_OPTIONAL
-	select BR2_ARCH_NEEDS_GCC_AT_LEAST_8
-config BR2_cortex_a76
-	bool "cortex-A76"
-	select BR2_ARM_CPU_HAS_ARM if !BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_NEON if !BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_THUMB2 if !BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_FP_ARMV8
-	select BR2_ARM_CPU_ARMV8A
-	select BR2_ARCH_HAS_MMU_OPTIONAL
-	select BR2_ARCH_NEEDS_GCC_AT_LEAST_9
-config BR2_cortex_a76_a55
-	bool "cortex-A76/A55 big.LITTLE"
-	select BR2_ARM_CPU_HAS_ARM if !BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_NEON if !BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_THUMB2 if !BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_FP_ARMV8
-	select BR2_ARM_CPU_ARMV8A
-	select BR2_ARCH_HAS_MMU_OPTIONAL
-	select BR2_ARCH_NEEDS_GCC_AT_LEAST_9
-config BR2_neoverse_n1
-	bool "neoverse-N1 (aka ares)"
-	select BR2_ARM_CPU_HAS_ARM if !BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_NEON if !BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_THUMB2 if !BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_FP_ARMV8
-	select BR2_ARM_CPU_ARMV8A
-	select BR2_ARCH_HAS_MMU_OPTIONAL
-	select BR2_ARCH_NEEDS_GCC_AT_LEAST_9
-config BR2_tsv110
-	bool "tsv110"
-	depends on BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_FP_ARMV8
-	select BR2_ARM_CPU_ARMV8A
-	select BR2_ARCH_HAS_MMU_OPTIONAL
-	select BR2_ARCH_NEEDS_GCC_AT_LEAST_9
-
-comment "armv8.4a cores"
-config BR2_saphira
-	bool "saphira"
-	depends on BR2_ARCH_IS_64
-	select BR2_ARM_CPU_HAS_FP_ARMV8
-	select BR2_ARM_CPU_ARMV8A
-	select BR2_ARCH_HAS_MMU_OPTIONAL
-	select BR2_ARCH_NEEDS_GCC_AT_LEAST_8
+endif # BR2_ARCH_IS_64
 endchoice
 
 config BR2_ARM_ENABLE_NEON
@@ -553,9 +445,7 @@ config BR2_ARM_ENABLE_NEON
 
 config BR2_ARM_ENABLE_VFP
 	bool "Enable VFP extension support"
-	depends on BR2_ARM_CPU_MAYBE_HAS_FPU
-	select BR2_ARM_CPU_HAS_FPV5 if BR2_ARM_CPU_MAYBE_HAS_FPV5
-	select BR2_ARM_CPU_HAS_FPV4 if BR2_ARM_CPU_MAYBE_HAS_FPV4
+	depends on BR2_ARM_CPU_MAYBE_HAS_VFPV2
 	select BR2_ARM_CPU_HAS_VFPV4 if BR2_ARM_CPU_MAYBE_HAS_VFPV4
 	select BR2_ARM_CPU_HAS_VFPV3 if BR2_ARM_CPU_MAYBE_HAS_VFPV3
 	select BR2_ARM_CPU_HAS_VFPV2 if BR2_ARM_CPU_MAYBE_HAS_VFPV2
@@ -566,9 +456,9 @@ config BR2_ARM_ENABLE_VFP
 
 choice
 	prompt "Target ABI"
-	default BR2_ARM_EABIHF if BR2_ARM_CPU_HAS_FPU
-	default BR2_ARM_EABI
 	depends on BR2_arm || BR2_armeb
+	default BR2_ARM_EABIHF if BR2_ARM_CPU_HAS_VFPV2
+	default BR2_ARM_EABI
 	help
 	  Application Binary Interface to use. The Application Binary
 	  Interface describes the calling conventions (how arguments
@@ -601,7 +491,7 @@ config BR2_ARM_EABI
 
 config BR2_ARM_EABIHF
 	bool "EABIhf"
-	depends on BR2_ARM_CPU_HAS_FPU
+	depends on BR2_ARM_CPU_HAS_VFPV2
 	help
 	  The EABIhf is an extension of EABI which supports the 'hard'
 	  floating point model. This model uses the floating point
@@ -622,12 +512,10 @@ endchoice
 choice
 	prompt "Floating point strategy"
 	default BR2_ARM_FPU_FP_ARMV8 if BR2_ARM_CPU_HAS_FP_ARMV8
-	default BR2_ARM_FPU_FPV5D16 if BR2_ARM_CPU_HAS_FPV5
-	default BR2_ARM_FPU_FPV4D16 if BR2_ARM_CPU_HAS_FPV4
 	default BR2_ARM_FPU_VFPV4D16 if BR2_ARM_CPU_HAS_VFPV4
 	default BR2_ARM_FPU_VFPV3D16 if BR2_ARM_CPU_HAS_VFPV3
 	default BR2_ARM_FPU_VFPV2 if BR2_ARM_CPU_HAS_VFPV2
-	default BR2_ARM_SOFT_FLOAT if !BR2_ARM_CPU_HAS_FPU
+	default BR2_ARM_SOFT_FLOAT if !BR2_ARM_CPU_HAS_VFPV2
 
 config BR2_ARM_SOFT_FLOAT
 	bool "Soft float"
@@ -734,38 +622,6 @@ config BR2_ARM_FPU_NEON_VFPV4
 	  example on Cortex-A5 and Cortex-A7, support for VFPv4 and
 	  NEON is optional.
 
-config BR2_ARM_FPU_FPV4D16
-	bool "FPv4-D16"
-	depends on BR2_ARM_CPU_HAS_FPV4
-	help
-	  This option allows to use the FPv4-SP (single precision)
-	  floating point unit, as available in some ARMv7m processors
-	  (Cortex-M4).
-
-config BR2_ARM_FPU_FPV5D16
-	bool "FPv5-D16"
-	depends on BR2_ARM_CPU_HAS_FPV5
-	select BR2_ARCH_NEEDS_GCC_AT_LEAST_5
-	help
-	  This option allows to use the FPv5-SP (single precision)
-	  floating point unit, as available in some ARMv7m processors
-	  (Cortex-M7).
-
-	  Note that if you want binary code that works on the earlier
-	  Cortex-M4, you should instead select FPv4-D16.
-
-config BR2_ARM_FPU_FPV5DPD16
-	bool "FPv5-DP-D16"
-	depends on BR2_ARM_CPU_HAS_FPV5
-	select BR2_ARCH_NEEDS_GCC_AT_LEAST_5
-	help
-	  This option allows to use the FPv5-DP (double precision)
-	  floating point unit, as available in some ARMv7m processors
-	  (Cortex-M7).
-
-	  Note that if you want binary code that works on the earlier
-	  Cortex-M4, you should instead select FPv4-D16.
-
 config BR2_ARM_FPU_FP_ARMV8
 	bool "FP-ARMv8"
 	depends on BR2_ARM_CPU_HAS_FP_ARMV8
@@ -825,10 +681,6 @@ config BR2_ARCH
 	default "aarch64"	if BR2_aarch64
 	default "aarch64_be"	if BR2_aarch64_be
 
-config BR2_NORMALIZED_ARCH
-	default "arm"		if BR2_arm || BR2_armeb
-	default "arm64"		if BR2_aarch64 || BR2_aarch64_be
-
 config BR2_ENDIAN
 	default "LITTLE" if (BR2_arm || BR2_aarch64)
 	default "BIG"	 if (BR2_armeb || BR2_aarch64_be)
@@ -864,7 +716,6 @@ config BR2_GCC_TARGET_CPU
 	# armv7m
 	default "cortex-m3"	if BR2_cortex_m3
 	default "cortex-m4"	if BR2_cortex_m4
-	default "cortex-m7"	if BR2_cortex_m7
 	# armv8a
 	default "cortex-a32"	if BR2_cortex_a32
 	default "cortex-a35"	if BR2_cortex_a35
@@ -876,17 +727,12 @@ config BR2_GCC_TARGET_CPU
 	default "cortex-a73"	if BR2_cortex_a73
 	default "cortex-a73.cortex-a35"	if BR2_cortex_a73_a35
 	default "cortex-a73.cortex-a53"	if BR2_cortex_a73_a53
-	default "emag"		if BR2_emag
 	default "exynos-m1"	if BR2_exynos_m1
 	default "falkor"	if BR2_falkor
-	default "phecda"	if BR2_phecda
 	default "qdf24xx"	if BR2_qdf24xx
-	default "thunderx"	if BR2_thunderx && !BR2_TOOLCHAIN_GCC_AT_LEAST_9
-	default "octeontx"	if BR2_thunderx && BR2_TOOLCHAIN_GCC_AT_LEAST_9
-	default "thunderxt81"	if BR2_thunderxt81 && !BR2_TOOLCHAIN_GCC_AT_LEAST_9
-	default "octeontx81"	if BR2_thunderxt81 && BR2_TOOLCHAIN_GCC_AT_LEAST_9
-	default "thunderxt83"	if BR2_thunderxt83 && !BR2_TOOLCHAIN_GCC_AT_LEAST_9
-	default "octeontx83"	if BR2_thunderxt83 && BR2_TOOLCHAIN_GCC_AT_LEAST_9
+	default "thunderx"	if BR2_thunderx
+	default "thunderxt81"	if BR2_thunderxt81
+	default "thunderxt83"	if BR2_thunderxt83
 	default "thunderxt88"	if BR2_thunderxt88
 	default "thunderxt88p1"	if BR2_thunderxt88p1
 	default "xgene1"	if BR2_xgene1
@@ -894,22 +740,13 @@ config BR2_GCC_TARGET_CPU
 	default "thunderx2t99"	if BR2_thunderx2t99
 	default "thunderx2t99p1"	if BR2_thunderx2t99p1
 	default "vulcan"	if BR2_vulcan
-	# armv8.2a
-	default "cortex-a55"	if BR2_cortex_a55
-	default "cortex-a75"	if BR2_cortex_a75
-	default "cortex-a75.cortex-a55"	if BR2_cortex_a75_a55
-	default "cortex-a76"	if BR2_cortex_a76
-	default "cortex-a76.cortex-a55"	if BR2_cortex_a76_a55
-	default "neoverse-n1"	if BR2_neoverse_n1
-	default "tsv110"	if BR2_tsv110
-	# armv8.4a
-	default "saphira"	if BR2_saphira
 
 config BR2_GCC_TARGET_ABI
 	default "aapcs-linux"	if BR2_arm || BR2_armeb
 	default "lp64"		if BR2_aarch64 || BR2_aarch64_be
 
 config BR2_GCC_TARGET_FPU
+	depends on BR2_arm || BR2_armeb
 	default "vfp"		if BR2_ARM_FPU_VFPV2
 	default "vfpv3"		if BR2_ARM_FPU_VFPV3
 	default "vfpv3-d16"	if BR2_ARM_FPU_VFPV3D16
@@ -917,12 +754,8 @@ config BR2_GCC_TARGET_FPU
 	default "vfpv4-d16"	if BR2_ARM_FPU_VFPV4D16
 	default "neon"		if BR2_ARM_FPU_NEON
 	default "neon-vfpv4"	if BR2_ARM_FPU_NEON_VFPV4
-	default "fpv4-sp-d16"   if BR2_ARM_FPU_FPV4D16
-	default "fpv5-sp-d16"	if BR2_ARM_FPU_FPV5D16
-	default "fpv5-d16"	if BR2_ARM_FPU_FPV5DPD16
 	default "fp-armv8"	if BR2_ARM_FPU_FP_ARMV8
 	default "neon-fp-armv8"	if BR2_ARM_FPU_NEON_FP_ARMV8
-	depends on BR2_arm || BR2_armeb
 
 config BR2_GCC_TARGET_FLOAT_ABI
 	default "soft"		if BR2_ARM_SOFT_FLOAT
@@ -936,6 +769,3 @@ config BR2_GCC_TARGET_MODE
 config BR2_READELF_ARCH_NAME
 	default "ARM"		if BR2_arm || BR2_armeb
 	default "AArch64"	if BR2_aarch64 || BR2_aarch64_be
-
-# vim: ft=kconfig
-# -*- mode:kconfig; -*-

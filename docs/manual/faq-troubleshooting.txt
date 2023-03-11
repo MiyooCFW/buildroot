@@ -45,7 +45,7 @@ distribution_ and you should opt for something like:
 
 * http://www.openembedded.org[openembedded]
 * https://www.yoctoproject.org[yocto]
-* https://www.debian.org/ports/[Debian]
+* http://www.emdebian.org[emdebian]
 * https://fedoraproject.org/wiki/Architectures[Fedora]
 * http://en.opensuse.org/Portal:ARM[openSUSE ARM]
 * http://archlinuxarm.org[Arch Linux ARM]
@@ -239,6 +239,3 @@ help reduce the build time:
 
  * Buy new hardware. SSDs and lots of RAM are key to speeding up the
    builds.
-
- * Experiment with top-level parallel build, see
-   xref:top-level-parallel-build[].

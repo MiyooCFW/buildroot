@@ -38,9 +38,11 @@ config BR2_PACKAGE_BUSYBOX_SHOW_OTHERS
 
 config BR2_PACKAGE_BUSYBOX_SELINUX
 	bool "Enable SELinux support"
-	default y
-	depends on BR2_PACKAGE_LIBSELINUX
-	select BR2_PACKAGE_BUSYBOX_INDIVIDUAL_BINARIES
+	depends on BR2_TOOLCHAIN_HAS_THREADS
+	depends on !BR2_STATIC_LIBS
+	depends on BR2_TOOLCHAIN_USES_GLIBC
+	depends on !BR2_arc
+	select BR2_PACKAGE_LIBSELINUX
 	help
 	  Enable SELinux support in BusyBox. Please note that
 	  depending on your BusyBox configuration and the SELinux
@@ -57,6 +59,7 @@ config BR2_PACKAGE_BUSYBOX_SELINUX
 config BR2_PACKAGE_BUSYBOX_INDIVIDUAL_BINARIES
 	bool "Individual binaries"
 	depends on !BR2_STATIC_LIBS
+	depends on !BR2_bfin # libbusybox.so link issue
 	help
 	  By default (i.e with this option disabled), Busybox is
 	  installed as a single binary in /bin/busybox and all applets
@@ -67,6 +70,7 @@ config BR2_PACKAGE_BUSYBOX_INDIVIDUAL_BINARIES
 
 comment "Busybox individual binaries need a toolchain w/ dynamic library"
 	depends on BR2_STATIC_LIBS
+	depends on !BR2_bfin
 
 config BR2_PACKAGE_BUSYBOX_WATCHDOG
 	bool "Install the watchdog daemon startup script"

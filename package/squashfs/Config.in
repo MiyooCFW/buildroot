@@ -12,7 +12,7 @@ config BR2_PACKAGE_SQUASHFS
 	help
 	  Tools to generate SquashFS filesystems.
 
-	  https://github.com/plougher/squashfs-tools
+	  http://squashfs.sourceforge.net/
 
 if BR2_PACKAGE_SQUASHFS
 
@@ -46,12 +46,6 @@ config BR2_PACKAGE_SQUASHFS_XZ
 	select BR2_PACKAGE_XZ
 	help
 	  Support XZ compression algorithm
-
-config BR2_PACKAGE_SQUASHFS_ZSTD
-	bool "zstd support"
-	select BR2_PACKAGE_ZSTD
-	help
-	  Support ZSTD compression algorithm
 
 endif
 

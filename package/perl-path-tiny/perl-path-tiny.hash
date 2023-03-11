@@ -1,6 +1,3 @@
 # retrieved by scancpan from http://cpan.metacpan.org/
-md5  f746d8da5d049a5523b1880666bb0992  Path-Tiny-0.122.tar.gz
-sha256  4bc6f76d0548ccd8b38cb66291a885bf0de453d0167562c7b82e8861afdcfb7c  Path-Tiny-0.122.tar.gz
-
-# computed by scancpan
-sha256  c1a19c0d83f668a784640c0b41e024f37b182ad38011b170f9200123e57f6070  LICENSE
+md5    17354181d9794df01be555b25114dd24 Path-Tiny-0.104.tar.gz
+sha256 c69f1dcfeb4aa004086deb9bc14c7d79f45798b947f1efbd634a3442e267aaef Path-Tiny-0.104.tar.gz

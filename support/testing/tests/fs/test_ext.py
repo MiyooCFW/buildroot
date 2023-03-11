@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 import infra.basetest
 
@@ -14,7 +15,10 @@ CHECK_FS_TYPE_CMD = "mount | grep '/dev/root on / type {}'"
 
 def dumpe2fs_run(builddir, image):
     cmd = ["host/sbin/dumpe2fs", os.path.join("images", image)]
-    ret = infra.run_cmd_on_host(builddir, cmd)
+    ret = subprocess.check_output(cmd,
+                                  stderr=open(os.devnull, "w"),
+                                  cwd=builddir,
+                                  env={"LANG": "C"})
     return ret.strip().splitlines()
 
 
@@ -31,7 +35,7 @@ def boot_img_and_check_fs_type(emulator, builddir, fs_type):
                   kernel="builtin",
                   kernel_cmdline=["root=/dev/mmcblk0",
                                   "rootfstype={}".format(fs_type)],
-                  options=["-drive", "file={},if=sd,format=raw".format(img)])
+                  options=["-drive", "file={},if=sd".format(img)])
     emulator.login()
     _, exit_code = emulator.run(CHECK_FS_TYPE_CMD.format(fs_type))
     return exit_code
@@ -43,7 +47,6 @@ class TestExt2(infra.basetest.BRTest):
         BR2_TARGET_ROOTFS_EXT2=y
         BR2_TARGET_ROOTFS_EXT2_2r0=y
         BR2_TARGET_ROOTFS_EXT2_LABEL="foobaz"
-        BR2_TARGET_ROOTFS_EXT2_SIZE="16384"
         # BR2_TARGET_ROOTFS_TAR is not set
         """
 
@@ -63,7 +66,6 @@ class TestExt2r1(infra.basetest.BRTest):
         BR2_TARGET_ROOTFS_EXT2=y
         BR2_TARGET_ROOTFS_EXT2_2r1=y
         BR2_TARGET_ROOTFS_EXT2_LABEL="foobar"
-        BR2_TARGET_ROOTFS_EXT2_SIZE="16384"
         # BR2_TARGET_ROOTFS_TAR is not set
         """
 
@@ -83,7 +85,6 @@ class TestExt3(infra.basetest.BRTest):
         """
         BR2_TARGET_ROOTFS_EXT2=y
         BR2_TARGET_ROOTFS_EXT2_3=y
-        BR2_TARGET_ROOTFS_EXT2_SIZE="16384"
         # BR2_TARGET_ROOTFS_TAR is not set
         """
 
@@ -113,8 +114,8 @@ class TestExt4(infra.basetest.BRTest):
         out = dumpe2fs_run(self.builddir, "rootfs.ext4")
         self.assertEqual(dumpe2fs_getprop(out, REVISION_PROP), "1 (dynamic)")
         self.assertEqual(dumpe2fs_getprop(out, BLOCKCNT_PROP), "16384")
-        # Yes there are 8 fewer inodes than requested
-        self.assertEqual(dumpe2fs_getprop(out, INODECNT_PROP), "2992")
+        # Yes there are 8 more inodes than requested
+        self.assertEqual(dumpe2fs_getprop(out, INODECNT_PROP), "3008")
         self.assertEqual(dumpe2fs_getprop(out, RESBLKCNT_PROP), "1638")
         self.assertIn("has_journal", dumpe2fs_getprop(out, FEATURES_PROP))
         self.assertIn("extent", dumpe2fs_getprop(out, FEATURES_PROP))

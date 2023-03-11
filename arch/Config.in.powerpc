@@ -11,8 +11,6 @@ choice
 	  Specific CPU variant to use
 config BR2_generic_powerpc
 	bool "generic"
-	# No C library supports this variant on ppc64le
-	depends on !BR2_powerpc64le
 config BR2_powerpc_401
 	bool "401"
 	depends on !BR2_ARCH_IS_64
@@ -46,6 +44,9 @@ config BR2_powerpc_476fp
 config BR2_powerpc_505
 	bool "505"
 	depends on !BR2_ARCH_IS_64
+config BR2_powerpc_601
+	bool "601"
+	depends on !BR2_ARCH_IS_64
 config BR2_powerpc_602
 	bool "602"
 	depends on !BR2_ARCH_IS_64
@@ -63,23 +64,19 @@ config BR2_powerpc_604e
 	depends on !BR2_ARCH_IS_64
 config BR2_powerpc_620
 	bool "620"
-	# No C library supports this variant on ppc64le
-	depends on !BR2_powerpc64le
 config BR2_powerpc_630
 	bool "630"
-	# No C library supports this variant on ppc64le
-	depends on !BR2_powerpc64le
 config BR2_powerpc_740
 	bool "740"
 	depends on !BR2_ARCH_IS_64
 config BR2_powerpc_7400
 	bool "7400"
-	depends on !BR2_ARCH_IS_64
 	select BR2_POWERPC_CPU_HAS_ALTIVEC
+	depends on !BR2_ARCH_IS_64
 config BR2_powerpc_7450
 	bool "7450"
-	depends on !BR2_ARCH_IS_64
 	select BR2_POWERPC_CPU_HAS_ALTIVEC
+	depends on !BR2_ARCH_IS_64
 config BR2_powerpc_750
 	bool "750"
 	depends on !BR2_ARCH_IS_64
@@ -121,12 +118,8 @@ config BR2_powerpc_e6500
 	select BR2_POWERPC_CPU_HAS_ALTIVEC
 config BR2_powerpc_power4
 	bool "power4"
-	# No C library supports this variant on ppc64le
-	depends on !BR2_powerpc64le
 config BR2_powerpc_power5
 	bool "power5"
-	# No C library supports this variant on ppc64le
-	depends on !BR2_powerpc64le
 config BR2_powerpc_power6
 	bool "power6"
 	select BR2_POWERPC_CPU_HAS_ALTIVEC
@@ -167,9 +160,6 @@ config BR2_ARCH
 	default "powerpc64"	if BR2_powerpc64
 	default "powerpc64le"	if BR2_powerpc64le
 
-config BR2_NORMALIZED_ARCH
-	default "powerpc"
-
 config BR2_ENDIAN
 	default "BIG"    if BR2_powerpc || BR2_powerpc64
 	default "LITTLE" if BR2_powerpc64le
@@ -186,6 +176,7 @@ config BR2_GCC_TARGET_CPU
 	default "476"		if BR2_powerpc_476
 	default "476fp"		if BR2_powerpc_476fp
 	default "505"		if BR2_powerpc_505
+	default "601"		if BR2_powerpc_601
 	default "602"		if BR2_powerpc_602
 	default "603"		if BR2_powerpc_603
 	default "603e"		if BR2_powerpc_603e
@@ -214,9 +205,14 @@ config BR2_GCC_TARGET_CPU
 	default "power7"	if BR2_powerpc_power7
 	default "power8"	if BR2_powerpc_power8
 
+config BR2_GCC_TARGET_ABI
+	default "altivec"		if BR2_PPC_ABI_altivec
+	default "no-altivec"		if BR2_PPC_ABI_no-altivec
+	default "spe"			if BR2_PPC_ABI_spe
+	default "no-spe"		if BR2_PPC_ABI_no-spe
+	default "ibmlongdouble"		if BR2_PPC_ABI_ibmlongdouble
+	default "ieeelongdouble"	if BR2_PPC_ABI_ieeelongdouble
+
 config BR2_READELF_ARCH_NAME
 	default "PowerPC"	if BR2_powerpc
 	default "PowerPC64"	if BR2_powerpc64 || BR2_powerpc64le
-
-# vim: ft=kconfig
-# -*- mode:kconfig; -*-

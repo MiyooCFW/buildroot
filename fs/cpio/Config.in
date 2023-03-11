@@ -1,9 +1,9 @@
 config BR2_TARGET_ROOTFS_CPIO
 	bool "cpio the root filesystem (for use as an initial RAM filesystem)"
 	help
-	  Build a cpio archive of the root filesystem. This is typically
-	  used for an initial RAM filesystem that is passed to the
-	  kernel by the bootloader.
+	  Build a cpio archive of the root filesystem.  This is typically
+	  used for an initial RAM filesystem that is passed to the kernel
+	  by the bootloader.
 
 if BR2_TARGET_ROOTFS_CPIO
 
@@ -50,11 +50,6 @@ config BR2_TARGET_ROOTFS_CPIO_XZ
 	bool "xz"
 	help
 	  Do compress the cpio filesystem with xz.
-
-config BR2_TARGET_ROOTFS_CPIO_ZSTD
-	bool "zstd"
-	help
-	  Do compress the cpio filesystem with zstd.
 
 endchoice
 

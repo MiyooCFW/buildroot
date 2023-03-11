@@ -4,12 +4,11 @@
 #
 ################################################################################
 
-PNGQUANT_VERSION = 2.17.0
+PNGQUANT_VERSION = 2.10.1
 PNGQUANT_SOURCE = pngquant-$(PNGQUANT_VERSION)-src.tar.gz
 PNGQUANT_SITE = https://pngquant.org
 PNGQUANT_LICENSE = GPL-3.0+
 PNGQUANT_LICENSE_FILES = COPYRIGHT
-PNGQUANT_CPE_ID_VENDOR = pngquant
 HOST_PNGQUANT_DEPENDENCIES = host-libpng
 PNGQUANT_DEPENDENCIES = libpng
 
@@ -52,5 +51,5 @@ define HOST_PNGQUANT_INSTALL_CMDS
 	$(HOST_MAKE_ENV) $(MAKE) -C $(@D) install
 endef
 
-$(eval $(generic-package))
 $(eval $(host-generic-package))
+$(eval $(generic-package))

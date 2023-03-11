@@ -4,13 +4,11 @@
 #
 ################################################################################
 
-LIBXSLT_VERSION = 1.1.35
-LIBXSLT_SOURCE = libxslt-$(LIBXSLT_VERSION).tar.xz
-LIBXSLT_SITE = https://download.gnome.org/sources/libxslt/1.1
+LIBXSLT_VERSION = 1.1.32
+LIBXSLT_SITE = ftp://xmlsoft.org/libxslt
 LIBXSLT_INSTALL_STAGING = YES
 LIBXSLT_LICENSE = MIT
 LIBXSLT_LICENSE_FILES = COPYING
-LIBXSLT_CPE_ID_VENDOR = xmlsoft
 
 LIBXSLT_CONF_OPTS = \
 	--with-gnu-ld \
@@ -19,6 +17,12 @@ LIBXSLT_CONF_OPTS = \
 	--with-libxml-prefix=$(STAGING_DIR)/usr
 LIBXSLT_CONFIG_SCRIPTS = xslt-config
 LIBXSLT_DEPENDENCIES = host-pkgconf libxml2
+
+# GCC bug with Os/O2/O3, PR77311
+# error: unable to find a register to spill in class 'CCREGS'
+ifeq ($(BR2_bfin),y)
+LIBXSLT_CONF_ENV += CFLAGS="$(TARGET_CFLAGS) -O1"
+endif
 
 # If we have enabled libgcrypt then use it, else disable crypto support.
 ifeq ($(BR2_PACKAGE_LIBGCRYPT),y)

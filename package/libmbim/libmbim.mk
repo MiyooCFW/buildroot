@@ -4,28 +4,24 @@
 #
 ################################################################################
 
-LIBMBIM_VERSION = 1.26.2
-LIBMBIM_SITE = https://gitlab.freedesktop.org/mobile-broadband/libmbim/-/archive/$(LIBMBIM_VERSION)
-LIBMBIM_LICENSE = LGPL-2.1+ (library), GPL-2.0+ (programs)
+LIBMBIM_VERSION = 1.14.2
+LIBMBIM_SITE = http://www.freedesktop.org/software/libmbim
+LIBMBIM_SOURCE = libmbim-$(LIBMBIM_VERSION).tar.xz
+LIBMBIM_LICENSE = LGPL-2.0+ (library), GPL-2.0+ (programs)
 LIBMBIM_LICENSE_FILES = COPYING COPYING.LIB
-LIBMBIM_CPE_ID_VENDOR = freedesktop
 LIBMBIM_INSTALL_STAGING = YES
 
 LIBMBIM_DEPENDENCIES = libglib2
-LIBMBIM_CONF_OPTS = -Dman=false
 
-ifeq ($(BR2_PACKAGE_GOBJECT_INTROSPECTION),y)
-LIBMBIM_DEPENDENCIES += gobject-introspection
-LIBMBIM_CONF_OPTS += -Dintrospection=true
+# we don't want -Werror
+LIBMBIM_CONF_OPTS = --enable-more-warnings=no
+
+# if libgudev available, request udev support
+ifeq ($(BR2_PACKAGE_LIBGUDEV),y)
+LIBMBIM_DEPENDENCIES += libgudev
+LIBMBIM_CONF_OPTS += --with-udev
 else
-LIBMBIM_CONF_OPTS += -Dintrospection=false
+LIBMBIM_CONF_OPTS += --without-udev
 endif
 
-ifeq ($(BR2_PACKAGE_BASH_COMPLETION),y)
-LIBMBIM_DEPENDENCIES += bash-completion
-LIBMBIM_CONF_OPTS += -Dbash_completion=true
-else
-LIBMBIM_CONF_OPTS += -Dbash_completion=false
-endif
-
-$(eval $(meson-package))
+$(eval $(autotools-package))

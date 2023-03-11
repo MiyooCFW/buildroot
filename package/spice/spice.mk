@@ -4,12 +4,11 @@
 #
 ################################################################################
 
-SPICE_VERSION = 0.15.0
+SPICE_VERSION = 0.14.1
 SPICE_SOURCE = spice-$(SPICE_VERSION).tar.bz2
 SPICE_SITE = http://www.spice-space.org/download/releases/spice-server
 SPICE_LICENSE = LGPL-2.1+
 SPICE_LICENSE_FILES = COPYING
-SPICE_CPE_ID_VENDOR = spice_project
 SPICE_INSTALL_STAGING = YES
 SPICE_DEPENDENCIES = \
 	host-pkgconf \
@@ -26,10 +25,16 @@ SPICE_CONF_OPTS = \
 	--disable-opengl \
 	--disable-smartcard \
 	--without-sasl \
-	--disable-manual \
-	--disable-tests
+	--disable-manual
 
 SPICE_DEPENDENCIES += host-pkgconf
+
+ifeq ($(BR2_PACKAGE_CELT051),y)
+SPICE_CONF_OPTS += --enable-celt051
+SPICE_DEPENDENCIES += celt051
+else
+SPICE_CONF_OPTS += --disable-celt051
+endif
 
 ifeq ($(BR2_PACKAGE_LZ4),y)
 SPICE_CONF_OPTS += --enable-lz4
@@ -43,6 +48,11 @@ SPICE_CONF_OPTS += --enable-opus
 SPICE_DEPENDENCIES += opus
 else
 SPICE_CONF_OPTS += --disable-opus
+endif
+
+# no enable/disable, detected using pkg-config
+ifeq ($(BR2_PACKAGE_OPUS),y)
+SPICE_DEPENDENCIES += opus
 endif
 
 # We need to tweak spice.pc because it /forgets/ (for static linking) that

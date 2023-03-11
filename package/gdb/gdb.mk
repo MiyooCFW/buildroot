@@ -14,41 +14,22 @@ GDB_SOURCE = gdb-$(GDB_VERSION).tar.gz
 GDB_FROM_GIT = y
 endif
 
-ifeq ($(BR2_csky),y)
-GDB_SITE = $(call github,c-sky,binutils-gdb,$(GDB_VERSION))
-GDB_SOURCE = gdb-$(GDB_VERSION).tar.gz
-GDB_FROM_GIT = y
-endif
-
 GDB_LICENSE = GPL-2.0+, LGPL-2.0+, GPL-3.0+, LGPL-3.0+
 GDB_LICENSE_FILES = COPYING COPYING.LIB COPYING3 COPYING3.LIB
-GDB_CPE_ID_VENDOR = gnu
 
-# On gdb < 10, if you want to build only gdbserver, you need to
-# configure only gdb/gdbserver.
-ifeq ($(BR2_PACKAGE_GDB_DEBUGGER)$(BR2_PACKAGE_GDB_TOPLEVEL),)
+# We only want gdbserver and not the entire debugger.
+ifeq ($(BR2_PACKAGE_GDB_DEBUGGER),)
 GDB_SUBDIR = gdb/gdbserver
-
-# When we want to build the full gdb, or for very recent versions of
-# gdb with gdbserver at the top-level, out of tree build is mandatory,
-# so we create a 'build' subdirectory in the gdb sources, and build
-# from there.
+HOST_GDB_SUBDIR = .
 else
-GDB_SUBDIR = build
-define GDB_CONFIGURE_SYMLINK
-	mkdir -p $(@D)/$(GDB_SUBDIR)
-	ln -sf ../configure $(@D)/$(GDB_SUBDIR)/configure
-endef
-GDB_PRE_CONFIGURE_HOOKS += GDB_CONFIGURE_SYMLINK
+GDB_DEPENDENCIES = ncurses \
+	$(if $(BR2_PACKAGE_LIBICONV),libiconv)
 endif
 
 # For the host variant, we really want to build with XML support,
 # which is needed to read XML descriptions of target architectures. We
 # also need ncurses.
-# As for libiberty, gdb may use a system-installed one if present, so
-# we must ensure ours is installed first.
-GDB_DEPENDENCIES = zlib
-HOST_GDB_DEPENDENCIES = host-expat host-libiberty host-ncurses host-zlib
+HOST_GDB_DEPENDENCIES = host-expat host-ncurses
 
 # Disable building documentation
 GDB_MAKE_OPTS += MAKEINFO=true
@@ -72,12 +53,6 @@ GDB_DEPENDENCIES += host-flex host-bison
 HOST_GDB_DEPENDENCIES += host-flex host-bison
 endif
 
-# When BR2_GDB_VERSION_11=y, we're going to build gdb 11.x for the
-# host (if enabled), so we add the necessary gmp dependency.
-ifeq ($(BR2_GDB_VERSION_11),y)
-HOST_GDB_DEPENDENCIES += host-gmp
-endif
-
 # When gdb sources are fetched from the binutils-gdb repository, they
 # also contain the binutils sources, but binutils shouldn't be built,
 # so we disable it (additionally the option --disable-install-libbfd
@@ -86,8 +61,7 @@ GDB_DISABLE_BINUTILS_CONF_OPTS = \
 	--disable-binutils \
 	--disable-install-libbfd \
 	--disable-ld \
-	--disable-gas \
-	--disable-gprof
+	--disable-gas
 
 GDB_CONF_ENV = \
 	ac_cv_type_uintptr_t=yes \
@@ -113,16 +87,6 @@ GDB_CONF_ENV = \
 GDB_CONF_ENV += gl_cv_func_gettimeofday_clobber=no
 GDB_MAKE_ENV += gl_cv_func_gettimeofday_clobber=no
 
-# Similarly, starting with gdb 8.1, the bundled gnulib tries to use
-# rpl_strerror. Let's tell gnulib the C library implementation works
-# well enough.
-GDB_CONF_ENV += \
-	gl_cv_func_working_strerror=yes \
-	gl_cv_func_strerror_0_works=yes
-GDB_MAKE_ENV += \
-	gl_cv_func_working_strerror=yes \
-	gl_cv_func_strerror_0_works=yes
-
 # Starting with glibc 2.25, the proc_service.h header has been copied
 # from gdb to glibc so other tools can use it. However, that makes it
 # necessary to make sure that declaration of prfpregset_t declaration
@@ -145,40 +109,11 @@ GDB_CONF_OPTS = \
 	--without-x \
 	--disable-sim \
 	$(GDB_DISABLE_BINUTILS_CONF_OPTS) \
+	$(if $(BR2_PACKAGE_GDB_SERVER),--enable-gdbserver,--disable-gdbserver) \
+	--with-curses \
 	--without-included-gettext \
-	--with-system-zlib \
 	--disable-werror \
-	--enable-static \
-	--without-mpfr
-
-ifeq ($(BR2_PACKAGE_GDB_DEBUGGER),y)
-GDB_CONF_OPTS += \
-	--enable-gdb \
-	--with-curses
-GDB_DEPENDENCIES += ncurses \
-	$(if $(BR2_PACKAGE_LIBICONV),libiconv)
-else
-GDB_CONF_OPTS += \
-	--disable-gdb \
-	--without-curses
-endif
-
-# When BR2_GDB_VERSION_11=y (because it's enabled for the host) and
-# we're building the full gdb for the target, we need gmp as a
-# dependency. For now the default gdb version in Buildroot doesn't
-# require gmp.
-ifeq ($(BR2_GDB_VERSION_11)$(BR2_PACKAGE_GDB_DEBUGGER),yy)
-GDB_CONF_OPTS += \
-	--with-libgmp-prefix=$(STAGING_DIR)/usr
-GDB_DEPENDENCIES += gmp
-endif
-
-ifeq ($(BR2_PACKAGE_GDB_SERVER),y)
-GDB_CONF_OPTS += --enable-gdbserver
-GDB_DEPENDENCIES += $(TARGET_NLS_DEPENDENCIES)
-else
-GDB_CONF_OPTS += --disable-gdbserver
-endif
+	--enable-static
 
 # When gdb is built as C++ application for ARC it segfaults at runtime
 # So we pass --disable-build-with-cxx config option to force gdb not to
@@ -193,11 +128,6 @@ ifneq ($(BR2_INSTALL_LIBSTDCPP),y)
 GDB_CONF_OPTS += --disable-build-with-cxx
 endif
 
-# inprocess-agent can't be built statically
-ifeq ($(BR2_STATIC_LIBS),y)
-GDB_CONF_OPTS += --disable-inprocess-agent
-endif
-
 ifeq ($(BR2_PACKAGE_GDB_TUI),y)
 GDB_CONF_OPTS += --enable-tui
 else
@@ -205,11 +135,8 @@ GDB_CONF_OPTS += --disable-tui
 endif
 
 ifeq ($(BR2_PACKAGE_GDB_PYTHON),y)
-# CONF_ENV: for top-level configure; MAKE_ENV: for sub-projects' configure.
-GDB_CONF_ENV += BR_PYTHON_VERSION=$(PYTHON3_VERSION_MAJOR)
-GDB_MAKE_ENV += BR_PYTHON_VERSION=$(PYTHON3_VERSION_MAJOR)
-GDB_DEPENDENCIES += python3
 GDB_CONF_OPTS += --with-python=$(TOPDIR)/package/gdb/gdb-python-config
+GDB_DEPENDENCIES += python
 else
 GDB_CONF_OPTS += --without-python
 endif
@@ -228,6 +155,13 @@ GDB_CONF_OPTS += --with-liblzma-prefix=$(STAGING_DIR)/usr
 GDB_DEPENDENCIES += xz
 else
 GDB_CONF_OPTS += --without-lzma
+endif
+
+ifeq ($(BR2_PACKAGE_ZLIB),y)
+GDB_CONF_OPTS += --with-zlib
+GDB_DEPENDENCIES += zlib
+else
+GDB_CONF_OPTS += --without-zlib
 endif
 
 ifeq ($(BR2_PACKAGE_GDB_PYTHON),)
@@ -267,9 +201,7 @@ HOST_GDB_CONF_OPTS = \
 	--enable-threads \
 	--disable-werror \
 	--without-included-gettext \
-	--with-system-zlib \
 	--with-curses \
-	--without-mpfr \
 	$(GDB_DISABLE_BINUTILS_CONF_OPTS)
 
 ifeq ($(BR2_PACKAGE_HOST_GDB_TUI),y)
@@ -278,29 +210,26 @@ else
 HOST_GDB_CONF_OPTS += --disable-tui
 endif
 
-ifeq ($(BR2_PACKAGE_HOST_GDB_PYTHON3),y)
-HOST_GDB_CONF_OPTS += --with-python=$(HOST_DIR)/bin/python3
-HOST_GDB_DEPENDENCIES += host-python3
+ifeq ($(BR2_PACKAGE_HOST_GDB_PYTHON),y)
+HOST_GDB_CONF_OPTS += --with-python=$(HOST_DIR)/bin/python2
+HOST_GDB_DEPENDENCIES += host-python
 else
 HOST_GDB_CONF_OPTS += --without-python
 endif
 
+# workaround a bug if in-tree build is used for bfin sim
+define HOST_GDB_BFIN_SIM_WORKAROUND
+	$(RM) $(@D)/sim/common/tconfig.h
+endef
+
 ifeq ($(BR2_PACKAGE_HOST_GDB_SIM),y)
 HOST_GDB_CONF_OPTS += --enable-sim
+ifeq ($(BR2_bfin),y)
+HOST_GDB_PRE_CONFIGURE_HOOKS += HOST_GDB_BFIN_SIM_WORKAROUND
+endif
 else
 HOST_GDB_CONF_OPTS += --disable-sim
 endif
-
-# Since gdb 9, in-tree builds for GDB are not allowed anymore,
-# so we create a 'build' subdirectory in the gdb sources, and
-# build from there.
-HOST_GDB_SUBDIR = build
-
-define HOST_GDB_CONFIGURE_SYMLINK
-	mkdir -p $(@D)/build
-	ln -sf ../configure $(@D)/build/configure
-endef
-HOST_GDB_PRE_CONFIGURE_HOOKS += HOST_GDB_CONFIGURE_SYMLINK
 
 # legacy $arch-linux-gdb symlink
 define HOST_GDB_ADD_SYMLINK

@@ -1,6 +1,5 @@
-# From https://lists.freedesktop.org/archives/dri-devel/2021-November/332386.html
-sha256  629352e08c1fe84862ca046598d8a08ce14d26ab25ee1f4704f993d074cb7f26  libdrm-2.4.109.tar.xz
-sha512  45194bb28207421afcff3e247930d2eeab77a5fea58e6be22f67525f2e0aab2f410a9ae0ab315b55ef56b80c481bba40b1660468b7cda539758b2bbb8e814fd8  libdrm-2.4.109.tar.xz
-
-# Hash for license file
-sha256  d0a616a9020dc0271e36e6dd4bad174b4e2c2a42636f13785f8e18dd5f85fd83  data/meson.build
+# From https://lists.freedesktop.org/archives/dri-devel/2017-December/160530.html
+md5 5307a147dde67ac643f6753a42b5d32c  libdrm-2.4.89.tar.bz2
+sha1 43123da26271df9a29deb687c1855bef3fed249c  libdrm-2.4.89.tar.bz2
+sha256 629f9782aabbb4809166de5f24d26fe0766055255038f16935602d89f136a02e  libdrm-2.4.89.tar.bz2
+sha512 380e4e46cd3971a73264bd1b482791fab0503268adb65ac81b674df009662cfb8ef5741e362f19670b2a43b1c46f022d857706c9a4bebed2b1cddaa317b7706d  libdrm-2.4.89.tar.bz2

@@ -4,23 +4,14 @@
 #
 ################################################################################
 
-BRLTTY_VERSION = 6.4
+BRLTTY_VERSION = 5.5
 BRLTTY_SOURCE = brltty-$(BRLTTY_VERSION).tar.xz
 BRLTTY_SITE = http://brltty.com/archive
 BRLTTY_INSTALL_STAGING_OPTS = INSTALL_ROOT=$(STAGING_DIR) install
 BRLTTY_INSTALL_TARGET_OPTS = INSTALL_ROOT=$(TARGET_DIR) install
-BRLTTY_LICENSE = LGPL-2.1+
-BRLTTY_LICENSE_FILES = LICENSE-LGPL README
+BRLTTY_LICENSE_FILES = LICENSE-GPL LICENSE-LGPL
 
-BRLTTY_DEPENDENCIES = \
-	$(TARGET_NLS_DEPENDENCIES) \
-	host-autoconf \
-	host-gawk \
-	host-pkgconf \
-	$(if $(BR2_PACKAGE_AT_SPI2_CORE),at-spi2-core)
-
-BRLTTY_CONF_ENV = \
-	PKG_CONFIG_FOR_BUILD=$(HOST_DIR)/bin/pkgconf
+BRLTTY_DEPENDENCIES = $(TARGET_NLS_DEPENDENCIES) host-autoconf host-pkgconf
 
 BRLTTY_CONF_OPTS = \
 	--disable-java-bindings \
@@ -29,14 +20,14 @@ BRLTTY_CONF_OPTS = \
 	--disable-python-bindings \
 	--disable-tcl-bindings \
 	--disable-x \
-	--without-espeak-ng \
 	--without-midi-package \
 	--without-mikropuhe --without-speechd --without-swift \
-	--without-theta
+	--without-theta --without-viavoice
 
 # Autoreconf is needed because we're patching configure.ac in
-# 0001-Fix-linking-error-on-mips64el. However, a plain autoreconf doesn't work,
-# because this package is only autoconf-based.
+# 0002-Check-for-ioperm-to-make-sure-the-platform-supports-.patch. However,
+# a plain autoreconf doesn't work, because this package is only
+# autoconf-based.
 define BRLTTY_AUTOCONF
 	cd $(BRLTTY_SRCDIR) && $(AUTOCONF)
 endef
@@ -55,14 +46,6 @@ BRLTTY_DEPENDENCIES += espeak
 BRLTTY_CONF_OPTS += --with-espeak=$(TARGET_DIR)/usr
 else
 BRLTTY_CONF_OPTS += --without-espeak
-endif
-
-ifeq ($(BR2_PACKAGE_EXPAT),y)
-# host-expat is needed by tbl2hex's host program
-BRLTTY_DEPENDENCIES += host-expat expat
-BRLTTY_CONF_OPTS += --enable-expat
-else
-BRLTTY_CONF_OPTS += --disable-expat
 endif
 
 ifeq ($(BR2_PACKAGE_FLITE),y)
@@ -84,23 +67,6 @@ BRLTTY_DEPENDENCIES += ncurses
 BRLTTY_CONF_OPTS += --with-curses
 else
 BRLTTY_CONF_OPTS += --without-curses
-endif
-
-ifeq ($(BR2_PACKAGE_PCRE2_32),y)
-BRLTTY_DEPENDENCIES += pcre2
-BRLTTY_CONF_OPTS += --with-rgx-package
-else ifeq ($(BR2_PACKAGE_PCRE_32),y)
-BRLTTY_DEPENDENCIES += pcre
-BRLTTY_CONF_OPTS += --with-rgx-package
-else
-BRLTTY_CONF_OPTS += --without-rgx-package
-endif
-
-ifeq ($(BR2_PACKAGE_POLKIT),y)
-BRLTTY_DEPENDENCIES += polkit
-BRLTTY_CONF_OPTS += --enable-polkit
-else
-BRLTTY_CONF_OPTS += --disable-polkit
 endif
 
 ifeq ($(BR2_PACKAGE_SYSTEMD),y)
@@ -129,12 +95,16 @@ BRLTTY_POST_INSTALL_TARGET_HOOKS += BRLTTY_INSTALL_CONF
 
 define BRLTTY_INSTALL_INIT_SYSV
 	$(INSTALL) -D -m 0755 package/brltty/S10brltty \
-		$(TARGET_DIR)/etc/init.d/S10brltty
+		   $(TARGET_DIR)/etc/init.d/S10brltty
 endef
 
 define BRLTTY_INSTALL_INIT_SYSTEMD
 	$(INSTALL) -D -m 0644 package/brltty/brltty.service \
-		$(TARGET_DIR)/usr/lib/systemd/system/brltty.service
+		   $(TARGET_DIR)/usr/lib/systemd/system/brltty.service
+
+	mkdir -p $(TARGET_DIR)/etc/systemd/system/sysinit.target.wants
+	ln -fs  ../../../../usr/lib/systemd/system/brltty.service \
+		$(TARGET_DIR)/etc/systemd/system/sysinit.target.wants/brltty.service
 endef
 
 $(eval $(autotools-package))

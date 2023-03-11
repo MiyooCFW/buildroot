@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-FFMPEG_VERSION = 4.4.3
+FFMPEG_VERSION = 3.4.4
 FFMPEG_SOURCE = ffmpeg-$(FFMPEG_VERSION).tar.xz
 FFMPEG_SITE = http://ffmpeg.org/releases
 FFMPEG_INSTALL_STAGING = YES
@@ -15,8 +15,6 @@ ifeq ($(BR2_PACKAGE_FFMPEG_GPL),y)
 FFMPEG_LICENSE += and GPL-2.0+
 FFMPEG_LICENSE_FILES += COPYING.GPLv2
 endif
-
-FFMPEG_CPE_ID_VENDOR = ffmpeg
 
 FFMPEG_CONF_OPTS = \
 	--prefix=/usr \
@@ -51,6 +49,7 @@ FFMPEG_CONF_OPTS = \
 	--disable-frei0r \
 	--disable-libopencore-amrnb \
 	--disable-libopencore-amrwb \
+	--disable-libcdio \
 	--disable-libdc1394 \
 	--disable-libgsm \
 	--disable-libilbc \
@@ -86,11 +85,10 @@ else
 FFMPEG_CONF_OPTS += --disable-ffplay
 endif
 
-ifeq ($(BR2_PACKAGE_LIBV4L),y)
-FFMPEG_DEPENDENCIES += libv4l
-FFMPEG_CONF_OPTS += --enable-libv4l2
+ifeq ($(BR2_PACKAGE_FFMPEG_FFSERVER),y)
+FFMPEG_CONF_OPTS += --enable-ffserver
 else
-FFMPEG_CONF_OPTS += --disable-libv4l2
+FFMPEG_CONF_OPTS += --disable-ffserver
 endif
 
 ifeq ($(BR2_PACKAGE_FFMPEG_AVRESAMPLE),y)
@@ -103,17 +101,6 @@ ifeq ($(BR2_PACKAGE_FFMPEG_FFPROBE),y)
 FFMPEG_CONF_OPTS += --enable-ffprobe
 else
 FFMPEG_CONF_OPTS += --disable-ffprobe
-endif
-
-ifeq ($(BR2_PACKAGE_FFMPEG_XCBGRAB),y)
-FFMPEG_CONF_OPTS += \
-	--enable-libxcb \
-	--enable-libxcb-shape \
-	--enable-libxcb-shm \
-	--enable-libxcb-xfixes
-FFMPEG_DEPENDENCIES += libxcb
-else
-FFMPEG_CONF_OPTS += --disable-libxcb
 endif
 
 ifeq ($(BR2_PACKAGE_FFMPEG_POSTPROC),y)
@@ -155,7 +142,7 @@ endif
 
 ifneq ($(call qstrip,$(BR2_PACKAGE_FFMPEG_BSFS)),all)
 FFMPEG_CONF_OPTS += --disable-bsfs \
-	$(foreach x,$(call qstrip,$(BR2_PACKAGE_FFMPEG_BSFS)),--enable-bsf=$(x))
+	$(foreach x,$(call qstrip,$(BR2_PACKAGE_FFMPEG_BSFS)),--enable-bsfs=$(x))
 endif
 
 ifneq ($(call qstrip,$(BR2_PACKAGE_FFMPEG_PROTOCOLS)),all)
@@ -216,25 +203,18 @@ else
 FFMPEG_CONF_OPTS += --disable-libfdk-aac
 endif
 
-ifeq ($(BR2_PACKAGE_FFMPEG_GPL)$(BR2_PACKAGE_LIBCDIO_PARANOIA),yy)
-FFMPEG_CONF_OPTS += --enable-libcdio
-FFMPEG_DEPENDENCIES += libcdio-paranoia
-else
-FFMPEG_CONF_OPTS += --disable-libcdio
-endif
-
 ifeq ($(BR2_PACKAGE_GNUTLS),y)
 FFMPEG_CONF_OPTS += --enable-gnutls --disable-openssl
 FFMPEG_DEPENDENCIES += gnutls
 else
 FFMPEG_CONF_OPTS += --disable-gnutls
-ifeq ($(BR2_PACKAGE_OPENSSL),y)
+ifeq ($(BR2_PACKAGE_LIBOPENSSL),y)
 # openssl isn't license compatible with GPL
 ifeq ($(BR2_PACKAGE_FFMPEG_GPL)x$(BR2_PACKAGE_FFMPEG_NONFREE),yx)
 FFMPEG_CONF_OPTS += --disable-openssl
 else
 FFMPEG_CONF_OPTS += --enable-openssl
-FFMPEG_DEPENDENCIES += openssl
+FFMPEG_DEPENDENCIES += libopenssl
 endif
 else
 FFMPEG_CONF_OPTS += --disable-openssl
@@ -291,7 +271,10 @@ endif
 
 # To avoid a circular dependency only use opencv if opencv itself does
 # not depend on ffmpeg.
-ifeq ($(BR2_PACKAGE_OPENCV3_LIB_IMGPROC)x$(BR2_PACKAGE_OPENCV3_WITH_FFMPEG),yx)
+ifeq ($(BR2_PACKAGE_OPENCV_LIB_IMGPROC)x$(BR2_PACKAGE_OPENCV_WITH_FFMPEG),yx)
+FFMPEG_CONF_OPTS += --enable-libopencv
+FFMPEG_DEPENDENCIES += opencv
+else ifeq ($(BR2_PACKAGE_OPENCV3_LIB_IMGPROC)x$(BR2_PACKAGE_OPENCV3_WITH_FFMPEG),yx)
 FFMPEG_CONF_OPTS += --enable-libopencv
 FFMPEG_DEPENDENCIES += opencv3
 else
@@ -324,13 +307,6 @@ FFMPEG_CONF_OPTS += --enable-libbluray
 FFMPEG_DEPENDENCIES += libbluray
 else
 FFMPEG_CONF_OPTS += --disable-libbluray
-endif
-
-ifeq ($(BR2_PACKAGE_INTEL_MEDIASDK),y)
-FFMPEG_CONF_OPTS += --enable-libmfx
-FFMPEG_DEPENDENCIES += intel-mediasdk
-else
-FFMPEG_CONF_OPTS += --disable-libmfx
 endif
 
 ifeq ($(BR2_PACKAGE_RTMPDUMP),y)
@@ -366,6 +342,13 @@ FFMPEG_CONF_OPTS += --enable-libtheora
 FFMPEG_DEPENDENCIES += libtheora
 else
 FFMPEG_CONF_OPTS += --disable-libtheora
+endif
+
+ifeq ($(BR2_PACKAGE_WAVPACK),y)
+FFMPEG_CONF_OPTS += --enable-libwavpack
+FFMPEG_DEPENDENCIES += wavpack
+else
+FFMPEG_CONF_OPTS += --disable-libwavpack
 endif
 
 ifeq ($(BR2_PACKAGE_LIBICONV),y)
@@ -411,13 +394,6 @@ FFMPEG_CONF_OPTS += --enable-libx265
 FFMPEG_DEPENDENCIES += x265
 else
 FFMPEG_CONF_OPTS += --disable-libx265
-endif
-
-ifeq ($(BR2_PACKAGE_DAV1D),y)
-FFMPEG_CONF_OPTS += --enable-libdav1d
-FFMPEG_DEPENDENCIES += dav1d
-else
-FFMPEG_CONF_OPTS += --disable-libdav1d
 endif
 
 ifeq ($(BR2_X86_CPU_HAS_MMX),y)
@@ -506,16 +482,9 @@ FFMPEG_CONF_OPTS += --disable-mipsfpu
 else
 FFMPEG_CONF_OPTS += --enable-mipsfpu
 endif
-
-# Fix build failure on several missing assembly instructions
-FFMPEG_CONF_OPTS += --disable-asm
 endif # MIPS
 
-ifeq ($(BR2_POWERPC_CPU_HAS_ALTIVEC):$(BR2_powerpc64le),y:)
-FFMPEG_CONF_OPTS += --enable-altivec
-else ifeq ($(BR2_POWERPC_CPU_HAS_VSX):$(BR2_powerpc64le),y:y)
-# On LE, ffmpeg AltiVec support needs VSX intrinsics, and VSX
-# is an extension to AltiVec.
+ifeq ($(BR2_POWERPC_CPU_HAS_ALTIVEC),y)
 FFMPEG_CONF_OPTS += --enable-altivec
 else
 FFMPEG_CONF_OPTS += --disable-altivec
@@ -536,20 +505,12 @@ endif
 # warning from ffmpeg's configure script.
 ifeq ($(BR2_mips)$(BR2_mipsel)$(BR2_mips64)$(BR2_mips64el),y)
 FFMPEG_CONF_OPTS += --cpu=generic
-else ifneq ($(GCC_TARGET_CPU),)
-FFMPEG_CONF_OPTS += --cpu="$(GCC_TARGET_CPU)"
-else ifneq ($(GCC_TARGET_ARCH),)
-FFMPEG_CONF_OPTS += --cpu="$(GCC_TARGET_ARCH)"
+else ifneq ($(call qstrip,$(BR2_GCC_TARGET_CPU)),)
+FFMPEG_CONF_OPTS += --cpu=$(BR2_GCC_TARGET_CPU)
+else ifneq ($(call qstrip,$(BR2_GCC_TARGET_ARCH)),)
+FFMPEG_CONF_OPTS += --cpu=$(BR2_GCC_TARGET_ARCH)
 endif
 
-FFMPEG_CFLAGS = $(TARGET_CFLAGS)
-
-ifeq ($(BR2_TOOLCHAIN_HAS_GCC_BUG_85180),y)
-FFMPEG_CONF_OPTS += --disable-optimizations
-FFMPEG_CFLAGS += -O0
-endif
-
-FFMPEG_CONF_ENV += CFLAGS="$(FFMPEG_CFLAGS)"
 FFMPEG_CONF_OPTS += $(call qstrip,$(BR2_PACKAGE_FFMPEG_EXTRACONF))
 
 # Override FFMPEG_CONFIGURE_CMDS: FFmpeg does not support --target and others

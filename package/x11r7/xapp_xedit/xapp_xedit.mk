@@ -11,8 +11,6 @@ XAPP_XEDIT_LICENSE = MIT
 XAPP_XEDIT_LICENSE_FILES = COPYING
 XAPP_XEDIT_DEPENDENCIES = xlib_libXaw
 
-XAPP_XEDIT_CONF_OPTS = \
-	--disable-selective-werror \
-	--with-appdefaultdir=/usr/share/X11/app-defaults
+XAPP_XEDIT_CONF_OPTS = --disable-selective-werror
 
 $(eval $(autotools-package))

@@ -1,6 +1,7 @@
 #! /bin/sh
 
 NAME=prosody
+DAEMON=/usr/bin/$NAME
 
 # This must match the pidfile field in
 # /etc/prosody/prosody.cfg.lua
@@ -8,12 +9,15 @@ NAME=prosody
 PIDDIR=/var/run/$NAME
 PIDFILE=$PIDDIR/$NAME.pid
 
+# Gracefully exit if the package has been removed.
+test -x $DAEMON || exit 0
+
 case "$1" in
   start)
     printf "Starting $NAME: "
     mkdir -p $PIDDIR
     chown $NAME:$NAME $PIDDIR
-    start-stop-daemon -S -q -o -x /usr/bin/prosody -c $NAME
+    start-stop-daemon -S -q -o -x $DAEMON -c $NAME
     [ $? = 0 ] && echo "OK" || echo "FAIL"
     ;;
   stop)

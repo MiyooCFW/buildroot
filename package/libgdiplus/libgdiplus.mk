@@ -4,12 +4,15 @@
 #
 ################################################################################
 
-LIBGDIPLUS_VERSION = 6.0.5
+LIBGDIPLUS_VERSION = 5.4
 LIBGDIPLUS_SITE = $(call github,mono,libgdiplus,$(LIBGDIPLUS_VERSION))
 
+# Although there is a LICENSE file thas specifies LGPL or MPL-1.1,
+# looks like it is incorrect. The actual source files specify that
+# they're licensed under MIT, and so does the COPYING file (and they
+# all predate the addition of the LICENSE file).
 LIBGDIPLUS_LICENSE = MIT
-LIBGDIPLUS_LICENSE_FILES = LICENSE
-LIBGDIPLUS_CPE_ID_VENDOR = mono-project
+LIBGDIPLUS_LICENSE_FILES = COPYING src/carbon-private.h
 
 LIBGDIPLUS_INSTALL_STAGING = YES
 

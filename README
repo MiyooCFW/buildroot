@@ -7,7 +7,6 @@ Online documentation can be found at http://buildroot.org/docs.html
 
 To build and use the buildroot stuff, do the following:
 
-0) run 'make miyoo_defconfig'
 1) run 'make menuconfig'
 2) select the target architecture and the packages you wish to compile
 3) run 'make'
@@ -21,7 +20,7 @@ Buildroot comes with a basic configuration for a number of boards. Run
 
 Please feed suggestions, bug reports, insults, and bribes back to the
 buildroot mailing list: buildroot@buildroot.org
-You can also find us on #buildroot on OFTC IRC.
+You can also find us on #buildroot on Freenode IRC.
 
 If you would like to contribute patches, please read
 https://buildroot.org/manual.html#submitting-patches

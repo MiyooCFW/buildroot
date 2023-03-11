@@ -4,18 +4,13 @@
 #
 ################################################################################
 
-STRESS_NG_VERSION = 0.13.05
-STRESS_NG_SITE = $(call github,ColinIanKing,stress-ng,V$(STRESS_NG_VERSION))
+STRESS_NG_VERSION = 0.09.32
+STRESS_NG_SOURCE = stress-ng-$(STRESS_NG_VERSION).tar.xz
+STRESS_NG_SITE = http://kernel.ubuntu.com/~cking/tarballs/stress-ng
 STRESS_NG_LICENSE = GPL-2.0+
 STRESS_NG_LICENSE_FILES = COPYING
 
-ifeq ($(BR2_PACKAGE_LIBBSD),y)
-STRESS_NG_DEPENDENCIES += libbsd
-endif
-
-ifeq ($(BR2_PACKAGE_KEYUTILS),y)
-STRESS_NG_DEPENDENCIES += keyutils
-endif
+STRESS_NG_DEPENDENCIES = attr keyutils
 
 define STRESS_NG_BUILD_CMDS
 	$(TARGET_CONFIGURE_OPTS) $(MAKE) -C $(@D)

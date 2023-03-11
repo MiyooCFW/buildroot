@@ -8,15 +8,15 @@ as well as the Freescale SABRE Board for Automotive Infotainment.
 
 Read the i.MX 6 SABRESD Quick Start Guide for an introduction to the
 board:
-https://www.nxp.com/files-static/32bit/doc/quick_start_guide/SABRESDB_IMX6_QSG.pdf
+http://cache.freescale.com/files/32bit/doc/quick_start_guide/SABRESDB_IMX6_QSG.pdf
 
 Read the i.MX 6 SoloX SABRESD Quick Start Guide for an introduction to
 the board:
-https://www.nxp.com/files-static/32bit/doc/quick_start_guide/IMX6SOLOXQSG.pdf
+http://cache.freescale.com/files/32bit/doc/user_guide/IMX6SOLOXQSG.pdf
 
 Read the SABRE for Automotive Infotainment Quick Start Guide for an
 introduction to the board:
-https://www.nxp.com/webapp/Download?colCode=IMX6SABREINFOQSG
+http://cache.freescale.com/files/32bit/doc/user_guide/IMX6SABREINFOQSG.pdf
 
 Building with NXP kernel and NXP U-Boot
 =======================================
@@ -166,6 +166,6 @@ Enjoy!
 References
 ==========
 
-https://community.nxp.com/docs/DOC-95015
-https://community.nxp.com/docs/DOC-95017
-https://community.nxp.com/docs/DOC-99218
+https://community.freescale.com/docs/DOC-95015
+https://community.freescale.com/docs/DOC-95017
+https://community.freescale.com/docs/DOC-99218

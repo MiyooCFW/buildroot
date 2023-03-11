@@ -1,5 +1,4 @@
-# From https://github.com/erlang/otp/releases/download/OTP-22.3.4.22/SHA256.txt
-sha256  e7f0793e62f8da4f7551dc9c1c0de76c40f19773ba516121fc56315c840f60cc  otp_src_22.3.4.22.tar.gz
-
-# Hash for license file
-sha256  809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0  LICENSE.txt
+# md5 from http://www.erlang.org/download/MD5, sha256 locally computed
+md5 a683c8c0aacfe0305c4bf47b3abfde6a  otp_src_20.3.tar.gz
+sha256 4e19e6c403d5255531c0b870f19511c8b8e3b080618e4f9efcb44d905935b2a1  otp_src_20.3.tar.gz
+sha256 809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0  LICENSE.txt

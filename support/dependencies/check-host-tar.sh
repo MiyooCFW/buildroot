@@ -20,11 +20,10 @@ major=`echo "$version" | cut -d. -f1`
 minor=`echo "$version" | cut -d. -f2`
 bugfix=`echo "$version" | cut -d. -f3`
 version_bsd=`$tar --version | grep 'bsdtar'`
-
-# BSD tar does not have all the command-line options
-if [ -n "${version_bsd}" ] ; then
-    # echo nothing: no suitable tar found
-    exit 1
+if [ ! -z "${version_bsd}" ] ; then 
+  # mark as invalid version - not all command line options are available
+  major=0
+  minor=0
 fi
 
 # Minimal version = 1.27 (previous versions do not correctly unpack archives
@@ -33,12 +32,24 @@ fi
 major_min=1
 minor_min=27
 
-if [ $major -lt $major_min ]; then
+# Maximal version = 1.29 (1.30 changed --numeric-owner output for
+# filenames > 100 characters). This is really a fix for a bug in
+# earlier tar versions regarding deterministic output so it is
+# unlikely to be reverted in later versions.
+major_max=1
+minor_max=29
+
+if [ $major -lt $major_min -o $major -gt $major_max ]; then
 	# echo nothing: no suitable tar found
 	exit 1
 fi
 
 if [ $major -eq $major_min -a $minor -lt $minor_min ]; then
+	# echo nothing: no suitable tar found
+	exit 1
+fi
+
+if [ $major -eq $major_max -a $minor -gt $minor_max ]; then
 	# echo nothing: no suitable tar found
 	exit 1
 fi

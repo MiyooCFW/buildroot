@@ -67,6 +67,10 @@ Python build system, but are not Python modules, can freely choose
 their name (existing examples in Buildroot are +scons+ and
 +supervisor+).
 
+In their +Config.in+ file, they should depend on +BR2_PACKAGE_PYTHON+
+so that when Buildroot will enable Python 3 usage for modules, we will
+be able to enable Python modules progressively on Python 3.
+
 The main macro of the Python package infrastructure is
 +python-package+. It is similar to the +generic-package+ macro. It is
 also possible to create Python host packages with the
@@ -90,9 +94,10 @@ Note that:
    dependencies are automatically added as needed by the Python
    package infrastructure.
 
- * Similarly, it is not needed to add +host-setuptools+ to
-   +PYTHON_FOO_DEPENDENCIES+ for setuptools-based packages, since it's
-   automatically added by the Python infrastructure as needed.
+ * Similarly, it is not needed to add +host-setuptools+ and/or
+   +host-distutilscross+ dependencies to +PYTHON_FOO_DEPENDENCIES+ for
+   setuptools-based packages, since these are automatically added by
+   the Python infrastructure as needed.
 
 One variable specific to the Python infrastructure is mandatory:
 
@@ -107,12 +112,6 @@ A few additional variables, specific to the Python infrastructure, can
 optionally be defined, depending on the package's needs. Many of them
 are only useful in very specific cases, typical packages will
 therefore only use a few of them, or none.
-
-* +PYTHON_FOO_SUBDIR+ may contain the name of a subdirectory inside the
-  package that contains the main +setup.py+ file. This is useful,
-  if for example, the main +setup.py+ file is not at the root of
-  the tree extracted by the tarball. If +HOST_PYTHON_FOO_SUBDIR+ is not
-  specified, it defaults to +PYTHON_FOO_SUBDIR+.
 
 * +PYTHON_FOO_ENV+, to specify additional environment variables to
   pass to the Python +setup.py+ script (for both the build and install
@@ -140,6 +139,13 @@ therefore only use a few of them, or none.
   +PKG_PYTHON_SETUPTOOLS_INSTALL_STAGING_OPTS+ (for target setuptools
   packages) and +HOST_PKG_PYTHON_SETUPTOOLS_INSTALL_OPTS+ (for host
   setuptools packages).
+
+* +HOST_PYTHON_FOO_NEEDS_HOST_PYTHON+, to define the host python
+  interpreter. The usage of this variable is limited to host
+  packages. The two supported value are +python2+ and +python3+. It
+  will ensure the right host python package is available and will
+  invoke it for the build. If some build steps are overloaded, the
+  right python interpreter must be explicitly called in the commands.
 
 With the Python infrastructure, all the steps required to build and
 install the packages are already defined, and they generally work well

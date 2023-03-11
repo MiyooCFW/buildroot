@@ -16,12 +16,13 @@ choice
 
 config BR2_PACKAGE_MARIADB
 	bool "mariadb"
+	depends on BR2_PACKAGE_LIBAIO_ARCH_SUPPORTS
 	depends on !BR2_STATIC_LIBS
-	depends on BR2_TOOLCHAIN_HAS_ATOMIC || BR2_TOOLCHAIN_HAS_SYNC_8
 	select BR2_PACKAGE_LIBAIO
 	select BR2_PACKAGE_LIBXML2
 	select BR2_PACKAGE_NCURSES
 	select BR2_PACKAGE_OPENSSL
+	select BR2_PACKAGE_READLINE
 	select BR2_PACKAGE_HAS_MYSQL
 	help
 	  MariaDB is one of the most popular database servers in the
@@ -31,12 +32,13 @@ config BR2_PACKAGE_MARIADB
 	  http://www.mariadb.org/
 
 comment "mariadb needs a toolchain w/ dynamic library"
+	depends on BR2_PACKAGE_LIBAIO_ARCH_SUPPORTS
 	depends on BR2_STATIC_LIBS
-	depends on BR2_TOOLCHAIN_HAS_ATOMIC || BR2_TOOLCHAIN_HAS_SYNC_8
 
 config BR2_PACKAGE_ORACLE_MYSQL
 	bool "oracle mysql"
 	select BR2_PACKAGE_NCURSES
+	select BR2_PACKAGE_READLINE
 	select BR2_PACKAGE_HAS_MYSQL
 	help
 	  The MySQL Open Source Database System

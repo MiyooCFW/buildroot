@@ -6,7 +6,7 @@ config BR2_PACKAGE_LJSYSCALL
 	  An FFI implementation of the Linux and NetBSD kernel ABIs for
 	  LuaJIT.
 
-	  http://www.myriabit.com/ljsyscall/
+	  http://github.com/justincormack/ljsyscall
 
 comment "ljsyscall needs LuaJIT"
 	depends on !BR2_PACKAGE_LUAJIT
