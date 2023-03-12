@@ -53,6 +53,30 @@ jobs:
         
     - uses: actions/upload-artifact@v2
       with:
+        name: suniv-f1c500s-miyoo-4bit.dtb (uClibc)
+        path: ${{ inputs.submodule || '.' }}/output/images/suniv-f1c500s-miyoo-4bit.dtb
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: suniv-f1c500s-miyoo.dtb (uClibc)
+        path: ${{ inputs.submodule || '.' }}/output/images/suniv-f1c500s-miyoo.dtb
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: u-boot-sunxi-with-spl.bin (uClibc)
+        path: ${{ inputs.submodule || '.' }}/output/images/u-boot-sunxi-with-spl.bin
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: zImage (uClibc)
+        path: ${{ inputs.submodule || '.' }}/output/images/zImage
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`          
+        
+    - uses: actions/upload-artifact@v2
+      with:
         name: SDK (uClibc)
         path: /opt/sdk.tar
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`    
@@ -95,6 +119,30 @@ jobs:
         name: rootfs (musl)
         path: ${{ inputs.submodule || '.' }}/output/images/rootfs.tar.xz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+        
+    - uses: actions/upload-artifact@v2
+      with:
+        name: suniv-f1c500s-miyoo-4bit.dtb (musl)
+        path: ${{ inputs.submodule || '.' }}/output/images/suniv-f1c500s-miyoo-4bit.dtb
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: suniv-f1c500s-miyoo.dtb (musl)
+        path: ${{ inputs.submodule || '.' }}/output/images/suniv-f1c500s-miyoo.dtb
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: u-boot-sunxi-with-spl.bin (musl)
+        path: ${{ inputs.submodule || '.' }}/output/images/u-boot-sunxi-with-spl.bin
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: zImage (musl)
+        path: ${{ inputs.submodule || '.' }}/output/images/zImage
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`        
         
     - uses: actions/upload-artifact@v2
       with:
