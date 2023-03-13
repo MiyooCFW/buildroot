@@ -11,7 +11,7 @@ on:
         type: string
 
 jobs:   
-  rootfs-uclibc:
+  build-image-uclibc:
     runs-on: ubuntu-22.04
     env:
       FORCE_UNSAFE_CONFIGURE: 1
@@ -30,7 +30,7 @@ jobs:
     - uses: actions/cache@v3
       if: inputs.submodule
       with:
-        path: ${{ inputs.submodule || '.' }}/output/images/rootfs.tar.xz
+        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-2.0.0.img
         key: ${{ steps.cache-key.outputs.key }}
       id: cache
         
@@ -47,33 +47,9 @@ jobs:
       
     - uses: actions/upload-artifact@v2
       with:
-        name: rootfs (uClibc)
-        path: ${{ inputs.submodule || '.' }}/output/images/rootfs.tar.xz
+        name: build image (uClibc)
+        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-2.0.0.img
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
-        
-    - uses: actions/upload-artifact@v2
-      with:
-        name: suniv-f1c500s-miyoo-4bit.dtb (uClibc)
-        path: ${{ inputs.submodule || '.' }}/output/images/suniv-f1c500s-miyoo-4bit.dtb
-        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
-
-    - uses: actions/upload-artifact@v2
-      with:
-        name: suniv-f1c500s-miyoo.dtb (uClibc)
-        path: ${{ inputs.submodule || '.' }}/output/images/suniv-f1c500s-miyoo.dtb
-        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
-
-    - uses: actions/upload-artifact@v2
-      with:
-        name: u-boot-sunxi-with-spl.bin (uClibc)
-        path: ${{ inputs.submodule || '.' }}/output/images/u-boot-sunxi-with-spl.bin
-        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
-
-    - uses: actions/upload-artifact@v2
-      with:
-        name: zImage (uClibc)
-        path: ${{ inputs.submodule || '.' }}/output/images/zImage
-        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`          
         
     - uses: actions/upload-artifact@v2
       with:
@@ -81,7 +57,7 @@ jobs:
         path: /opt/sdk.tar
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`    
 
-  rootfs-musl:
+  build-image-musl:
     runs-on: ubuntu-22.04
     env:
       FORCE_UNSAFE_CONFIGURE: 1
@@ -100,7 +76,7 @@ jobs:
     - uses: actions/cache@v3
       if: inputs.submodule
       with:
-        path: ${{ inputs.submodule || '.' }}/output/images/rootfs.tar.xz
+        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-2.0.0.img
         key: ${{ steps.cache-key.outputs.key }}
       id: cache
         
@@ -109,41 +85,17 @@ jobs:
       run: |
         cd ${{ inputs.submodule || '.' }}
         apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
-        make miyoo_defconfig
+        make miyoo_musl_defconfig
         make
         cd /opt
         tar cf sdk.tar miyoo 
       
     - uses: actions/upload-artifact@v2
       with:
-        name: rootfs (musl)
-        path: ${{ inputs.submodule || '.' }}/output/images/rootfs.tar.xz
-        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
-        
-    - uses: actions/upload-artifact@v2
-      with:
-        name: suniv-f1c500s-miyoo-4bit.dtb (musl)
-        path: ${{ inputs.submodule || '.' }}/output/images/suniv-f1c500s-miyoo-4bit.dtb
+        name: build image (musl)
+        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-2.0.0.img
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
 
-    - uses: actions/upload-artifact@v2
-      with:
-        name: suniv-f1c500s-miyoo.dtb (musl)
-        path: ${{ inputs.submodule || '.' }}/output/images/suniv-f1c500s-miyoo.dtb
-        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
-
-    - uses: actions/upload-artifact@v2
-      with:
-        name: u-boot-sunxi-with-spl.bin (musl)
-        path: ${{ inputs.submodule || '.' }}/output/images/u-boot-sunxi-with-spl.bin
-        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
-
-    - uses: actions/upload-artifact@v2
-      with:
-        name: zImage (musl)
-        path: ${{ inputs.submodule || '.' }}/output/images/zImage
-        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`        
-        
     - uses: actions/upload-artifact@v2
       with:
         name: SDK (musl)

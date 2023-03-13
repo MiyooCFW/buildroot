@@ -1,0 +1,3 @@
+title=File System Check
+exec=/mnt/apps/st/st
+params=-e /mnt/apps/fsck/fsck.sh

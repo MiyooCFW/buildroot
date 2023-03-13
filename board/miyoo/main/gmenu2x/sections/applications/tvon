@@ -1,0 +1,3 @@
+title=TVout ON
+description=TV output enabled
+exec=/mnt/apps/tvon/tvout-on.sh
