@@ -3,7 +3,7 @@ GMENU2X_SITE_METHOD = git
 GMENU2X_SITE = https://github.com/MiyooCFW/gmenu2x.git
 GMENU2X_DEPENDENCIES = sdl sdl_image sdl_mixer sdl_sound sdl_ttf
 define GMENU2X_BUILD_CMDS
-    $(MAKE) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" LD="$(TARGET_LD)" -C $(@D) -f Makefile.miyoo
+    $(MAKE) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" STRIP="$(TARGET_STRIP)" LD="$(TARGET_LD)" -C $(@D) -f Makefile.miyoo
 endef
 
 define GMENU2X_INSTALL_TARGET_CMDS
