@@ -7,8 +7,8 @@ SELFDIR=`dirname \`realpath ${0}\``
 #BOOT_CMD="boot.cmd"
 #OUTPUT_NAME="boot.scr"
 
-cp -r board/miyoo/boot/ "${BINARIES_DIR}"
-cp -r board/miyoo/main/ "${BINARIES_DIR}"
+cp -r board/miyoo/boot "${BINARIES_DIR}"
+cp -r board/miyoo/main "${BINARIES_DIR}"
 #cd "${BINARIES_DIR}"
 #"${MKIMAGE}" -f boot/${BOOT_CMD} ${OUTPUT_NAME}
 #rm boot/${BOOT_CMD}

@@ -13,7 +13,7 @@ swapon /dev/mmcblk0p3 | tee -a ${LOG}
 LOG=/dev/null
 
 BINDIR="${MOUNTDIR}/misc/bin"
-FATFSCK="${BINDIR}/fsck.fat"
+FATFSCK="fsck.fat"
 
 # high brightness
 echo '10' > /sys/devices/platform/backlight/backlight/backlight/brightness
