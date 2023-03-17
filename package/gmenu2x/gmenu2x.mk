@@ -12,7 +12,7 @@ CFLAGS += -O0 -ggdb -g3 $(SDL_CFLAGS)
 CFLAGS += -DTARGET_MIYOO
 
 define GMENU2X_BUILD_CMDS
-    $(MAKE) CFLAGS="$(CFLAGS)" CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" STRIP="$(TARGET_STRIP)" LD="$(TARGET_LD)" -C $(@D) -f Makefile.miyoo
+    $(MAKE) CFLAGS="$(CFLAGS)" CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" STRIP="$(TARGET_STRIP)" LD="$(TARGET_LD)" -C $(@D) -f Makefile.miyoo dist
 endef
 
 define GMENU2X_INSTALL_TARGET_CMDS
