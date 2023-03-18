@@ -1,0 +1,9 @@
+! manifest
+! format: each line corresponds to one file to be copied over
+! from_file(as_appears_in_this_directory) to_file(relative_to_root_of_main_partition)
+!   to_file is optional; if missing will use from_file
+.backlight.conf
+.volume.conf
+gmenu2x.conf gmenu2x/gmenu2x.conf
+input.conf gmenu2x/input.conf
+! leave this last line here

@@ -1,0 +1,103 @@
+#!/bin/busybox sh
+
+MOUNTDIR=/boot
+# expect to be run from /boot, where the boot partition is mounted (readonly)
+
+# also expect CONSOLE_VARIANT to be passed in = already set from /etc/main
+# also expect the screen driver to be loaded in /etc/main
+
+# create swap
+mkswap /dev/mmcblk0p3 | tee -a ${LOG}
+swapon /dev/mmcblk0p3 | tee -a ${LOG}
+
+LOG=/dev/null
+
+BINDIR="${MOUNTDIR}/misc/bin"
+FATFSCK="fsck.fat"
+
+# high brightness
+echo '10' > /sys/devices/platform/backlight/backlight/backlight/brightness
+
+#echo -e "\e[?3c"
+echo -e "\e[32m" # green
+
+# action time - copy over the kernel and the config files
+
+echo "firstboot script running..." | tee -a ${LOG}
+echo
+
+BASEDIR="${MOUNTDIR}"
+
+# action time
+
+# copy over the config files
+echo "Copying default configuration files into place..." | tee -a ${LOG}
+mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 /mnt | tee -a ${LOG}
+if test -r "${BASEDIR}/configs/manifest"; then
+    cat "${BASEDIR}/configs/manifest" | while read -r LINE; do
+        if test "${LINE}" == "${LINE#!}" -a "${LINE}" != "" ; then
+            set -- ${LINE}
+            # 1               2
+            # source_filename target_filename/inside main/
+            if test -r "${BASEDIR}/configs/$1"; then
+                TO="$2"
+                if test "${TO}" == ""; then
+                    TO="$1"
+                fi
+                echo "Copying $1 to /mnt/$TO..." | tee -a ${LOG}
+                cp -f "${BASEDIR}/configs/$1" "/mnt/$TO" | tee -a ${LOG}
+            fi
+        fi
+    done
+fi
+
+echo
+
+# run a custom script if present - could be used to fix u-boot and such
+if test -r "${BASEDIR}/firstboot.custom.sh"; then
+    echo "Running a specific firstboot script..." | tee -a ${LOG}
+    (cd "${BASEDIR}" && sh firstboot.custom.sh) | tee -a ${LOG}
+    echo "Finished running a specific firstboot script." | tee -a ${LOG}
+fi
+
+
+echo
+
+# resize the main partition if requested
+if test -e "${MOUNTDIR}/resize"; then
+    echo "Going to resize the MAIN partition." | tee -a ${LOG}
+    echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
+    umount /dev/mmcblk0p4 | tee -a ${LOG}
+    "${FATFSCK}" -y /dev/mmcblk0p4 | tee -a ${LOG}
+    "${BINDIR}/fatresize_hc" | tee -a ${LOG}
+    "${FATFSCK}" -y /dev/mmcblk0p4 | tee -a ${LOG}
+    echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
+    sync
+    mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 /mnt | tee -a ${LOG}
+fi
+
+# do some more stuff here ??
+
+
+mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
+# disable this script
+echo "Disabling the firstboot script." | tee -a ${LOG}
+mv "${MOUNTDIR}/firstboot" "${MOUNTDIR}/firstboot.done" | tee -a ${LOG}
+if test -e "${MOUNTDIR}/resize"; then rm "${MOUNTDIR}/resize"; fi
+mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
+
+echo
+
+sync
+echo "firstboot script finished." | tee -a ${LOG}
+
+echo
+
+#REBOOT device if firstboot.custom script detected - for e.g. u-boot
+if test -r "${BASEDIR}/firstboot.custom.sh"; then
+echo "please wait a few seconds for shutdown...." | tee -a ${LOG}
+umount /dev/mmcblk0p4 | tee -a ${LOG}
+#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
+sleep 3
+reboot
+fi

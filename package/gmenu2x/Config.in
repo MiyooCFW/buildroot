@@ -1,0 +1,7 @@
+config BR2_PACKAGE_GMENU2X
+	bool "gmenu2x"
+	select BR2_PACKAGE_SDL
+	select BR2_PACKAGE_SDL_IMAGE
+	select BR2_PACKAGE_SDL_TTF
+	help
+	  This GMenu2X is a fork of GMenuNX and is developed for the MiyooCFW, released under the GNU GPL license v2.

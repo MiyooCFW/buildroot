@@ -1,0 +1,5 @@
+config BR2_PACKAGE_MIYOO_DAEMON
+	bool "miyoo-daemon"
+	depends on BR2_PACKAGE_SDL
+	help
+	  miyoo_daemon

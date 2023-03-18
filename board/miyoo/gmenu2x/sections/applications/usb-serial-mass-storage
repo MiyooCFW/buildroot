@@ -1,0 +1,3 @@
+title=USB serial MS
+description=USB Serial mass storage mode
+exec=/mnt/apps/usb-serial-mass-storage/usb-serial-mass-storage.sh
