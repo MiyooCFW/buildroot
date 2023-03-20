@@ -1,0 +1,5 @@
+config BR2_PACKAGE_FATRESIZE
+	depends on BR2_PACKAGE_PARTED
+	bool "fatresize"
+	help
+	  Resize fat partitions

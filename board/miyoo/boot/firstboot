@@ -3,25 +3,17 @@
 MOUNTDIR=/boot
 # expect to be run from /boot, where the boot partition is mounted (readonly)
 
-# also expect CONSOLE_VARIANT to be passed in = already set from /etc/main
-# also expect the screen driver to be loaded in /etc/main
-
 # create swap
 mkswap /dev/mmcblk0p3 | tee -a ${LOG}
 swapon /dev/mmcblk0p3 | tee -a ${LOG}
 
 LOG=/dev/null
 
-BINDIR="${MOUNTDIR}/misc/bin"
-FATFSCK="fsck.fat"
-
 # high brightness
 echo '10' > /sys/devices/platform/backlight/backlight/backlight/brightness
 
 #echo -e "\e[?3c"
 echo -e "\e[32m" # green
-
-# action time - copy over the kernel and the config files
 
 echo "firstboot script running..." | tee -a ${LOG}
 echo
@@ -68,9 +60,9 @@ if test -e "${MOUNTDIR}/resize"; then
     echo "Going to resize the MAIN partition." | tee -a ${LOG}
     echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
     umount /dev/mmcblk0p4 | tee -a ${LOG}
-    "${FATFSCK}" -y /dev/mmcblk0p4 | tee -a ${LOG}
-    "${BINDIR}/fatresize_hc" | tee -a ${LOG}
-    "${FATFSCK}" -y /dev/mmcblk0p4 | tee -a ${LOG}
+    fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
+    fatresize_hc | tee -a ${LOG}
+    fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
     echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
     sync
     mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 /mnt | tee -a ${LOG}
