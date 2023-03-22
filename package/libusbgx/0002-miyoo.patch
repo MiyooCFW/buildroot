@@ -1,0 +1,141 @@
+Index: examples/gadget-acm-ecm.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/examples/gadget-acm-ecm.c b/examples/gadget-acm-ecm.c
+--- a/examples/gadget-acm-ecm.c	(revision 721e3a1cbd7e2b6361bb439d3959e7403e4f0092)
++++ b/examples/gadget-acm-ecm.c	(date 1679314494083)
+@@ -38,7 +38,7 @@
+ 	usbg_state *s;
+ 	usbg_gadget *g;
+ 	usbg_config *c;
+-	usbg_function *f_acm0, *f_acm1, *f_ecm;
++	usbg_function *f_acm0;
+ 	int ret = -EINVAL;
+ 	int usbg_ret;
+ 
+@@ -60,7 +60,7 @@
+ 	};
+ 
+ 	struct usbg_config_strs c_strs = {
+-		.configuration = "CDC 2xACM+ECM"
++		.configuration = "CDC 1xACM"
+ 	};
+ 
+ 	usbg_ret = usbg_init("/sys/kernel/config", &s);
+@@ -86,22 +86,6 @@
+ 				usbg_strerror(usbg_ret));
+ 		goto out2;
+ 	}
+-
+-	usbg_ret = usbg_create_function(g, USBG_F_ACM, "usb1", NULL, &f_acm1);
+-	if (usbg_ret != USBG_SUCCESS) {
+-		fprintf(stderr, "Error creating acm1 function\n");
+-		fprintf(stderr, "Error: %s : %s\n", usbg_error_name(usbg_ret),
+-				usbg_strerror(usbg_ret));
+-		goto out2;
+-	}
+-
+-	usbg_ret = usbg_create_function(g, USBG_F_ECM, "usb0", NULL, &f_ecm);
+-	if (usbg_ret != USBG_SUCCESS) {
+-		fprintf(stderr, "Error creating ecm function\n");
+-		fprintf(stderr, "Error: %s : %s\n", usbg_error_name(usbg_ret),
+-				usbg_strerror(usbg_ret));
+-		goto out2;
+-	}
+ 
+ 	/* NULL can be passed to use kernel defaults */
+ 	usbg_ret = usbg_create_config(g, 1, "The only one", NULL, &c_strs, &c);
+@@ -119,22 +103,6 @@
+ 				usbg_strerror(usbg_ret));
+ 		goto out2;
+ 	}
+-
+-	usbg_ret = usbg_add_config_function(c, "acm.GS1", f_acm1);
+-	if (usbg_ret != USBG_SUCCESS) {
+-		fprintf(stderr, "Error adding acm.GS1\n");
+-		fprintf(stderr, "Error: %s : %s\n", usbg_error_name(usbg_ret),
+-				usbg_strerror(usbg_ret));
+-		goto out2;
+-	}
+-
+-	usbg_ret = usbg_add_config_function(c, "ecm.usb0", f_ecm);
+-	if (usbg_ret != USBG_SUCCESS) {
+-		fprintf(stderr, "Error adding ecm.usb0\n");
+-		fprintf(stderr, "Error: %s : %s\n", usbg_error_name(usbg_ret),
+-				usbg_strerror(usbg_ret));
+-		goto out2;
+-	}
+ 
+ 	usbg_ret = usbg_enable_gadget(g, DEFAULT_UDC);
+ 	if (usbg_ret != USBG_SUCCESS) {
+Index: examples/gadget-ms.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/examples/gadget-ms.c b/examples/gadget-ms.c
+--- a/examples/gadget-ms.c	(revision 721e3a1cbd7e2b6361bb439d3959e7403e4f0092)
++++ b/examples/gadget-ms.c	(date 1679314494093)
+@@ -36,7 +36,7 @@
+ 	usbg_state *s;
+ 	usbg_gadget *g;
+ 	usbg_config *c;
+-	usbg_function *f_ms;
++	usbg_function *f_ms, *f_acm0;
+ 	int ret = -EINVAL;
+ 	int usbg_ret;
+ 
+@@ -60,18 +60,18 @@
+ 	struct usbg_f_ms_lun_attrs f_ms_luns_array[] = {
+ 		{
+ 			.id = -1, /* allows to place in any position */
+-			.cdrom = 1,
++			.cdrom = 0,
+ 			.ro = 0,
+ 			.nofua = 0,
+ 			.removable = 1,
+-			.file = "",
++			.file = argv[1],
+ 		}, {
+ 			.id = -1, /* allows to place in any position */
+ 			.cdrom = 0,
+ 			.ro = 0,
+ 			.nofua = 0,
+ 			.removable = 1,
+-			.file = argv[1],
++			.file = argv[2],
+ 		}
+ 	};
+ 
+@@ -116,6 +116,14 @@
+ 		goto out2;
+ 	}
+ 
++    usbg_ret = usbg_create_function(g, USBG_F_ACM, "usb0", NULL, &f_acm0);
++    if (usbg_ret != USBG_SUCCESS) {
++        fprintf(stderr, "Error creating acm0 function\n");
++        fprintf(stderr, "Error: %s : %s\n", usbg_error_name(usbg_ret),
++                usbg_strerror(usbg_ret));
++        goto out2;
++    }
++
+ 	usbg_ret = usbg_create_function(g, USBG_F_MASS_STORAGE, "my_reader",
+ 					&f_attrs, &f_ms);
+ 	if (usbg_ret != USBG_SUCCESS) {
+@@ -133,6 +141,14 @@
+ 				usbg_strerror(usbg_ret));
+ 		goto out2;
+ 	}
++
++    usbg_ret = usbg_add_config_function(c, "acm.GS0", f_acm0);
++    if (usbg_ret != USBG_SUCCESS) {
++        fprintf(stderr, "Error adding acm.GS0\n");
++        fprintf(stderr, "Error: %s : %s\n", usbg_error_name(usbg_ret),
++                usbg_strerror(usbg_ret));
++        goto out2;
++    }
+ 
+ 	usbg_ret = usbg_add_config_function(c, "some_name_here", f_ms);
+ 	if (usbg_ret != USBG_SUCCESS) {

@@ -34,7 +34,10 @@ else
 fi
 
 # load kernel modules
-modprobe "g_acm_ms" file=/dev/mmcblk0p4,/dev/mmcblk0p1,/dev/mmcblk0p2 removable=1,1 ro=0,0 >> "${LOGS}" 2>&1
+
+# load usb gadget
+mount -t configfs none /sys/kernel/config >> "${LOGS}" 2>&1
+gadget-ms /dev/mmcblk0p1 /dev/mmcblk0p4 >> "${LOGS}" 2>&1
 
 
 # just load the expected ones (screen driver) from here
