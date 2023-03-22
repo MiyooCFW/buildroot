@@ -1,0 +1,4 @@
+config BR2_PACKAGE_MIYOO_CTL
+	bool "miyoo-ctl"
+	help
+	  miyoo-ctl
