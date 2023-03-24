@@ -15,9 +15,9 @@ export LOGS # so that subshells can use this as well
 if test -r "${BOOTDIR}/console.cfg"; then
     source "${BOOTDIR}/console.cfg"
 fi
-# sanity checks - we default to V90/Q90
+# sanity checks - we default to PocketGO
 if test -z "${CONSOLE_VARIANT}"; then
-    CONSOLE_VARIANT="v90_q90"
+    CONSOLE_VARIANT="pocketgo"
 fi
 export CONSOLE_VARIANT
 
