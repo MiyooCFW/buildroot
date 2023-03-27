@@ -40,9 +40,7 @@ jobs:
         cd ${{ inputs.submodule || '.' }}
         apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         make miyoo_uclibc_defconfig
-        make
-        cd /opt
-        tar cf sdk.tar miyoo
+        make sdk
 
       
     - uses: actions/upload-artifact@v2
@@ -54,7 +52,7 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: SDK (uClibc)
-        path: /opt/sdk.tar
+        path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-uclibcgnueabi_sdk-buildroot.tar.gz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`    
 
   build-image-musl:
@@ -86,9 +84,7 @@ jobs:
         cd ${{ inputs.submodule || '.' }}
         apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         make miyoo_musl_defconfig
-        make
-        cd /opt
-        tar cf sdk.tar miyoo 
+        make sdk
       
     - uses: actions/upload-artifact@v2
       with:
@@ -99,5 +95,5 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: SDK (musl)
-        path: /opt/sdk.tar
+        path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-musleabi_sdk-buildroot.tar.gz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
