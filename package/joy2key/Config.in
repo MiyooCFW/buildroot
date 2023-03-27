@@ -1,0 +1,4 @@
+config BR2_PACKAGE_JOY2KEY
+	bool "joy2key"
+	help
+	  Joy2key will translate your joystick movements into the equivilent keystrokes
