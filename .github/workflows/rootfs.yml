@@ -30,7 +30,7 @@ jobs:
     - uses: actions/cache@v3
       if: inputs.submodule
       with:
-        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-2.0.0.img
+        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-*.img
         key: ${{ steps.cache-key.outputs.key }}
       id: cache
         
@@ -48,7 +48,7 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: build image (uClibc)
-        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-2.0.0.img
+        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-*.img
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
         
     - uses: actions/upload-artifact@v2
@@ -76,7 +76,7 @@ jobs:
     - uses: actions/cache@v3
       if: inputs.submodule
       with:
-        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-2.0.0.img
+        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-*.img
         key: ${{ steps.cache-key.outputs.key }}
       id: cache
         
@@ -93,7 +93,7 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: build image (musl)
-        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-2.0.0.img
+        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-*.img
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
 
     - uses: actions/upload-artifact@v2
