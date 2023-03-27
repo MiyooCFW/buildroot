@@ -92,7 +92,7 @@ jobs:
         path: ~/.buildroot-ccache
         key: ${{ inputs.submodule }}-musl-ccache-${{ github.sha }}
         restore-keys: |
-          ${{ inputs.submodule }}-musl-ccache-
+          ${{ inputs.submodule }}-musl-ccache-off
 
     - name: build
       #if: steps.cache.outputs.cache-hit != 'true'
