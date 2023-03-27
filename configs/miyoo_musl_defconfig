@@ -1,6 +1,6 @@
 BR2_arm=y
 BR2_SVN="svn"
-BR2_HOST_DIR="/opt/miyoo"
+BR2_HOST_DIR="$(BASE_DIR)/host"
 BR2_CPAN_MIRROR="http://cpan.metacpan.org"
 BR2_JLEVEL=32
 BR2_CCACHE=y
