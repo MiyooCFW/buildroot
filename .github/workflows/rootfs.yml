@@ -65,6 +65,12 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
+        name: build-graphs (uClibc)
+        path: ${{ inputs.submodule || '.' }}/output/graphs/
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
+
+    - uses: actions/upload-artifact@v2
+      with:
         name: rootfs (uClibc)
         path: ${{ inputs.submodule || '.' }}/output/images/rootfs.ext4
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`   
@@ -118,6 +124,12 @@ jobs:
       with:
         name: SDK (musl)
         path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-musleabi_sdk-buildroot.tar.gz
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: build-graphs (musl)
+        path: ${{ inputs.submodule || '.' }}/output/graphs/
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
 
     - uses: actions/upload-artifact@v2
