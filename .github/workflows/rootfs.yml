@@ -63,6 +63,12 @@ jobs:
         path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-uclibcgnueabi_sdk-buildroot.tar.gz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`    
 
+    - uses: actions/upload-artifact@v2
+      with:
+        name: rootfs (uClibc)
+        path: ${{ inputs.submodule || '.' }}/output/images/rootfs*
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`   
+
   build-image-musl:
     runs-on: ubuntu-22.04
     env:
@@ -112,4 +118,10 @@ jobs:
       with:
         name: SDK (musl)
         path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-musleabi_sdk-buildroot.tar.gz
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: rootfs (musl)
+        path: ${{ inputs.submodule || '.' }}/output/images/rootfs*
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
