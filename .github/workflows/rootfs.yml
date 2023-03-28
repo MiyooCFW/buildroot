@@ -49,7 +49,12 @@ jobs:
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         make miyoo_uclibc_defconfig
         make sdk
-
+ 
+    - name: generate-graphs
+      run: |
+        cd ${{ inputs.submodule || '.' }}
+        sudo apt update && sudo apt install -y python3-matplotlib python3-numpy
+        make graph-build
       
     - uses: actions/upload-artifact@v2
       with:
@@ -62,6 +67,12 @@ jobs:
         name: SDK (uClibc)
         path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-uclibcgnueabi_sdk-buildroot.tar.gz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`    
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: build-graphs (uClibc)
+        path: ${{ inputs.submodule || '.' }}/output/graphs/
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
 
   build-image-musl:
     runs-on: ubuntu-22.04
@@ -101,6 +112,12 @@ jobs:
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         make miyoo_musl_defconfig
         make sdk
+
+    - name: generate-graphs
+      run: |
+        cd ${{ inputs.submodule || '.' }}
+        sudo apt update && sudo apt install -y python3-matplotlib python3-numpy
+        make graph-build
       
     - uses: actions/upload-artifact@v2
       with:
@@ -112,4 +129,10 @@ jobs:
       with:
         name: SDK (musl)
         path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-musleabi_sdk-buildroot.tar.gz
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: build-graphs (musl)
+        path: ${{ inputs.submodule || '.' }}/output/graphs/
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
