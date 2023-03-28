@@ -1,7 +1,6 @@
 BR2_arm=y
 BR2_SVN="svn"
 BR2_CPAN_MIRROR="http://cpan.metacpan.org"
-BR2_JLEVEL=32
 BR2_CCACHE=y
 # BR2_PIC_PIE is not set
 BR2_SSP_NONE=y
