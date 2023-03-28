@@ -66,7 +66,7 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: rootfs (uClibc)
-        path: ${{ inputs.submodule || '.' }}/output/images/rootfs*
+        path: ${{ inputs.submodule || '.' }}/output/images/rootfs.ext4
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`   
 
   build-image-musl:
@@ -123,5 +123,5 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: rootfs (musl)
-        path: ${{ inputs.submodule || '.' }}/output/images/rootfs*
+        path: ${{ inputs.submodule || '.' }}/output/images/rootfs.ext4
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
