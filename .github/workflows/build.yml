@@ -18,7 +18,15 @@ jobs:
     - uses: actions/checkout@v3
     - if: inputs.submodule
       run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}
-        
+  
+    - name: retrieve ccache
+      uses: actions/cache@v3
+      with:
+        path: ~/.buildroot-ccache
+        key: ${{ inputs.submodule }}-uclibc-ccache-${{ github.sha }}
+        restore-keys: |
+          ${{ inputs.submodule }}-uclibc-ccache-
+
     - name: build
       run: |
         cd ${{ inputs.submodule || '.' }}
@@ -64,7 +72,15 @@ jobs:
     - uses: actions/checkout@v3
     - if: inputs.submodule
       run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}
-    
+
+    - name: retrieve ccache
+      uses: actions/cache@v3
+      with:
+        path: ~/.buildroot-ccache
+        key: ${{ inputs.submodule }}-musl-ccache-${{ github.sha }}
+        restore-keys: |
+          ${{ inputs.submodule }}-musl-ccache-
+
     - name: build
       run: |
         cd ${{ inputs.submodule || '.' }}
