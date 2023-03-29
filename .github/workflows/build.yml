@@ -1,5 +1,4 @@
-name: Build Root Filesystem
-
+name: Buildroot
 on:
   push:
   pull_request:
@@ -19,31 +18,8 @@ jobs:
     - uses: actions/checkout@v3
     - if: inputs.submodule
       run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}
-    
-    - name: Generate cache key
-      if: inputs.submodule
-      id: cache-key
-      run: |
-        cd ${{ inputs.submodule }}
-        echo "::set-output name=key::${{ inputs.submodule }}-$(git rev-parse --short HEAD)"
-      
-    - uses: actions/cache@v3
-      if: inputs.submodule
-      with:
-        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-*.img
-        key: ${{ steps.cache-key.outputs.key }}
-      id: cache
-
-    - name: retrieve ccache
-      uses: actions/cache@v3
-      with:
-        path: ~/.buildroot-ccache
-        key: ${{ inputs.submodule }}-uclibc-ccache-${{ github.sha }}
-        restore-keys: |
-          ${{ inputs.submodule }}-uclibc-ccache-
         
     - name: build
-      #if: steps.cache.outputs.cache-hit != 'true'
       run: |
         cd ${{ inputs.submodule || '.' }}
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
@@ -56,25 +32,25 @@ jobs:
         sudo apt update && sudo apt install -y python3-matplotlib python3-numpy
         make graph-build
       
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: build image (uClibc)
         path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-*.img
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
         
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: SDK (uClibc)
         path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-uclibcgnueabi_sdk-buildroot.tar.gz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`    
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: build-graphs (uClibc)
         path: ${{ inputs.submodule || '.' }}/output/graphs/
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: rootfs (uClibc)
         path: ${{ inputs.submodule || '.' }}/output/images/rootfs.ext4
@@ -89,30 +65,7 @@ jobs:
     - if: inputs.submodule
       run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}
     
-    - name: Generate cache key
-      if: inputs.submodule
-      id: cache-key
-      run: |
-        cd ${{ inputs.submodule }}
-        echo "::set-output name=key::${{ inputs.submodule }}-$(git rev-parse --short HEAD)"
-      
-    - uses: actions/cache@v3
-      if: inputs.submodule
-      with:
-        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-*.img
-        key: ${{ steps.cache-key.outputs.key }}
-      id: cache
-
-    - name: retrieve ccache
-      uses: actions/cache@v3
-      with:
-        path: ~/.buildroot-ccache
-        key: ${{ inputs.submodule }}-musl-ccache-${{ github.sha }}
-        restore-keys: |
-          ${{ inputs.submodule }}-musl-ccache-
-
     - name: build
-      #if: steps.cache.outputs.cache-hit != 'true'
       run: |
         cd ${{ inputs.submodule || '.' }}
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
@@ -125,25 +78,25 @@ jobs:
         sudo apt update && sudo apt install -y python3-matplotlib python3-numpy
         make graph-build
       
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: build image (musl)
         path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-*.img
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: SDK (musl)
         path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-musleabi_sdk-buildroot.tar.gz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: build-graphs (musl)
         path: ${{ inputs.submodule || '.' }}/output/graphs/
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: rootfs (musl)
         path: ${{ inputs.submodule || '.' }}/output/images/rootfs.ext4
