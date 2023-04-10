@@ -71,7 +71,9 @@ gadget-ms /dev/mmcblk0p1 /dev/mmcblk0p4 >> "${LOGS}" 2>&1
 		# Load video module read from uEnv.txt & defined by variant in console.cfg
 		if (grep -q FLIP\=\1 "${HOME}/options.cfg"); then
 		modprobe $video $params flip=1
-		else
+		elif (grep -q FLIP\=\0 "${HOME}/options.cfg"); then
+		modprobe $video $params flip=0
+        else
 		modprobe $video $params
 		fi
       fi
