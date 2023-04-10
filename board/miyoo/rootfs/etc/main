@@ -53,8 +53,10 @@ gadget-ms /dev/mmcblk0p1 /dev/mmcblk0p4 >> "${LOGS}" 2>&1
 	# TVout scripting backend
     tvout=`cat ${HOME}/tvout`
     if ((test -r "${HOME}/tvout")); then
-     echo 0 >/sys/class/backlight/backlight/brightness
+     echo 0 > /sys/class/backlight/backlight/brightness
      echo 0 > /sys/class/vtconsole/vtcon1/bind
+     cp /mnt/.backlight.conf /mnt/.backlight.bak
+     echo 0 > ${HOME}/.backlight.conf
      modprobe -r $video
      if (grep -q TVMODE\=\1 "${HOME}/options.cfg"); then
 		modprobe miyoo-tvout tvmode=1
@@ -64,6 +66,9 @@ gadget-ms /dev/mmcblk0p1 /dev/mmcblk0p4 >> "${LOGS}" 2>&1
      echo 1 > /sys/class/vtconsole/vtcon1/bind
      modprobe -r $video
     else
+	  if ((test -r "${HOME}/.backlight.bak")); then
+	  mv ${HOME}/.backlight.bak ${HOME}/.backlight.conf
+	  fi 
 	  # MODULES_CUSTOM scripting
       if ((test -r "${BOOTDIR}/modules.custom.sh") && !(grep -q MODULES_CUSTOM\=\0 "${HOME}/options.cfg")); then
           (cd "${BOOTDIR}" && sh modules.custom.sh ) >> "${LOGS}" 2>&1
@@ -73,7 +78,7 @@ gadget-ms /dev/mmcblk0p1 /dev/mmcblk0p4 >> "${LOGS}" 2>&1
 		modprobe $video $params flip=1
 		elif (grep -q FLIP\=\0 "${HOME}/options.cfg"); then
 		modprobe $video $params flip=0
-        else
+		else
 		modprobe $video $params
 		fi
       fi
