@@ -61,7 +61,7 @@ if test -e "${MOUNTDIR}/resize"; then
     echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
     umount /dev/mmcblk0p4 | tee -a ${LOG}
     fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
-    fatresize_hc | tee -a ${LOG}
+    fatresize -s max -v -p /dev/mmcblk0p4 -n 4
     fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
     echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
     sync
@@ -75,7 +75,7 @@ mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
 # disable this script
 echo "Disabling the firstboot script." | tee -a ${LOG}
 mv "${MOUNTDIR}/firstboot" "${MOUNTDIR}/firstboot.done" | tee -a ${LOG}
-if test -e "${MOUNTDIR}/resize"; then rm "${MOUNTDIR}/resize"; fi
+if test -e "${MOUNTDIR}/resize"; then rm "${MOUNTDIR}/resize"; reboot; fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
 echo
