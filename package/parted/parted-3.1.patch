@@ -1,0 +1,24 @@
+diff --git a/libparted/arch/linux.c b/libparted/arch/linux.c
+index e2c4139..56ae782 100644
+--- a/libparted/arch/linux.c
++++ b/libparted/arch/linux.c
+@@ -41,6 +41,7 @@
+ #include <sys/utsname.h>        /* for uname() */
+ #include <scsi/scsi.h>
+ #include <assert.h>
++#include <sys/sysmacros.h>
+ #ifdef ENABLE_DEVICE_MAPPER
+ #include <libdevmapper.h>
+ #endif
+diff --git a/libparted/fs/xfs/platform_defs.h b/libparted/fs/xfs/platform_defs.h
+index 2b55752..a6ec8fb 100644
+--- a/libparted/fs/xfs/platform_defs.h
++++ b/libparted/fs/xfs/platform_defs.h
+@@ -38,6 +38,7 @@
+ #include <stdarg.h>
+ #include <assert.h>
+ #include <endian.h>
++#include <fcntl.h>
+ #include <stddef.h>
+ #include <stdlib.h>
+ #include <string.h>
