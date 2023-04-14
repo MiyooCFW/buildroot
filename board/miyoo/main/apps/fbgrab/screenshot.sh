@@ -8,4 +8,4 @@ if [[ -e $name.png ]] ; then
     done
     name=$name-$i
 fi
-/mnt/apps/fbgrab/fbgrab "$name".png
+fbgrab "$name".png
