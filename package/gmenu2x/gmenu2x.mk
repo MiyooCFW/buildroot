@@ -5,8 +5,9 @@ GMENU2X_DEPENDENCIES = sdl sdl_image sdl_mixer sdl_sound sdl_ttf
 
 PLATFORM = miyoo
 BUILDTIME := $(shell date +%s)
+COMMIT_HASH := $(shell git rev-parse --short HEAD)
 SDL_CFLAGS  = $(shell $(STAGING_DIR)/usr/bin/sdl-config --cflags)
-CFLAGS = -DPLATFORM=\"$(PLATFORM)\" -D__BUILDTIME__=$(BUILDTIME) -DLOG_LEVEL=3
+CFLAGS = -DPLATFORM=\"$(PLATFORM)\" -D__BUILDTIME__=$(BUILDTIME) -D__COMMIT_HASH__=$(COMMIT_HASH) -DLOG_LEVEL=3
 CFLAGS += -Isrc 
 CFLAGS += -O0 -ggdb -g3 $(SDL_CFLAGS)
 CFLAGS += -DTARGET_MIYOO
