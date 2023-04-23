@@ -26,13 +26,19 @@ jobs:
         key: ${{ inputs.submodule }}-uclibc-ccache-${{ github.sha }}
         restore-keys: |
           ${{ inputs.submodule }}-uclibc-ccache-
-
+    
+    - name: generate cfw hash
+      run: |
+        git config --global --add safe.directory /__w/buildroot/buildroot 
+        echo "cfwsha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      id: cfwsha
+    
     - name: build
       run: |
         cd ${{ inputs.submodule || '.' }}
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         make miyoo_uclibc_defconfig
-        make sdk
+        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}"
  
     - name: generate-graphs
       run: |
@@ -81,12 +87,18 @@ jobs:
         restore-keys: |
           ${{ inputs.submodule }}-musl-ccache-
 
+    - name: generate cfw hash
+      run: |
+        git config --global --add safe.directory /__w/buildroot/buildroot 
+        echo "cfwsha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      id: cfwsha
+
     - name: build
       run: |
         cd ${{ inputs.submodule || '.' }}
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         make miyoo_musl_defconfig
-        make sdk
+        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}"
 
     - name: generate-graphs
       run: |
