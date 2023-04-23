@@ -5,15 +5,15 @@ GMENU2X_DEPENDENCIES = sdl sdl_image sdl_mixer sdl_sound sdl_ttf
 
 PLATFORM = miyoo
 BUILDTIME := $(shell date +%s)
-COMMIT_HASH := $(shell git rev-parse --short HEAD)
+BUILDROOT_HASH := $(shell git rev-parse --short HEAD)
 SDL_CFLAGS  = $(shell $(STAGING_DIR)/usr/bin/sdl-config --cflags)
-CFLAGS = -DPLATFORM=\"$(PLATFORM)\" -D__BUILDTIME__=$(BUILDTIME) -D__COMMIT_HASH__=$(COMMIT_HASH) -DLOG_LEVEL=3
+CFLAGS = -DPLATFORM=\"$(PLATFORM)\" -D__BUILDTIME__=$(BUILDTIME) -D__CFW_HASH__=$(CFW_HASH) -D__BUILDROOT_HASH__=$(BUILDROOT_HASH) -DLOG_LEVEL=3
 CFLAGS += -Isrc 
 CFLAGS += -O0 -ggdb -g3 $(SDL_CFLAGS)
 CFLAGS += -DTARGET_MIYOO
 
 define GMENU2X_BUILD_CMDS
-    $(MAKE) CFLAGS="$(CFLAGS)" CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" STRIP="$(TARGET_STRIP)" LD="$(TARGET_LD)" -C $(@D) -f Makefile.miyoo dist
+    $(MAKE) CFLAGS="$(CFLAGS) -D__COMMIT_HASH__=$(shell git -C $(GMENU2X_DL_DIR)/git rev-parse --short HEAD)" CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" STRIP="$(TARGET_STRIP)" LD="$(TARGET_LD)" -C $(@D) -f Makefile.miyoo dist
 endef
 
 define GMENU2X_INSTALL_TARGET_CMDS
