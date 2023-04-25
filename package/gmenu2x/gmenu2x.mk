@@ -4,7 +4,7 @@ GMENU2X_SITE = https://github.com/MiyooCFW/gmenu2x.git
 GMENU2X_DEPENDENCIES = sdl sdl_image sdl_mixer sdl_sound sdl_ttf
 
 PLATFORM = miyoo
-BUILDTIME := "$(shell date +%F\ %H:%M)"
+BUILDTIME := \"$(shell date +%F\ %H:%M)\"
 BUILDROOT_HASH := $(shell git rev-parse --short HEAD)
 SDL_CFLAGS  = $(shell $(STAGING_DIR)/usr/bin/sdl-config --cflags)
 CFLAGS = -DPLATFORM=\"$(PLATFORM)\" -D__BUILDTIME__=$(BUILDTIME) -D__BUILDROOT_HASH__=$(BUILDROOT_HASH) -DLOG_LEVEL=3
