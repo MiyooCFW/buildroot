@@ -9,7 +9,9 @@ BUILDROOT_HASH := $(shell git rev-parse --short HEAD)
 SDL_CFLAGS  = $(shell $(STAGING_DIR)/usr/bin/sdl-config --cflags)
 CFLAGS = -DPLATFORM=\"$(PLATFORM)\" -D__BUILDTIME__=$(BUILDTIME) -D__BUILDROOT_HASH__=$(BUILDROOT_HASH) -DLOG_LEVEL=3
 ifdef CFW_HASH
+ifneq ($(CFW_HASH), $(BUILDROOT_HASH)) 
 CFLAGS += -D__CFW_HASH__=$(CFW_HASH)
+endif
 endif
 CFLAGS += -Isrc 
 CFLAGS += -O0 -ggdb -g3 $(SDL_CFLAGS)
