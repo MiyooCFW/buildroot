@@ -118,9 +118,6 @@ fi
 # run boot logo animation
 if (!(grep -q BOOT_LOGO\=\0 "${HOME}/options.cfg")); then
     ${BOOTLOGO} >> "${LOGS}" 2>&1
-	#st7789s video driver long initialization fix
-elif (lsmod | grep -q st7789s); then
-	sleep 1
 fi
 
 # can't unmount boot because 'daemon' runs from it - but it's mounted read-only
