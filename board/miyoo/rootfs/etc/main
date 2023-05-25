@@ -70,9 +70,7 @@ gadget-ms /dev/mmcblk0p1 /dev/mmcblk0p4 >> "${LOGS}" 2>&1
 	  mv ${HOME}/.backlight.bak ${HOME}/.backlight.conf
 	  fi 
 	  # MODULES_CUSTOM scripting
-      if ((test -r "${BOOTDIR}/modules.custom.sh") && !(grep -q MODULES_CUSTOM\=\0 "${HOME}/options.cfg")); then
-          (cd "${BOOTDIR}" && sh modules.custom.sh ) >> "${LOGS}" 2>&1
-      else
+      if (!(test -r "${BOOTDIR}/modules.custom.sh") || !(grep -q MODULES_CUSTOM\=\1 "${HOME}/options.cfg")); then
 		# Load video module read from uEnv.txt & defined by variant in console.cfg
 		if (grep -q FLIP\=\1 "${HOME}/options.cfg"); then
 		modprobe $video $params flip=1
@@ -81,6 +79,8 @@ gadget-ms /dev/mmcblk0p1 /dev/mmcblk0p4 >> "${LOGS}" 2>&1
 		else
 		modprobe $video $params
 		fi
+      else
+        (cd "${BOOTDIR}" && sh modules.custom.sh ) >> "${LOGS}" 2>&1
       fi
     fi
 
