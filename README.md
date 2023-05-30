@@ -46,3 +46,7 @@ or buy a powerful PC for yourself.
 ## Flashing firmware to target
 
 load output/images/miyoo-cfw-2.0.0.img on sdcard
+
+---
+# _Buildroot 2022.02.9 (docs: https://github.com/MiyooCFW/buildroot/blob/master/docs/manual/manual.pdf)_
+---
