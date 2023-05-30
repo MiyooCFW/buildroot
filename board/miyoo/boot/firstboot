@@ -53,10 +53,12 @@ if test -r "${BASEDIR}/firstboot.custom.sh"; then
 fi
 
 
-echo
-
+echo " "
+sleep 1
 # resize the main partition if requested
-if test -e "${MOUNTDIR}/resize"; then
+if ((test -e "${MOUNTDIR}/resize") && !(dialog --defaultno --yes-label NO --no-label YES --stdout --timeout 10 --title 	"   Expand MAIN partition?" \
+    --colors --yesno "\n\n   \ZuSelect an option & press START\Zn\n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 12  60)); then
+    clear
     echo "Going to resize the MAIN partition." | tee -a ${LOG}
     echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
     umount /dev/mmcblk0p4 | tee -a ${LOG}
