@@ -55,6 +55,15 @@ fi
 
 echo " "
 sleep 1
+
+# test if proper video\kbd driver was loaded:
+if !(dialog --defaultno --stdout --timeout 10 --title 	"   Can you see this msg?" \
+		--colors --yesno "\n\n   \ZuSelect an option & press START" 12  60); then
+		sync
+		sleep 2
+		poweroff
+fi
+		
 # resize the main partition if requested
 if ((test -e "${MOUNTDIR}/resize") && !(dialog --defaultno --yes-label NO --no-label YES --stdout --timeout 10 --title 	"   Expand MAIN partition?" \
     --colors --yesno "\n\n   \ZuSelect an option & press START\Zn\n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 12  60)); then
@@ -74,6 +83,85 @@ fi
 
 
 mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
+# Create temp file to store variable for menu choice
+TEMP=$(mktemp) 
+# Display the menu for selecting CONSOLE_VARIANT using dialog
+dialog --clear --title "Select your device:" --menu "Select an option:" 15 40 12 \
+    1 "BittBoy2x_v1" \
+    2 "BittBoy2x_v2" \
+    3 "BittBoy3.5" \
+    4 "Powkiddy Q20" \
+    5 "Powkiddy Q90" \
+    6 "Powkiddy V90" \
+    7 "PocketGO \(default\)" \
+    8 "PocketGO with TE pin" \
+    9 "XYC Q8" \
+    10 "SUP M3 (r61520fb controller)" \
+    11 "SUP M3 (RM68090 screen)" \
+    12 "SUP M3 (HX8347D screen)" \
+    2> $TEMP
+
+# Read the user's choice from the file
+CHOICE=$(cat $TEMP)
+# Perform actions based on the user's choice
+case $CHOICE in
+    1)
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v1" 5 18
+        echo "CONSOLE_VARIANT=bittboy2x_v1" > ${MOUNTDIR}/console.cfg
+        ;;
+    2)
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v2" 5 18
+        echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
+        ;;
+    3)
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy3.5" 5 18
+         echo "CONSOLE_VARIANT=bittboy3.5" > ${MOUNTDIR}/console.cfg
+        ;;
+    4)
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Powkiddy Q20" 5 18
+        echo "CONSOLE_VARIANT=q20" > ${MOUNTDIR}/console.cfg
+        ;;
+    5)
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Powkiddy Q90" 5 18
+        echo "CONSOLE_VARIANT=q90" > ${MOUNTDIR}/console.cfg
+        ;;
+    6)
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Powkiddy V90" 5 18
+        echo "CONSOLE_VARIANT=v90" > ${MOUNTDIR}/console.cfg
+        ;;
+    7)
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 PocketGo" 5 18
+        echo "CONSOLE_VARIANT=pocketgo" > ${MOUNTDIR}/console.cfg
+        ;;
+   8)
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 PocketGoi+TE" 5 18
+        echo "CONSOLE_VARIANT=pocketgo_TE" > ${MOUNTDIR}/console.cfg
+        ;;
+    9)
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 XYC Q8" 5 18
+        echo "You selected XYC Q8"
+        echo "CONSOLE_VARIANT=xyc" > ${MOUNTDIR}/console.cfg
+        ;;
+    10)
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 SUO M3 (R61520)" 5 18
+        echo "CONSOLE_VARIANT=m3" > ${MOUNTDIR}/console.cfg
+        ;;
+    11)
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 SUP M3 with RM68090" 5 24
+        echo "CONSOLE_VARIANT=m3_rm68090" > ${MOUNTDIR}/console.cfg
+        ;;
+    12)
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 SUP M3 with HX8347D" 5 18
+        echo "CONSOLE_VARIANT=m3_hx8347d" > ${MOUNTDIR}/console.cfg
+        ;;
+    *)
+        echo "Invalid choice. Exiting."
+        ;;
+esac
+
+# Cleanup - delete the temporary file
+rm $TEMP
+
 # disable this script
 echo "Disabling the firstboot script." | tee -a ${LOG}
 mv "${MOUNTDIR}/firstboot" "${MOUNTDIR}/firstboot.done" | tee -a ${LOG}
@@ -87,11 +175,11 @@ echo "firstboot script finished." | tee -a ${LOG}
 
 echo
 
-#REBOOT device if firstboot.custom script detected - for e.g. u-boot
 if test -r "${BASEDIR}/firstboot.custom.sh"; then
 echo "please wait a few seconds for shutdown...." | tee -a ${LOG}
 umount /dev/mmcblk0p4 | tee -a ${LOG}
 #umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
 sleep 3
-reboot
 fi
+#REBOOT device to overwrite CONSOLE_VARIANT from $CHOICE
+reboot
