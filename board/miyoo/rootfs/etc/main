@@ -11,16 +11,6 @@ LOGS=/dev/null
 # can use /mnt/log.txt here, but note that this prevents clean shutdowns - so only use this for debugging
 export LOGS # so that subshells can use this as well
 
-# try to read what handheld we're on
-if test -r "${BOOTDIR}/console.cfg"; then
-    source "${BOOTDIR}/console.cfg"
-fi
-# sanity checks - we default to PocketGO
-if test -z "${CONSOLE_VARIANT}"; then
-    CONSOLE_VARIANT="pocketgo"
-fi
-export CONSOLE_VARIANT
-
 # check if it's first boot and turn on messages if yes
 if test -r "${BOOTDIR}/firstboot"; then
     DEBUG_MSG="yes"
@@ -97,6 +87,16 @@ fi
 fi
 
 clear
+
+# try to read what handheld we're on
+if test -r "${BOOTDIR}/console.cfg"; then
+    source "${BOOTDIR}/console.cfg"
+fi
+# sanity checks the console type has been set
+if test -z "${CONSOLE_VARIANT}"; then
+    CONSOLE_VARIANT="unknown"
+fi
+export CONSOLE_VARIANT
 
 echo "Boot!" >> "${LOGS}"
 echo "Handheld type is ${CONSOLE_VARIANT}" >> "${LOGS}"
