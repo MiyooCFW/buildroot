@@ -86,58 +86,52 @@ mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
 # Create temp file to store variable for menu choice
 TEMP=$(mktemp) 
 # Display the menu for selecting CONSOLE_VARIANT using dialog
-dialog --clear --title "Select your device:" --menu "Select an option:" 15 40 12 \
-    1 "BittBoy2x_v1" \
-    2 "BittBoy2x_v2" \
-    3 "BittBoy3.5" \
-    4 "Powkiddy Q20" \
-    5 "Powkiddy Q90" \
-    6 "Powkiddy V90" \
-    7 "PocketGO \(default\)" \
-    8 "PocketGO with TE pin" \
-    9 "XYC Q8" \
-    10 "SUP M3 (r61520fb controller)" \
-    11 "SUP M3 (RM68090 screen)" \
-    12 "SUP M3 (HX8347D screen)" \
+if (grep "DETECTED_VERSION=V90/Q90/Q20/PocketGo ST7789S controller" "${MOUNTDIR}/uEnv.txt"); then
+ dialog --clear --title "Select your device:" --menu "Select an option:" 15 40 5 \
+    1 "Powkiddy Q20" \
+    2 "Powkiddy Q90" \
+    3 "Powkiddy V90" \
+    4 "PocketGO (default)" \
+    5 "PocketGO with TE pin" \
     2> $TEMP
 
 # Read the user's choice from the file
 CHOICE=$(cat $TEMP)
 # Perform actions based on the user's choice
 case $CHOICE in
-    1)
+    0)
         dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v1" 5 18
         echo "CONSOLE_VARIANT=bittboy2x_v1" > ${MOUNTDIR}/console.cfg
         ;;
-    2)
+    0)
         dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v2" 5 18
         echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
         ;;
-    3)
+    0)
         dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy3.5" 5 18
          echo "CONSOLE_VARIANT=bittboy3.5" > ${MOUNTDIR}/console.cfg
         ;;
-    4)
+    1)
         dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Powkiddy Q20" 5 18
         echo "CONSOLE_VARIANT=q20" > ${MOUNTDIR}/console.cfg
         ;;
-    5)
+    2)
         dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Powkiddy Q90" 5 18
         echo "CONSOLE_VARIANT=q90" > ${MOUNTDIR}/console.cfg
         ;;
-    6)
+    3)
         dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Powkiddy V90" 5 18
         echo "CONSOLE_VARIANT=v90" > ${MOUNTDIR}/console.cfg
         ;;
-    7)
+    4)
         dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 PocketGo" 5 18
         echo "CONSOLE_VARIANT=pocketgo" > ${MOUNTDIR}/console.cfg
         ;;
-   8)
+    5)
         dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 PocketGoi+TE" 5 18
         echo "CONSOLE_VARIANT=pocketgo_TE" > ${MOUNTDIR}/console.cfg
         ;;
-    9)
+    0)
         dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 XYC Q8" 5 18
         echo "You selected XYC Q8"
         echo "CONSOLE_VARIANT=xyc" > ${MOUNTDIR}/console.cfg
@@ -155,13 +149,14 @@ case $CHOICE in
         echo "CONSOLE_VARIANT=m3_hx8347d" > ${MOUNTDIR}/console.cfg
         ;;
     *)
-        echo "Invalid choice. Exiting."
+        echo "Invalid choice. Exiting and selecting default device."
+		sleep 2
         ;;
-esac
+ esac
 
 # Cleanup - delete the temporary file
-rm $TEMP
-
+ rm $TEMP
+fi
 # disable this script
 echo "Disabling the firstboot script." | tee -a ${LOG}
 mv "${MOUNTDIR}/firstboot" "${MOUNTDIR}/firstboot.done" | tee -a ${LOG}

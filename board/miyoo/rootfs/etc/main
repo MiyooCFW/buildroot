@@ -17,10 +17,10 @@ if test -r "${BOOTDIR}/firstboot"; then
 fi
 
 if test "x${DEBUG_MSG}" == "xyes"; then
-    echo -e "\e[0m"    # normal foreground colour
+    echo -e "\e[0m"    # normal foreground color
     export DEBUG_MSG   # set it globally for further programs
 else
-    echo -e "\e[30m"   # black foreground colour
+    echo -e "\e[30m"   # black foreground color
 fi
 
 # load kernel modules
