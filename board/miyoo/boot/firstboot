@@ -75,21 +75,6 @@ if !(dialog --defaultno --stdout --timeout 30 --title   "   License agreement" \
 		sleep 2
 		poweroff
 fi
-		
-# resize the main partition if requested
-if ((test -e "${MOUNTDIR}/resize") && !(dialog --defaultno --yes-label NO --no-label YES --stdout --timeout 10 --title 	"   Expand MAIN partition?" \
-    --colors --yesno "\n\n   \ZuSelect an option & press START\Zn\n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 12  60)); then
-    clear
-    echo "Going to resize the MAIN partition." | tee -a ${LOG}
-    echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
-    umount /dev/mmcblk0p4 | tee -a ${LOG}
-    fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
-    fatresize -s max -v -p /dev/mmcblk0p4 -n 4
-    fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
-    echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
-    sync
-    mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 /mnt | tee -a ${LOG}
-fi
 
 mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
 
@@ -195,7 +180,25 @@ TEMP=$(mktemp)
  rm $TEMP
  fi
 fi
+mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
+
+# resize the main partition if requested
+if ((test -e "${MOUNTDIR}/resize") && !(dialog --defaultno --yes-label NO --no-label YES --stdout --timeout 10 --title 	"   Expand MAIN partition?" \
+    --colors --yesno "\n\n   \ZuSelect an option & press START\Zn\n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 12  60)); then
+    clear
+    echo "Going to resize the MAIN partition." | tee -a ${LOG}
+    echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
+    umount /dev/mmcblk0p4 | tee -a ${LOG}
+    fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
+    fatresize -s max -v -p /dev/mmcblk0p4 -n 4
+    fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
+    echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
+    sync
+    mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 /mnt | tee -a ${LOG}
+fi
+
 # disable this script
+mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
 echo "Disabling the firstboot script." | tee -a ${LOG}
 mv "${MOUNTDIR}/firstboot" "${MOUNTDIR}/firstboot.done" | tee -a ${LOG}
 if test -e "${MOUNTDIR}/resize"; then rm "${MOUNTDIR}/resize"; reboot; fi
