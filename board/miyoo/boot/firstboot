@@ -56,9 +56,21 @@ fi
 echo " "
 sleep 1
 
+LICENSE="
+The software provided is offered \"as is\" without \
+any warranties or guarantees of any kind, either \
+expressed or implied. The use of this software is \
+entirely at your own risk. We shall not be held \
+responsible for any damages, losses, or adverse \
+consequences arising from the use or misuse of this software.
+\n\n
+\ZuDo you acknowledge and agree to these terms?\Zn
+\n\n
+   Select an option & press START"
+
 # test if proper video\kbd driver was loaded:
-if !(dialog --defaultno --stdout --timeout 10 --title 	"   Can you see this msg?" \
-		--colors --yesno "\n\n   \ZuSelect an option & press START" 12  60); then
+if !(dialog --defaultno --stdout --timeout 30 --title   "   License agreement" \
+--colors --yesno "\n              \ZbMiyooCFW\Zn\n$LICENSE" 19  60); then
 		sync
 		sleep 2
 		poweroff
@@ -79,15 +91,40 @@ if ((test -e "${MOUNTDIR}/resize") && !(dialog --defaultno --yes-label NO --no-l
     mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 /mnt | tee -a ${LOG}
 fi
 
-# do some more stuff here ??
-
-
 mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
-# Create temp file to store variable for menu choice
+
+# try to read what handheld we're on
+if (test -r "${MOUNTDIR}/console.cfg") &&; then
+    source "${BOOTDIR}/console.cfg"
+fi
+
+# list of available devices in u-boot Environment parameters read
+devices_ID=(
+"bittboy2x_v1" 
+"bittboy2x_v2" 
+"bittboy3.5"
+"q20" 
+"q90" 
+"v90" 
+"pocketgo" 
+"pocketgo_TE" 
+"xyc" 
+"m3" 
+"m3_rm68090" 
+"m3_hx8347d")
+
+for i in "${devices_ID[@]}"; do
+    if [[ "$i" == "${CONSOLE_VARIANT}" ]]; then
+        export FOUND_CONSOLE=1
+        break
+    fi
+done
+
+if test ! -n "$FOUND_CONSOLE"; then
+## Create temp file to store variable for menu choice
 TEMP=$(mktemp) 
-# Display the menu for selecting CONSOLE_VARIANT using dialog
-if (grep "DETECTED_VERSION=V90/Q90/Q20/PocketGo ST7789S controller" "${MOUNTDIR}/uEnv.txt"); then
- dialog --clear --title "Select your device:" --menu "Select an option:" 15 40 5 \
+ if (grep "DETECTED_VERSION=V90/Q90/Q20/PocketGo ST7789S controller" "${MOUNTDIR}/uEnv.txt"); then
+  dialog --clear --title "Select your device:" --menu "Select an option:" 15 40 5 \
     1 "Powkiddy Q20" \
     2 "Powkiddy Q90" \
     3 "Powkiddy V90" \
@@ -95,10 +132,10 @@ if (grep "DETECTED_VERSION=V90/Q90/Q20/PocketGo ST7789S controller" "${MOUNTDIR}
     5 "PocketGO with TE pin" \
     2> $TEMP
 
-# Read the user's choice from the file
-CHOICE=$(cat $TEMP)
-# Perform actions based on the user's choice
-case $CHOICE in
+## Read the user's choice from the file
+  CHOICE=$(cat $TEMP)
+## Perform actions based on the user's choice
+  case $CHOICE in
     0)
         dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v1" 5 18
         echo "CONSOLE_VARIANT=bittboy2x_v1" > ${MOUNTDIR}/console.cfg
@@ -152,10 +189,11 @@ case $CHOICE in
         echo "Invalid choice. Exiting and selecting default device."
 		sleep 2
         ;;
- esac
+  esac
 
 # Cleanup - delete the temporary file
  rm $TEMP
+ fi
 fi
 # disable this script
 echo "Disabling the firstboot script." | tee -a ${LOG}
