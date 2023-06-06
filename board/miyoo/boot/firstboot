@@ -57,7 +57,7 @@ echo " "
 sleep 1
 
 LICENSE="
-The software provided is offered \"as is\" without \
+The software provided is offered without \
 any warranties or guarantees of any kind, either \
 expressed or implied. The use of this software is \
 entirely at your own risk. We shall not be held \
@@ -108,13 +108,15 @@ for i in $devices_ID; do
     fi
 done
 
+# Defaulting to console overwriting active
+export CONSOLE_OVERWRITE=false
 # test if no device specified in console.cfg
 if ! $FOUND_CONSOLE; then
 ## Create temp file to store variable for menu choice
 TEMP=$(mktemp) 
 ## show selection menu for ST7789S devices
  if (grep "DETECTED_VERSION=V90/Q90/Q20/PocketGo ST7789S controller" "${MOUNTDIR}/uEnv.txt"); then
-  dialog --clear --title "Select your device:" --menu "Select an option:" 15 40 5 \
+  dialog --clear --title "Select your device:" --menu " " 15 40 5 \
     1 "Powkiddy Q20" \
     2 "Powkiddy Q90" \
     3 "Powkiddy V90" \
@@ -177,7 +179,7 @@ TEMP=$(mktemp)
         echo "CONSOLE_VARIANT=m3_hx8347d" > ${MOUNTDIR}/console.cfg
         ;;
     *)
-        echo "Invalid choice. Exiting and selecting default device."
+        echo "Invalid choice. Exiting and selecting default device from autodetection."
 		export CONSOLE_OVERWRITE=false
 		sleep 2
         ;;
