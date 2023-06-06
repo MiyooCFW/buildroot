@@ -79,8 +79,8 @@ fi
 mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
 
 # try to read what handheld we're on
-if (test -r "${MOUNTDIR}/console.cfg") &&; then
-    source "${BOOTDIR}/console.cfg"
+if (test -r "${MOUNTDIR}/console.cfg"); then
+    source "${MOUNTDIR}/console.cfg"
 fi
 
 # list of available devices in u-boot Environment parameters read
@@ -98,6 +98,9 @@ devices_ID=(
 "m3_rm68090" 
 "m3_hx8347d")
 
+## Defaulting to "not found the console in string list"
+export FOUND_CONSOLE=0
+
 for i in "${devices_ID[@]}"; do
     if [[ "$i" == "${CONSOLE_VARIANT}" ]]; then
         export FOUND_CONSOLE=1
@@ -105,7 +108,7 @@ for i in "${devices_ID[@]}"; do
     fi
 done
 
-if test ! -n "$FOUND_CONSOLE"; then
+if test "$FOUND_CONSOLE"; then
 ## Create temp file to store variable for menu choice
 TEMP=$(mktemp) 
  if (grep "DETECTED_VERSION=V90/Q90/Q20/PocketGo ST7789S controller" "${MOUNTDIR}/uEnv.txt"); then
@@ -116,7 +119,8 @@ TEMP=$(mktemp)
     4 "PocketGO (default)" \
     5 "PocketGO with TE pin" \
     2> $TEMP
-
+## Defaulting to console overwritten active
+  export CONSOLE_OVERWRITE=1
 ## Read the user's choice from the file
   CHOICE=$(cat $TEMP)
 ## Perform actions based on the user's choice
@@ -172,6 +176,7 @@ TEMP=$(mktemp)
         ;;
     *)
         echo "Invalid choice. Exiting and selecting default device."
+		export CONSOLE_OVERWRITE=0
 		sleep 2
         ;;
   esac
@@ -217,5 +222,9 @@ umount /dev/mmcblk0p4 | tee -a ${LOG}
 #umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
 sleep 3
 fi
-#REBOOT device to overwrite CONSOLE_VARIANT from $CHOICE
+
+# REBOOT device if CONSOLE_VARIANT was overwritten from $CHOICE
+## so that it could be applied in u-boot by readID
+if test "$CONSOLE_OVERWRITE"; then
 reboot
+fi
