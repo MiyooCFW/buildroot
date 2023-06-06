@@ -129,18 +129,6 @@ TEMP=$(mktemp)
   CHOICE=$(cat $TEMP)
 ## Perform actions based on the user's choice
   case $CHOICE in
-    0)
-        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v1" 5 18
-        echo "CONSOLE_VARIANT=bittboy2x_v1" > ${MOUNTDIR}/console.cfg
-        ;;
-    0)
-        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v2" 5 18
-        echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
-        ;;
-    0)
-        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy3.5" 5 18
-         echo "CONSOLE_VARIANT=bittboy3.5" > ${MOUNTDIR}/console.cfg
-        ;;
     1)
         dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Powkiddy Q20" 5 18
         echo "CONSOLE_VARIANT=q20" > ${MOUNTDIR}/console.cfg
@@ -158,25 +146,8 @@ TEMP=$(mktemp)
         echo "CONSOLE_VARIANT=pocketgo" > ${MOUNTDIR}/console.cfg
         ;;
     5)
-        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 PocketGoi+TE" 5 18
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 PocketGo+TE" 5 18
         echo "CONSOLE_VARIANT=pocketgo_TE" > ${MOUNTDIR}/console.cfg
-        ;;
-    0)
-        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 XYC Q8" 5 18
-        echo "You selected XYC Q8"
-        echo "CONSOLE_VARIANT=xyc" > ${MOUNTDIR}/console.cfg
-        ;;
-    10)
-        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 SUO M3 (R61520)" 5 18
-        echo "CONSOLE_VARIANT=m3" > ${MOUNTDIR}/console.cfg
-        ;;
-    11)
-        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 SUP M3 with RM68090" 5 24
-        echo "CONSOLE_VARIANT=m3_rm68090" > ${MOUNTDIR}/console.cfg
-        ;;
-    12)
-        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 SUP M3 with HX8347D" 5 18
-        echo "CONSOLE_VARIANT=m3_hx8347d" > ${MOUNTDIR}/console.cfg
         ;;
     *)
         echo "Invalid choice. Exiting and selecting default device from autodetection."
