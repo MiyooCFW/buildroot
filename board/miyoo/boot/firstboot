@@ -84,33 +84,35 @@ if (test -r "${MOUNTDIR}/console.cfg"); then
 fi
 
 # list of available devices in u-boot Environment parameters read
-devices_ID=(
-"bittboy2x_v1" 
-"bittboy2x_v2" 
-"bittboy3.5"
-"q20" 
-"q90" 
-"v90" 
-"pocketgo" 
-"pocketgo_TE" 
-"xyc" 
-"m3" 
-"m3_rm68090" 
-"m3_hx8347d")
+devices_ID="
+bittboy2x_v1
+bittboy2x_v2 
+bittboy3.5
+q20 
+q90 
+v90
+pocketgo
+pocketgo_TE
+xyc
+m3
+m3_rm68090 
+m3_hx8347d"
 
 ## Defaulting to "not found the console in string list"
-export FOUND_CONSOLE=0
+export FOUND_CONSOLE=false
 
-for i in "${devices_ID[@]}"; do
-    if [[ "$i" == "${CONSOLE_VARIANT}" ]]; then
-        export FOUND_CONSOLE=1
+for i in $devices_ID; do
+    if test "$i" = "$CONSOLE_VARIANT" ; then
+        export FOUND_CONSOLE=true
         break
     fi
 done
 
-if test "$FOUND_CONSOLE"; then
+# test if no device specified in console.cfg
+if ! $FOUND_CONSOLE; then
 ## Create temp file to store variable for menu choice
 TEMP=$(mktemp) 
+## show selection menu for ST7789S devices
  if (grep "DETECTED_VERSION=V90/Q90/Q20/PocketGo ST7789S controller" "${MOUNTDIR}/uEnv.txt"); then
   dialog --clear --title "Select your device:" --menu "Select an option:" 15 40 5 \
     1 "Powkiddy Q20" \
@@ -119,8 +121,8 @@ TEMP=$(mktemp)
     4 "PocketGO (default)" \
     5 "PocketGO with TE pin" \
     2> $TEMP
-## Defaulting to console overwritten active
-  export CONSOLE_OVERWRITE=1
+## Defaulting to console overwriting active
+  export CONSOLE_OVERWRITE=true
 ## Read the user's choice from the file
   CHOICE=$(cat $TEMP)
 ## Perform actions based on the user's choice
@@ -176,7 +178,7 @@ TEMP=$(mktemp)
         ;;
     *)
         echo "Invalid choice. Exiting and selecting default device."
-		export CONSOLE_OVERWRITE=0
+		export CONSOLE_OVERWRITE=false
 		sleep 2
         ;;
   esac
@@ -225,6 +227,6 @@ fi
 
 # REBOOT device if CONSOLE_VARIANT was overwritten from $CHOICE
 ## so that it could be applied in u-boot by readID
-if test "$CONSOLE_OVERWRITE"; then
+if $CONSOLE_OVERWRITE; then
 reboot
 fi
