@@ -88,17 +88,19 @@ fi
 # list of available devices in u-boot Environment parameters read
 devices_ID="
 bittboy2x_v1
-bittboy2x_v2 
+bittboy2x_v2
 bittboy3.5
-q20 
-q90 
+q20
+q90
 v90
 pocketgo
 pocketgo_TE
-xyc
-m3
-m3_rm68090 
-m3_hx8347d"
+xyc_gc9306
+m3_r61520
+m3_rm68090
+m3_hx8347d
+m3_gc9306
+"
 
 ## Defaulting to "not found the console in string list"
 export FOUND_CONSOLE=false
