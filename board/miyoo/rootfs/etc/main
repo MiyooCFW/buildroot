@@ -91,12 +91,9 @@ clear
 # try to read what handheld we're on
 if test -r "${BOOTDIR}/console.cfg"; then
     source "${BOOTDIR}/console.cfg"
+else
+    export CONSOLE_VARIANT="unknown"
 fi
-# sanity checks the console type has been set
-if test -z "${CONSOLE_VARIANT}"; then
-    CONSOLE_VARIANT="unknown"
-fi
-export CONSOLE_VARIANT
 
 echo "Boot!" >> "${LOGS}"
 echo "Handheld type is ${CONSOLE_VARIANT}" >> "${LOGS}"

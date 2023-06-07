@@ -81,6 +81,8 @@ mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
 # try to read what handheld we're on
 if (test -r "${MOUNTDIR}/console.cfg"); then
     source "${MOUNTDIR}/console.cfg"
+else 
+    export CONSOLE_VARIANT="unknown"
 fi
 
 # list of available devices in u-boot Environment parameters read
@@ -108,7 +110,7 @@ for i in $devices_ID; do
     fi
 done
 
-# Defaulting to console overwriting active
+# Defaulting to console overwriting inactive
 export CONSOLE_OVERWRITE=false
 # test if no device specified in console.cfg
 if ! $FOUND_CONSOLE; then
