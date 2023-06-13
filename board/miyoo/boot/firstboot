@@ -69,8 +69,8 @@ consequences arising from the use or misuse of this software.
    Select an option & press START"
 
 # test if proper video\kbd driver was loaded:
-if !(dialog --defaultno --stdout --timeout 30 --title   "   License agreement" \
---colors --yesno "\n              \ZbMiyooCFW\Zn\n$LICENSE" 19  60); then
+if (dialog --ok-label NO --cancel-label YES --stdout --title "   License agreement" \
+--colors --pause "\n              \ZbMiyooCFW\Zn\n$LICENSE" 22 60 5); then
 		sync
 		sleep 2
 		poweroff
@@ -167,8 +167,9 @@ fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
 # resize the main partition if requested
-if ((test -e "${MOUNTDIR}/resize") && !(dialog --defaultno --yes-label NO --no-label YES --stdout --timeout 10 --title 	"   Expand MAIN partition?" \
-    --colors --yesno "\n\n   \ZuSelect an option & press START\Zn\n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 12  60)); then
+if ((test -e "${MOUNTDIR}/resize") && (dialog --defaultno --stdout --ok-label YES --cancel-label NO --title "   AUTO-RESIZE" \
+    --colors --pause "\n\n       \ZuExpand MAIN partition?\Zn\n\n   Select an option & press START
+	\n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 15 60 10)); then
     clear
     echo "Going to resize the MAIN partition." | tee -a ${LOG}
     echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
