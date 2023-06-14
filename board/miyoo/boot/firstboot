@@ -68,14 +68,9 @@ consequences arising from the use or misuse of this software.
 \n\n
    Select an option & press START"
 
-# test if proper video\kbd driver was loaded:
-if (dialog --ok-label NO --cancel-label YES --stdout --title "   License agreement" \
---colors --pause "\n              \ZbMiyooCFW\Zn\n$LICENSE" 22 60 5); then
-		sync
-		sleep 2
-		poweroff
-fi
-
+## Create temp file to store variable for menu choice
+TEMP=$(mktemp) 
+## Access /boot directory
 mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
 
 # try to read what handheld we're on
@@ -85,7 +80,7 @@ else
     export CONSOLE_VARIANT="unknown"
 fi
 
-# list of available devices in u-boot Environment parameters read
+# list of available devices in u-boot Environment parameters' read in FORCE_VERSION
 devices_ID="
 bittboy2x_v1
 bittboy2x_v2
@@ -102,24 +97,74 @@ m3_hx8347d
 m3_gc9306
 "
 
+# list of available devices in u-boot Environment parameters' read in Auto-Detection method
+devices_auto_ID="
+st7789s
+bittboy
+bittboy2
+bittboy3
+xyc
+m3
+"
+
 ## Defaulting to "not found the console in string list"
 export FOUND_CONSOLE=false
+export FOUND_CONSOLE_AUTO=false
 
 for i in $devices_ID; do
-    if test "$i" = "$CONSOLE_VARIANT" ; then
+    if test "$i" = "$CONSOLE_VARIANT"; then
         export FOUND_CONSOLE=true
         break
     fi
 done
 
+for i in $devices_auto_ID; do
+    if test "$i" = "$CONSOLE_VARIANT"; then
+        export FOUND_CONSOLE_AUTO=true
+        break
+    fi
+done
+
+if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
+ if (grep "DETECTED_VERSION=V90/Q90/Q20/PocketGo ST7789S controller" "${MOUNTDIR}/uEnv.txt"); then
+ # Test_Video if proper miyoo video's version driver was loaded:
+  dialog --defaultno --ok-label NO --cancel-label "Flipped!" --extra-button --extra-label YES --stdout --title   "   Test Video" \
+  --colors --pause "\n\n     Can you see this msg?" 10 34 10
+
+  echo $? > $TEMP
+ ## Read the user's first choice from the tmp file
+  CHOICE_FIRST=$(cat $TEMP)
+
+ # "YES" choice for Test_Video msgbox DIALOG_EXTRA exit code
+  if test $CHOICE_FIRST -eq 3; then
+    echo "CONSOLE_VARIANT=st7789s" > ${MOUNTDIR}/console.cfg	
+ # "Flipped!" choice for Test_Video msgbox DIALOG_CANCEL exit code
+  elif test $CHOICE_FIRST -eq 1; then
+ # Correct variant for bittboy3.5 (not forced)
+    echo "CONSOLE_VARIANT=bittboy3" > ${MOUNTDIR}/console.cfg
+	sync
+	sleep 2
+	reboot
+	
+ # "NO" or timeout choice for Test_Video msgbox thus DIALOG_OK exit code or error -1/255
+  else
+ # Correct variant for bittboy2x_v1(not forced)
+    echo "CONSOLE_VARIANT=bittboy" > ${MOUNTDIR}/console.cfg
+	sync
+	sleep 2
+	reboot
+  fi
+ fi
+ # Overwrite CONSOLE_VARIANT from new entry
+ source "${MOUNTDIR}/console.cfg"
+fi
+
 # Defaulting to console overwriting inactive
 export CONSOLE_OVERWRITE=false
 # test if no device specified in console.cfg
-if ! $FOUND_CONSOLE; then
-## Create temp file to store variable for menu choice
-TEMP=$(mktemp) 
+if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
 ## show selection menu for ST7789S devices
- if (grep "DETECTED_VERSION=V90/Q90/Q20/PocketGo ST7789S controller" "${MOUNTDIR}/uEnv.txt"); then
+ if test "$CONSOLE_VARIANT" == "st7789s"; then
   dialog --clear --title "Select your device:" --menu " " 15 40 5 \
     1 "Powkiddy Q20" \
     2 "Powkiddy Q90" \
@@ -148,6 +193,8 @@ TEMP=$(mktemp)
     4)
         dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 PocketGo" 5 18
         echo "CONSOLE_VARIANT=pocketgo" > ${MOUNTDIR}/console.cfg
+		# PocketGo matches default variant, so no need to overwrite uboot FORCE version and continue
+		export CONSOLE_OVERWRITE=false
         ;;
     5)
         dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 PocketGo+TE" 5 18
@@ -159,10 +206,58 @@ TEMP=$(mktemp)
 		sleep 2
         ;;
   esac
+ # Test_Keyboard if proper miyoo.kbd  version was loaded: 
+ elif test "$CONSOLE_VARIANT" == "bittboy3" || test "$CONSOLE_VARIANT" == "bittboy2"; then
+  dialog --defaultno --ok-label YES --cancel-label NO --stdout --title   "  Test Keyboard" \
+  --colors --pause "\n\n  Does D-pad works correctly?" 10 34 10
+  
+  echo $? > $TEMP
+ ## Read the user's last choice from the tmp file
+  CHOICE_2=$(cat $TEMP)
 
+  # "YES" choice for Test_Keyboard msgbox DIALOG_OK exit code
+  ## thus we have valid version, just update to FORCE variant and continue
+  if test $CHOICE_2 -eq 0; then
+   if test "$CONSOLE_VARIANT" == "bittboy3"; then
+    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy3.5" 5 18
+    echo "CONSOLE_VARIANT=bittboy3.5" > ${MOUNTDIR}/console.cfg
+   elif test "$CONSOLE_VARIANT" == "bittboy2"; then
+    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v2" 5 18
+    echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
+   fi
+  # "NO" choice for Test_Keyboard msgbox DIALOG_CANCEL exit code and -1/255
+  ## thus correct Auto-Detection variant and reboot
+  else
+   if test "$CONSOLE_VARIANT" == "bittboy3"; then
+    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v2" 5 18
+    echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
+   elif test "$CONSOLE_VARIANT" == "bittboy2"; then
+    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy3.5" 5 18
+    echo "CONSOLE_VARIANT=bittboy3.5" > ${MOUNTDIR}/console.cfg
+   fi
+   sync
+   sleep 2
+   reboot
+  fi
+ elif test "$CONSOLE_VARIANT" == "bittboy"; then
+   dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v1" 5 18
+   echo "CONSOLE_VARIANT=bittboy2x_v1" > ${MOUNTDIR}/console.cfg
+#UNUSED devices_auto_ID variants:
+##elif test "$CONSOLE_VARIANT" = "xyc"; then
+##elif test "$CONSOLE_VARIANT" = "m3"; then
 # Cleanup - delete the temporary file
  rm $TEMP
  fi
+fi
+
+#License prompt
+if (dialog --ok-label NO --cancel-label YES --stdout --title "   License agreement" \
+  --colors --pause "\n              \ZbMiyooCFW\Zn\n$LICENSE" 19 60 30); then
+	echo "CONSOLE_VARIANT=unknown" > ${MOUNTDIR}/console.cfg
+    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown" 5 18
+	sync
+	sleep 2
+	poweroff
 fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
