@@ -143,16 +143,18 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
  # Correct variant for bittboy3.5 (not forced)
     echo "CONSOLE_VARIANT=bittboy3" > ${MOUNTDIR}/console.cfg
 	sync
-	sleep 2
+	sleep 1
 	reboot
+	sleep 2
 	
  # "NO" or timeout choice for Test_Video msgbox thus DIALOG_OK exit code or error -1/255
   else
  # Correct variant for bittboy2x_v1(not forced)
     echo "CONSOLE_VARIANT=bittboy" > ${MOUNTDIR}/console.cfg
 	sync
-	sleep 2
+	sleep 1
 	reboot
+	sleep 2
   fi
  elif (grep "DETECTED_VERSION=GC9306/GC9305 controller from gc9306fb" "${MOUNTDIR}/uEnv.txt"); then
   echo "CONSOLE_VARIANT=m3" > ${MOUNTDIR}/console.cfg
@@ -175,8 +177,9 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
    echo "INVERT=0" >> /mnt/options.cfg
    echo "CONSOLE_VARIANT=m3_r61520" > ${MOUNTDIR}/console.cfg
    sync
-   sleep 2
+   sleep 1
    reboot
+   sleep 2
   fi
  fi
  # Overwrite CONSOLE_VARIANT from new entry
@@ -205,25 +208,25 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
 ## Perform actions based on the user's choice
   case $CHOICE in
     1)
-        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Powkiddy Q20" 5 18
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy Q20" 5 18
         echo "CONSOLE_VARIANT=q20" > ${MOUNTDIR}/console.cfg
         ;;
     2)
-        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Powkiddy Q90" 5 18
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy Q90" 5 18
         echo "CONSOLE_VARIANT=q90" > ${MOUNTDIR}/console.cfg
         ;;
     3)
-        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Powkiddy V90" 5 18
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy V90" 5 18
         echo "CONSOLE_VARIANT=v90" > ${MOUNTDIR}/console.cfg
         ;;
     4)
-        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 PocketGo" 5 18
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox " PocketGo" 5 18
         echo "CONSOLE_VARIANT=pocketgo" > ${MOUNTDIR}/console.cfg
 		# PocketGo matches default variant, so no need to overwrite uboot FORCE version and continue
 		export CONSOLE_OVERWRITE=false
         ;;
     5)
-        dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 PocketGo+TE" 5 18
+        dialog --colors --timeout 2 --ok-label " Your device " --msgbox " PocketGo+TE" 5 18
         echo "CONSOLE_VARIANT=pocketgo_TE" > ${MOUNTDIR}/console.cfg
         ;;
     *)
@@ -245,16 +248,16 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
   ## thus we have valid version, just update to FORCE_VERSION and continue
   if test $CHOICE_2 -eq 0; then
    if test "$CONSOLE_VARIANT" == "bittboy3"; then
-    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy3.5" 5 18
+    dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy3.5" 5 18
     echo "CONSOLE_VARIANT=bittboy3.5" > ${MOUNTDIR}/console.cfg
    elif test "$CONSOLE_VARIANT" == "bittboy2"; then
-    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v2" 5 18
+    dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy2x v2" 5 18
     echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
    elif test "$CONSOLE_VARIANT" == "xyc"; then
-    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 XYC Q8" 5 18
+    dialog --colors --timeout 2 --ok-label " Your device " --msgbox " XYC Q8" 5 18
     echo "CONSOLE_VARIANT=xyc_gc9306" > ${MOUNTDIR}/console.cfg
    elif test "$CONSOLE_VARIANT" == "m3"; then
-    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 SUP M3" 5 18
+    dialog --colors --timeout 2 --ok-label " Your device " --msgbox " SUP M3" 5 18
     echo "CONSOLE_VARIANT=m3_gc9306" > ${MOUNTDIR}/console.cfg
    fi
   # "NO" choice for Test_Keyboard msgbox DIALOG_CANCEL exit code and -1/255
@@ -270,26 +273,80 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
     echo "CONSOLE_VARIANT=xyc" > ${MOUNTDIR}/console.cfg
    fi
    sync
-   sleep 2
+   sleep 1
    reboot
+   sleep 2
   fi
  elif test "$CONSOLE_VARIANT" == "bittboy"; then
-   dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v1" 5 18
+   dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy2x v1" 5 18
    echo "CONSOLE_VARIANT=bittboy2x_v1" > ${MOUNTDIR}/console.cfg
  fi
  # Cleanup - delete the temporary file
  rm $TEMP
 fi
 
+# Display FORCE_VERSION of selected device type
+if $FOUND_CONSOLE; then
+  case $CONSOLE_VARIANT in
+  bittboy2x_v1)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy2x v1" 5 18
+			   ;;
+  bittboy2x_v2)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy2x v2" 5 18
+			   ;;
+  bittboy3.5)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy3.5" 5 18
+			   ;;
+  q20)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy Q20" 5 18
+			   ;;
+  q90)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy Q90" 5 18
+			   ;;
+  v90)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy V90" 5 18
+			   ;;
+  pocketgo)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox " PocketGo" 5 18
+			   ;;
+  pocketgo_TE)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox " PocketGo+TE" 5 18
+			   ;;
+  xyc_gc9306)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox " XYC Q8" 5 18
+			   ;;
+  m3_r61520)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox "         SUP M3\n (controller of r61520fb)" 6 29
+			   ;;
+  m3_rm68090)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox "      SUP M3\n(RM68090 controller)" 6 24
+			   ;;
+  m3_hx8347d)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox "      SUP M3\n(HX8347D controller)" 6 24
+			   ;;
+  m3_gc9306)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox "      SUP M3\n(GC9306 controller)" 6 24
+			   ;;
+  *)
+               dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown\Zn" 5 18
+               echo "CONSOLE_VARIANT=unknown" > ${MOUNTDIR}/console.cfg
+               echo "##DO_NOT_REMOVE_THIS_LINE##" >> ${MOUNTDIR}/console.cfg
+			   ;;
+  esac
+fi
+
 #License prompt
 if (dialog --clear --ok-label NO --cancel-label YES --stdout --title "   License agreement" \
   --colors --pause "\n              \ZbMiyooCFW\Zn\n$LICENSE" 22 60 30); then
+    echo "We understand. Have a nice day!"
+	sleep 1
 	echo "CONSOLE_VARIANT=unknown" > ${MOUNTDIR}/console.cfg
 	echo "##DO_NOT_REMOVE_THIS_LINE##" >> ${MOUNTDIR}/console.cfg
-    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown" 5 18
+    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown\Zn" 5 18
 	sync
-	sleep 2
+	sleep 0.1
 	poweroff
+	sleep 2
 fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
@@ -334,4 +391,5 @@ fi
 ## so that it could be applied in u-boot by readID
 if $CONSOLE_OVERWRITE; then
 reboot
+sleep 1
 fi
