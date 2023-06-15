@@ -129,7 +129,7 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
  if (grep "DETECTED_VERSION=V90/Q90/Q20/PocketGo ST7789S controller" "${MOUNTDIR}/uEnv.txt"); then
  # Test_Video if proper miyoo video's version driver was loaded:
   dialog --defaultno --ok-label NO --cancel-label "Flipped!" --extra-button --extra-label YES --stdout --title   "   Test Video" \
-  --colors --pause "\n\n     Can you see this msg?" 10 34 10
+  --colors --pause "\n\n   \ZuCan you see this message?\Zn\n\nSelect an option & press START" 12 34 10
 
   echo $? > $TEMP
  ## Read the user's first choice from the tmp file
@@ -154,9 +154,35 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
 	sleep 2
 	reboot
   fi
+ elif (grep "DETECTED_VERSION=GC9306/GC9305 controller from gc9306fb" "${MOUNTDIR}/uEnv.txt"); then
+  echo "CONSOLE_VARIANT=m3" > ${MOUNTDIR}/console.cfg
+  
+ elif (grep "SUP M3 unknown controller Works with R61520" "${MOUNTDIR}/uEnv.txt"); then 
+  # Test_Image if proper "invert" colors parameter was loaded: 
+  dialog --defaultno --ok-label NO --cancel-label Inverted --stdout --title   "  Test Image" \
+  --colors --pause "\n\n  \ZuAre your colors Inverted?\Zn\n\nSelect an option & press START" 12 34 10
+
+  echo $? > $TEMP
+ ## Read the user's last choice from the tmp file
+  CHOICE_3=$(cat $TEMP)
+  # "NO" choice for Test_Image msgbox DIALOG_OK exit code
+  ## thus we have valid version and simply continue
+  if test $CHOICE_3 -eq 0; then
+   echo "Correct colors, proceed with flashing"
+  # "INVERTED" choice for Test_Iamge msgbox DIALOG_CANCEL exit code and -1/255
+  ## thus correct "invert" colors parameter on video driver
+  else
+   echo "INVERT=0" >> /mnt/options.cfg
+   echo "CONSOLE_VARIANT=m3_r61520" > ${MOUNTDIR}/console.cfg
+   sync
+   sleep 2
+   reboot
+  fi
  fi
  # Overwrite CONSOLE_VARIANT from new entry
  source "${MOUNTDIR}/console.cfg"
+ # Cleanup - delete the temporary file
+ rm $TEMP
 fi
 
 # Defaulting to console overwriting inactive
@@ -207,16 +233,16 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
         ;;
   esac
  # Test_Keyboard if proper miyoo.kbd  version was loaded: 
- elif test "$CONSOLE_VARIANT" == "bittboy3" || test "$CONSOLE_VARIANT" == "bittboy2"; then
+ elif test "$CONSOLE_VARIANT" == "bittboy3" || test "$CONSOLE_VARIANT" == "bittboy2" || test "$CONSOLE_VARIANT" == "xyc" || test "$CONSOLE_VARIANT" == "m3"; then
   dialog --defaultno --ok-label YES --cancel-label NO --stdout --title   "  Test Keyboard" \
-  --colors --pause "\n\n  Does D-pad works correctly?" 10 34 10
+  --colors --pause "\n\n  \ZuDoes D-pad works correctly?\Zn\n\nSelect an option & press START" 12 34 10
   
   echo $? > $TEMP
  ## Read the user's last choice from the tmp file
   CHOICE_2=$(cat $TEMP)
 
   # "YES" choice for Test_Keyboard msgbox DIALOG_OK exit code
-  ## thus we have valid version, just update to FORCE variant and continue
+  ## thus we have valid version, just update to FORCE_VERSION and continue
   if test $CHOICE_2 -eq 0; then
    if test "$CONSOLE_VARIANT" == "bittboy3"; then
     dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy3.5" 5 18
@@ -224,16 +250,24 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
    elif test "$CONSOLE_VARIANT" == "bittboy2"; then
     dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v2" 5 18
     echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
+   elif test "$CONSOLE_VARIANT" == "xyc"; then
+    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 XYC Q8" 5 18
+    echo "CONSOLE_VARIANT=xyc_gc9306" > ${MOUNTDIR}/console.cfg
+   elif test "$CONSOLE_VARIANT" == "m3"; then
+    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 SUP M3" 5 18
+    echo "CONSOLE_VARIANT=m3_gc9306" > ${MOUNTDIR}/console.cfg
    fi
   # "NO" choice for Test_Keyboard msgbox DIALOG_CANCEL exit code and -1/255
   ## thus correct Auto-Detection variant and reboot
   else
    if test "$CONSOLE_VARIANT" == "bittboy3"; then
-    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v2" 5 18
     echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
    elif test "$CONSOLE_VARIANT" == "bittboy2"; then
-    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy3.5" 5 18
     echo "CONSOLE_VARIANT=bittboy3.5" > ${MOUNTDIR}/console.cfg
+   elif test "$CONSOLE_VARIANT" == "xyc"; then
+    echo "CONSOLE_VARIANT=m3" > ${MOUNTDIR}/console.cfg
+   elif test "$CONSOLE_VARIANT" == "m3"; then
+    echo "CONSOLE_VARIANT=xyc" > ${MOUNTDIR}/console.cfg
    fi
    sync
    sleep 2
@@ -242,18 +276,16 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
  elif test "$CONSOLE_VARIANT" == "bittboy"; then
    dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 BittBoy2x_v1" 5 18
    echo "CONSOLE_VARIANT=bittboy2x_v1" > ${MOUNTDIR}/console.cfg
-#UNUSED devices_auto_ID variants:
-##elif test "$CONSOLE_VARIANT" = "xyc"; then
-##elif test "$CONSOLE_VARIANT" = "m3"; then
-# Cleanup - delete the temporary file
- rm $TEMP
  fi
+ # Cleanup - delete the temporary file
+ rm $TEMP
 fi
 
 #License prompt
-if (dialog --ok-label NO --cancel-label YES --stdout --title "   License agreement" \
-  --colors --pause "\n              \ZbMiyooCFW\Zn\n$LICENSE" 19 60 30); then
+if (dialog --clear --ok-label NO --cancel-label YES --stdout --title "   License agreement" \
+  --colors --pause "\n              \ZbMiyooCFW\Zn\n$LICENSE" 22 60 30); then
 	echo "CONSOLE_VARIANT=unknown" > ${MOUNTDIR}/console.cfg
+	echo "##DO_NOT_REMOVE_THIS_LINE##" >> ${MOUNTDIR}/console.cfg
     dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown" 5 18
 	sync
 	sleep 2
@@ -262,7 +294,7 @@ fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
 # resize the main partition if requested
-if ((test -e "${MOUNTDIR}/resize") && (dialog --defaultno --stdout --ok-label YES --cancel-label NO --title "   AUTO-RESIZE" \
+if ((test -e "${MOUNTDIR}/resize") && (dialog --clear --defaultno --stdout --ok-label YES --cancel-label NO --title "   AUTO-RESIZE" \
     --colors --pause "\n\n       \ZuExpand MAIN partition?\Zn\n\n   Select an option & press START
 	\n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 15 60 10)); then
     clear
