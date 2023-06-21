@@ -115,9 +115,9 @@ fi
 #  so it's fine
 ## umount /dev/mmcblk0p1
 
+# Writes dmesg after firstboot procedure or if DEBUG_MSG=yes
 if test "x${DEBUG_MSG}" == "xyes"; then
-    echo "(Waiting 5 seconds before proceeding...)"
-    sleep 5
+    sleep 1
     dmesg > /mnt/dmesg.txt
 fi
 

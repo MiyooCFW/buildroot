@@ -72,12 +72,14 @@ TEMP=$(mktemp)
 ## Access /boot directory
 mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
 
-# try to read what handheld we're on
-if (test -r "${MOUNTDIR}/console.cfg"); then
-	source "${MOUNTDIR}/console.cfg"
-else 
-	export CONSOLE_VARIANT="unknown"
-fi
+# try to read what handheld we're on when calling func
+console_var_func(){
+	if (test -r "${MOUNTDIR}/console.cfg"); then
+		source "${MOUNTDIR}/console.cfg"
+	else 
+		export CONSOLE_VARIANT="unknown"
+	fi
+}
 
 # list of available devices in u-boot Environment parameters' read in FORCE_VERSION
 devices_ID="
@@ -110,26 +112,33 @@ m3
 export FOUND_CONSOLE=false
 export FOUND_CONSOLE_AUTO=false
 
+find_console_func(){
 for i in $devices_ID; do
 	if test "$i" = "$CONSOLE_VARIANT"; then
 		export FOUND_CONSOLE=true
 		break
 	fi
 done
+}
 
+find_console_auto_func(){
 for i in $devices_auto_ID; do
 	if test "$i" = "$CONSOLE_VARIANT"; then
 		export FOUND_CONSOLE_AUTO=true
 		break
 	fi
 done
+}
 
+console_var_func
+find_console_func
+find_console_auto_func
 if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
 	if (grep "DETECTED_VERSION=V90/Q90/Q20/PocketGo ST7789S controller" "${MOUNTDIR}/uEnv.txt"); then
 		# Test_Video if proper miyoo video's version driver was loaded:
 		test_video_func(){
 			dialog --defaultno --ok-label NO --cancel-label "Flipped!" --extra-button --extra-label YES --stdout --title   "   Test Video" \
-			--colors --pause "\n\n   \ZuCan you see this message?\Zn\n\nSelect an option&press START/Y/B" 12 36 10
+			--colors --pause "\n\n   \ZuCan you see this message?\Zn\n\nSelect an option & press START" 12 34 10
 
 			echo $? > $TEMP
 			## Read the user's first choice from the tmp file
@@ -188,6 +197,7 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
 		# "INVERTED" choice for Test_Iamge msgbox DIALOG_CANCEL exit code and -1/255
 		## thus correct "invert" colors parameter on video driver
 		else
+#TODO - make "invert" flag overwriting less dependent
 			echo "INVERT=0" >> /mnt/options.cfg
 			sync
 			sleep 0.1
@@ -208,6 +218,10 @@ console_unknown_func(){
 
 # Defaulting to console overwriting inactive
 export CONSOLE_OVERWRITE=false
+# Test if console have been found in devices_auto_ID
+console_var_func
+find_console_func
+find_console_auto_func
 # test if no device specified in console.cfg
 if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
 	## show selection menu for ST7789S devices
@@ -233,23 +247,18 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
 		## Perform actions based on the user's choice
 		case $CHOICE in
 			1)
-				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy Q20" 5 18
 				echo "CONSOLE_VARIANT=q20" > ${MOUNTDIR}/console.cfg
 				;;
 			2)
-				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy Q90" 5 18
 				echo "CONSOLE_VARIANT=q90" > ${MOUNTDIR}/console.cfg
 				;;
 			3)
-				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy V90" 5 18
 				echo "CONSOLE_VARIANT=v90" > ${MOUNTDIR}/console.cfg
 				;;
 			4)
-				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " PocketGo" 5 18
 				default_console_func
 				;;
 			5)
-				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " PocketGo+TE" 5 18
 				echo "CONSOLE_VARIANT=pocketgo_TE" > ${MOUNTDIR}/console.cfg
 				;;
 			*)
@@ -272,23 +281,19 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
 			## thus we have valid version, just update to FORCE_VERSION and continue
 			if test $CHOICE_2 -eq 1; then
 				if test "$CONSOLE_VARIANT" == "bittboy3"; then
-					dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy3.5" 5 18
 					echo "CONSOLE_VARIANT=bittboy3.5" > ${MOUNTDIR}/console.cfg
 				elif test "$CONSOLE_VARIANT" == "bittboy2"; then
-					dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy2x v2" 5 18
 					echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
 				elif test "$CONSOLE_VARIANT" == "xyc"; then
-					dialog --colors --timeout 2 --ok-label " Your device " --msgbox " XYC Q8" 5 18
 					echo "CONSOLE_VARIANT=xyc_gc9306" > ${MOUNTDIR}/console.cfg
 				elif test "$CONSOLE_VARIANT" == "m3"; then
-					dialog --colors --timeout 2 --ok-label " Your device " --msgbox " SUP M3" 5 18
 					echo "CONSOLE_VARIANT=m3_gc9306" > ${MOUNTDIR}/console.cfg
 				fi
 			# "NO" or timeout choice for Test_Keyboard msgbox DIALOG_OK exit code
 			## thus correct Auto-Detection variant and reboot
 			elif test $CHOICE_2 -eq 0; then
 				if test "$CONSOLE_VARIANT" == "bittboy3"; then
-					echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
+					echo "CONSOLE_VARIANT=bittboy2" > ${MOUNTDIR}/console.cfg
 				elif test "$CONSOLE_VARIANT" == "bittboy2"; then
 					console_unknown_func
 				elif test "$CONSOLE_VARIANT" == "xyc"; then
@@ -314,14 +319,15 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
 			fi
 		done
 	elif test "$CONSOLE_VARIANT" == "bittboy"; then
-		dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy2x v1" 5 18
 		echo "CONSOLE_VARIANT=bittboy2x_v1" > ${MOUNTDIR}/console.cfg
 	fi
 	# Cleanup - delete the temporary file
 	rm $TEMP
 fi
 
-# Display FORCE_VERSION of selected device type
+console_var_func
+find_console_func
+find_console_auto_func
 if $FOUND_CONSOLE; then
 	case $CONSOLE_VARIANT in
 		bittboy2x_v1)
@@ -366,14 +372,14 @@ if $FOUND_CONSOLE; then
 		*)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown-Error\Zn" 5 18
 	esac
-elif ! $FOUND_CONSOLE; then
+else
 	dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown\Zn" 5 18
 	console_unknown_func
 fi
 
 #License prompt
-if (!(dialog --clear --defaultno --ok-label YES --cancel-label NO --stdout --title "   License agreement" \
-	--colors --pause "\n              \ZbMiyooCFW\Zn\n$LICENSE" 22 60 30) || (test $? -eq 255)); then
+if (dialog --clear --ok-label NO --cancel-label YES --stdout --title "   License agreement" \
+	--colors --pause "\n              \ZbMiyooCFW\Zn\n$LICENSE" 22 60 30 || test $? -eq 255); then
 	echo -en "     We understand. Have a nice day!\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
 	sleep 1
 	console_unknown_func
