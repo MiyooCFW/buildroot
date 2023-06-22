@@ -130,9 +130,11 @@ for i in $devices_auto_ID; do
 done
 }
 
-console_var_func
-find_console_func
-find_console_auto_func
+detect_console_func(){
+	console_var_func
+	find_console_func
+	find_console_auto_func
+}
 if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
 	if (grep "DETECTED_VERSION=V90/Q90/Q20/PocketGo ST7789S controller" "${MOUNTDIR}/uEnv.txt"); then
 		# Test_Video if proper miyoo video's version driver was loaded:
@@ -142,22 +144,25 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
 
 			echo $? > $TEMP
 			## Read the user's first choice from the tmp file
-			CHOICE_FIRST=$(cat $TEMP)
+			CHOICE=$(cat $TEMP)
 
 			# "YES" choice for Test_Video msgbox DIALOG_EXTRA exit code
-			if test $CHOICE_FIRST -eq 3; then
+			if test $CHOICE -eq 3; then
 				# Correct variant for st7789s (non forced)
 				echo "CONSOLE_VARIANT=st7789s" > ${MOUNTDIR}/console.cfg	
 			# "Flipped!" choice for Test_Video msgbox DIALOG_CANCEL exit code
-			elif test $CHOICE_FIRST -eq 1; then
-				# Correct variant for bittboy3.5 (non forced)
+			elif test $CHOICE -eq 1; then
+				# Correct variant for bittboy3.5 (non forced) and display info about flipped image
 				echo "CONSOLE_VARIANT=bittboy3" > ${MOUNTDIR}/console.cfg
+				dialog --timeout 2 --msgbox "Image flipped! correct&reboot" 0 0
+				#TODO: use special Unicode characters to draw text upside-down e.g.:
+				## dialog --timeout 2 --msgbox "ƃuᴉʇooqǝɹ⅋uᴉʇɔǝɹɹoɔ 'pǝddᴉןɟ ǝƃɐɯᴉ \n\n image flipped, correcting&rebooting" 0 0
 				sync
 				sleep 0.1
 				reboot
 				sleep 2
 			# "NO" or timeout choice for Test_Video msgbox thus DIALOG_OK exit code
-			elif test $CHOICE_FIRST -eq 0; then
+			elif test $CHOICE -eq 0; then
 				# Correct variant for bittboy2x_v1 (non forced)
 				echo "CONSOLE_VARIANT=bittboy" > ${MOUNTDIR}/console.cfg
 				sync
@@ -171,10 +176,10 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
 			fi
 		}
 		
-		# Loop Test_Video until correct selection has been performed (CHOICE_FIRST=0/1/3)
+		# Loop Test_Video until correct selection has been performed (CHOICE=0/1/3)
 		while true; do
 			test_video_func
-			if ! (test $CHOICE_FIRST -eq -1 || test $CHOICE_FIRST -eq 255); then
+			if ! (test $CHOICE -eq -1 || test $CHOICE -eq 255); then
 				break
 			fi
 		done
@@ -189,10 +194,10 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
 		echo $? > $TEMP
 		echo "CONSOLE_VARIANT=m3_r61520" > ${MOUNTDIR}/console.cfg
 		## Read the user's last choice from the tmp file
-		CHOICE_3=$(cat $TEMP)
+		CHOICE=$(cat $TEMP)
 		# "NO" choice for Test_Image msgbox DIALOG_OK exit code
 		## thus we have valid version and simply continue
-		if test $CHOICE_3 -eq 0; then
+		if test $CHOICE -eq 0; then
 			echo "Colors are correct, proceed with flashing"
 		# "INVERTED" choice for Test_Iamge msgbox DIALOG_CANCEL exit code and -1/255
 		## thus correct "invert" colors parameter on video driver
@@ -219,9 +224,7 @@ console_unknown_func(){
 # Defaulting to console overwriting inactive
 export CONSOLE_OVERWRITE=false
 # Test if console have been found in devices_auto_ID
-console_var_func
-find_console_func
-find_console_auto_func
+detect_console_func
 # test if no device specified in console.cfg
 if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
 	## show selection menu for ST7789S devices
@@ -275,11 +278,11 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
 
 			echo $? > $TEMP
 			## Read the user's last choice from the tmp file
-			CHOICE_2=$(cat $TEMP)
+			CHOICE=$(cat $TEMP)
 
 			# "YES" choice for Test_Keyboard msgbox DIALOG_CANCEL exit code
 			## thus we have valid version, just update to FORCE_VERSION and continue
-			if test $CHOICE_2 -eq 1; then
+			if test $CHOICE -eq 1; then
 				if test "$CONSOLE_VARIANT" == "bittboy3"; then
 					echo "CONSOLE_VARIANT=bittboy3.5" > ${MOUNTDIR}/console.cfg
 				elif test "$CONSOLE_VARIANT" == "bittboy2"; then
@@ -291,7 +294,7 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
 				fi
 			# "NO" or timeout choice for Test_Keyboard msgbox DIALOG_OK exit code
 			## thus correct Auto-Detection variant and reboot
-			elif test $CHOICE_2 -eq 0; then
+			elif test $CHOICE -eq 0; then
 				if test "$CONSOLE_VARIANT" == "bittboy3"; then
 					echo "CONSOLE_VARIANT=bittboy2" > ${MOUNTDIR}/console.cfg
 				elif test "$CONSOLE_VARIANT" == "bittboy2"; then
@@ -311,23 +314,40 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
 				sleep 1.5
 			fi
 		}
-		# Loop Test_Keyboard until correct selection has been performed (CHOICE_FIRST=0/1/3)
+		# Loop Test_Keyboard until correct selection has been performed (CHOICE=0/1)
 		while true; do
 			test_keyboard_func
-			if ! (test $CHOICE_2 -eq -1 || test $CHOICE_2 -eq 255); then
+			if ! (test $CHOICE -eq -1 || test $CHOICE -eq 255); then
 				break
 			fi
 		done
 	elif test "$CONSOLE_VARIANT" == "bittboy"; then
-		echo "CONSOLE_VARIANT=bittboy2x_v1" > ${MOUNTDIR}/console.cfg
+		# Test_Video'2 if proper miyoo video's version driver was loaded:
+		dialog --defaultno --ok-label NO --cancel-label YES --stdout --title   "   Test Video'2" \
+		--colors --pause "\n\n   \ZuCan you see this message?\Zn\n\nSelect an option & press START" 12 34 10
+		
+		echo $? > $TEMP
+		## Read the user's last choice from the tmp file
+		CHOICE=$(cat $TEMP)
+		# "YES" choice for Test_Video'2 msgbox DIALOG_CANCEL exit code
+		## thus we have valid version, just update to FORCE_VERSION and continue
+		if test $CHOICE -eq 1; then
+			echo "CONSOLE_VARIANT=bittboy2x_v1" > ${MOUNTDIR}/console.cfg
+		# "NO" or timeout choice for Test_Video msgbox thus DIALOG_OK exit code 0 (or ERROR/ESCAPE with -1/255)
+		## correct variant to unknown and redo whole flashing_prd again
+		else
+			console_unknown_func			
+			sync
+			sleep 0.1
+			reboot
+			sleep 2
+		fi
 	fi
 	# Cleanup - delete the temporary file
 	rm $TEMP
 fi
 
-console_var_func
-find_console_func
-find_console_auto_func
+detect_console_func
 if $FOUND_CONSOLE; then
 	case $CONSOLE_VARIANT in
 		bittboy2x_v1)
@@ -375,6 +395,26 @@ if $FOUND_CONSOLE; then
 else
 	dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown\Zn" 5 18
 	console_unknown_func
+fi
+
+detect_console_func
+if test "$CONSOLE_VARIANT" != "unknown"; then
+	# Test_Variant if correct CONSOLE_VARIANT has been written to console.cfg
+	dialog --defaultno --ok-label NO --cancel-label YES --stdout --title   "   Test Variant" \
+	--colors --pause "Does this device match yours?" 0 0 15
+	
+	echo $? > $TEMP
+	## Read the user's last choice from the tmp file
+	CHOICE=$(cat $TEMP)
+	# Any choice different than "YES" from Test_Variant - that is 0/-1/255 exit code
+	## correct variant to unknown and redo whole flashing_prd again
+	if !(test $CHOICE -eq 1); then
+		console_unknown_func			
+		sync
+		sleep 0.1
+		reboot
+		sleep 2
+	fi
 fi
 
 #License prompt
