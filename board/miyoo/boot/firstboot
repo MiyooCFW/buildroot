@@ -81,7 +81,7 @@ console_var_func(){
 	fi
 }
 
-# list of available devices in u-boot Environment parameters' read in FORCE_VERSION
+# list of available devices in u-boot Environment parameters' read from FORCE_VERSION
 devices_ID="
 bittboy2x_v1
 bittboy2x_v2
@@ -98,7 +98,7 @@ m3_hx8347d
 m3_gc9306
 "
 
-# list of available devices in u-boot Environment parameters' read in Auto-Detection method
+# list of available devices in u-boot Environment parameters' read from Auto-Detection method
 devices_auto_ID="
 st7789s
 bittboy
@@ -107,6 +107,18 @@ bittboy3
 xyc
 m3
 "
+
+# list of available devices in this flashing procedure read from DETECTED_VERSION in u-boot Environment parameters'
+DETECTED_1="V90/Q90/Q20/PocketGo ST7789S controller"
+DETECTED_2="GC9306/GC9305 controller from gc9306fb"
+DETECTED_3="SUP M3 unknown controller Works with R61520"
+DETECTED_4="bittboy2x_v1 r61520fb controller"
+DETECTED_5="bittboy3.5/bittboy2x_v2 ST7789S controller"
+#DETECTED_6="RM68090 controller"
+#DETECTED_7="R61520 controller"
+#DETECTED_8="R61505W controller"
+#DETECTED_9="HX8347-D controller"
+#DETECTED_10="UNKNOWN"
 
 ## Defaulting to "not found the console in string list"
 export FOUND_CONSOLE=false
@@ -135,8 +147,15 @@ detect_console_func(){
 	find_console_func
 	find_console_auto_func
 }
-if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
-	if (grep "DETECTED_VERSION=V90/Q90/Q20/PocketGo ST7789S controller" "${MOUNTDIR}/uEnv.txt"); then
+
+export CONSOLE_DETECTED=false
+#Checking if device at hand is operational within flashing procedure 
+if (grep -qE "${DETECTED_1}|${DETECTED_2}|${DETECTED_3}|${DETECTED_4}|${DETECTED_5}" "${MOUNTDIR}/uEnv.txt"); then
+	CONSOLE_DETECTED=true
+fi
+
+if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
+	if (grep -q "$DETECTED_1" "${MOUNTDIR}/uEnv.txt"); then
 		# Test_Video if proper miyoo video's version driver was loaded:
 		test_video_func(){
 			dialog --defaultno --ok-label NO --cancel-label "Flipped!" --extra-button --extra-label YES --stdout --title   "   Test Video" \
@@ -179,14 +198,14 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
 		# Loop Test_Video until correct selection has been performed (CHOICE=0/1/3)
 		while true; do
 			test_video_func
-			if ! (test $CHOICE -eq -1 || test $CHOICE -eq 255); then
+			if !(test $CHOICE -eq -1 || test $CHOICE -eq 255); then
 				break
 			fi
 		done
-	elif (grep "DETECTED_VERSION=GC9306/GC9305 controller from gc9306fb" "${MOUNTDIR}/uEnv.txt"); then
+	elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
 		echo "CONSOLE_VARIANT=m3" > ${MOUNTDIR}/console.cfg
 
-	elif (grep "SUP M3 unknown controller Works with R61520" "${MOUNTDIR}/uEnv.txt"); then 
+	elif (grep -q "$DETECTED_3" "${MOUNTDIR}/uEnv.txt"); then 
 		# Test_Image if proper "invert" colors parameter was loaded: 
 		dialog --defaultno --ok-label NO --cancel-label Inverted --stdout --title   "  Test Image" \
 		--colors --pause "\n\n  \ZuAre your colors Inverted?\Zn\n\nSelect an option & press START" 12 34 10
@@ -212,8 +231,6 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO; then
 	fi
 	# Overwrite CONSOLE_VARIANT from new entry
 	source "${MOUNTDIR}/console.cfg"
-	# Cleanup - delete the temporary file
-	rm $TEMP
 fi
 
 console_unknown_func(){
@@ -226,8 +243,9 @@ export CONSOLE_OVERWRITE=false
 # Test if console have been found in devices_auto_ID
 detect_console_func
 # test if no device specified in console.cfg
-if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
+if (! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO) && $CONSOLE_DETECTED; then
 	## show selection menu for ST7789S devices
+	### TODO: test also if "<DETECTED_VERSION>"="$DETECTED_?" depending on current CONSOLE_VARIANT
 	if test "$CONSOLE_VARIANT" == "st7789s"; then
 		dialog --clear --timeout 60 --title "Select your device:" --menu " " 15 40 5 \
 		1 "Powkiddy Q20" \
@@ -317,7 +335,7 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
 		# Loop Test_Keyboard until correct selection has been performed (CHOICE=0/1)
 		while true; do
 			test_keyboard_func
-			if ! (test $CHOICE -eq -1 || test $CHOICE -eq 255); then
+			if !(test $CHOICE -eq -1 || test $CHOICE -eq 255); then
 				break
 			fi
 		done
@@ -343,12 +361,11 @@ if ! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO; then
 			sleep 2
 		fi
 	fi
-	# Cleanup - delete the temporary file
-	rm $TEMP
 fi
 
 detect_console_func
 if $FOUND_CONSOLE; then
+	# Info_Box about selected/edited device in console.cfg
 	case $CONSOLE_VARIANT in
 		bittboy2x_v1)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy2x v1" 5 18
@@ -392,13 +409,6 @@ if $FOUND_CONSOLE; then
 		*)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown-Error\Zn" 5 18
 	esac
-else
-	dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown\Zn" 5 18
-	console_unknown_func
-fi
-
-detect_console_func
-if test "$CONSOLE_VARIANT" != "unknown"; then
 	# Test_Variant if correct CONSOLE_VARIANT has been written to console.cfg
 	dialog --defaultno --ok-label NO --cancel-label YES --stdout --title   "   Test Variant" \
 	--colors --pause "Does this device match yours?" 0 0 15
@@ -415,6 +425,9 @@ if test "$CONSOLE_VARIANT" != "unknown"; then
 		reboot
 		sleep 2
 	fi
+else
+	dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown\Zn" 5 18
+	console_unknown_func
 fi
 
 #License prompt
@@ -445,6 +458,9 @@ if ((test -e "${MOUNTDIR}/resize") && (dialog --clear --defaultno --stdout --ok-
 	sync
 	mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 /mnt | tee -a ${LOG}
 fi
+
+# Cleanup - delete the temporary file storing variable value
+rm $TEMP
 
 # disable this script
 mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
