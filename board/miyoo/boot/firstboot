@@ -154,6 +154,7 @@ if (grep -qE "${DETECTED_1}|${DETECTED_2}|${DETECTED_3}|${DETECTED_4}|${DETECTED
 	CONSOLE_DETECTED=true
 fi
 
+detect_console_func
 if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	if (grep -q "$DETECTED_1" "${MOUNTDIR}/uEnv.txt"); then
 		# Test_Video if proper miyoo video's version driver was loaded:
@@ -243,7 +244,7 @@ export CONSOLE_OVERWRITE=false
 # Test if console have been found in devices_auto_ID
 detect_console_func
 # test if no device specified in console.cfg
-if (! $FOUND_CONSOLE || $FOUND_CONSOLE_AUTO) && $CONSOLE_DETECTED; then
+if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	## show selection menu for ST7789S devices
 	### TODO: test also if "<DETECTED_VERSION>"="$DETECTED_?" depending on current CONSOLE_VARIANT
 	if test "$CONSOLE_VARIANT" == "st7789s"; then
