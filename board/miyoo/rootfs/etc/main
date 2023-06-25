@@ -11,26 +11,16 @@ LOGS=/dev/null
 # can use /mnt/log.txt here, but note that this prevents clean shutdowns - so only use this for debugging
 export LOGS # so that subshells can use this as well
 
-# try to read what handheld we're on
-if test -r "${BOOTDIR}/console.cfg"; then
-    source "${BOOTDIR}/console.cfg"
-fi
-# sanity checks - we default to PocketGO
-if test -z "${CONSOLE_VARIANT}"; then
-    CONSOLE_VARIANT="pocketgo"
-fi
-export CONSOLE_VARIANT
-
 # check if it's first boot and turn on messages if yes
 if test -r "${BOOTDIR}/firstboot"; then
     DEBUG_MSG="yes"
 fi
 
 if test "x${DEBUG_MSG}" == "xyes"; then
-    echo -e "\e[0m"    # normal foreground colour
+    echo -e "\e[0m"    # normal foreground color
     export DEBUG_MSG   # set it globally for further programs
 else
-    echo -e "\e[30m"   # black foreground colour
+    echo -e "\e[30m"   # black foreground color
 fi
 
 # load kernel modules
@@ -98,6 +88,13 @@ fi
 
 clear
 
+# try to read what handheld we're on
+if test -r "${BOOTDIR}/console.cfg"; then
+    source "${BOOTDIR}/console.cfg"
+else
+    export CONSOLE_VARIANT="unknown"
+fi
+
 echo "Boot!" >> "${LOGS}"
 echo "Handheld type is ${CONSOLE_VARIANT}" >> "${LOGS}"
 
@@ -118,9 +115,9 @@ fi
 #  so it's fine
 ## umount /dev/mmcblk0p1
 
+# Writes dmesg after firstboot procedure or if DEBUG_MSG=yes
 if test "x${DEBUG_MSG}" == "xyes"; then
-    echo "(Waiting 5 seconds before proceeding...)"
-    sleep 5
+    sleep 1
     dmesg > /mnt/dmesg.txt
 fi
 
