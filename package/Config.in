@@ -2135,6 +2135,7 @@ menu "Miscellaneous"
 	source "package/miyoo-daemon/Config.in"
 	source "package/miyoo-logo/Config.in"
 	source "package/miyoo-ctl/Config.in"
+	source "package/fbcat/Config.in"
 
 endmenu
 
