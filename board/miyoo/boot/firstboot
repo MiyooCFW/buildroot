@@ -482,6 +482,7 @@ if test -r "${BASEDIR}/firstboot.custom.sh"; then
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
 	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
 	sleep 3
+	reboot
 fi
 
 # REBOOT device if CONSOLE_VARIANT was overwritten from $CHOICE
