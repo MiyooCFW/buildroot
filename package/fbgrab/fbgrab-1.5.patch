@@ -1,0 +1,13 @@
+diff --git a/fbgrab.c b/fbgrab.c
+index 2abc08a..287cede 100644
+--- a/fbgrab.c
++++ b/fbgrab.c
+@@ -335,7 +335,7 @@ static void write_PNG(unsigned char *outbuffer, char *filename,
+ 
+     png_init_io(png_ptr, outfile);
+ 
+-    png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
++    png_set_compression_level(png_ptr, compression);
+ 
+     bit_depth = 8;
+     color_type = PNG_COLOR_TYPE_RGB_ALPHA;
