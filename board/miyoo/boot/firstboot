@@ -112,13 +112,14 @@ m3
 DETECTED_1="V90/Q90/Q20/PocketGo ST7789S controller"
 DETECTED_2="GC9306/GC9305 controller from gc9306fb"
 DETECTED_3="SUP M3 unknown controller Works with R61520"
-DETECTED_4="bittboy2x_v1 r61520fb controller"
-DETECTED_5="bittboy3.5/bittboy2x_v2 ST7789S controller"
-#DETECTED_6="RM68090 controller"
-#DETECTED_7="R61520 controller"
-#DETECTED_8="R61505W controller"
-#DETECTED_9="HX8347-D controller"
-#DETECTED_10="UNKNOWN"
+DETECTED_4="bittboy r61520fb controller"
+DETECTED_5="bittboy2 ST7789S controller"
+DETECTED_6="bittboy3 ST7789S controller"
+DETECTED_7="RM68090 controller"
+DETECTED_8="R61520 controller"
+DETECTED_9="R61505W controller"
+DETECTED_10="HX8347-D controller"
+DETECTED_11="UNKNOWN"
 
 ## Defaulting to "not found the console in string list"
 export FOUND_CONSOLE=false
@@ -150,13 +151,14 @@ detect_console_func(){
 
 export CONSOLE_DETECTED=false
 #Checking if device at hand is operational within flashing procedure 
-if (grep -qE "${DETECTED_1}|${DETECTED_2}|${DETECTED_3}|${DETECTED_4}|${DETECTED_5}" "${MOUNTDIR}/uEnv.txt"); then
+if (grep -qE "${DETECTED_1}|${DETECTED_2}|${DETECTED_3}|${DETECTED_4}|${DETECTED_5}|${DETECTED_6}|${DETECTED_7}|${DETECTED_8}|${DETECTED_9}|${DETECTED_10}|${DETECTED_11}" "${MOUNTDIR}/uEnv.txt"); then
 	CONSOLE_DETECTED=true
 fi
 
 detect_console_func
 if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	if (grep -q "$DETECTED_1" "${MOUNTDIR}/uEnv.txt"); then
+		echo "Auto-Detected $DETECTED_1" | tee -a ${LOG}
 		# Test_Video if proper miyoo video's version driver was loaded:
 		test_video_func(){
 			dialog --defaultno --ok-label NO --cancel-label "Flipped!" --extra-button --extra-label YES --stdout --title   "   Test Video" \
@@ -204,9 +206,10 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 			fi
 		done
 	elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
+		echo "Auto-Detected $DETECTED_2" | tee -a ${LOG}
 		echo "CONSOLE_VARIANT=m3" > ${MOUNTDIR}/console.cfg
-
-	elif (grep -q "$DETECTED_3" "${MOUNTDIR}/uEnv.txt"); then 
+	elif (grep -q "$DETECTED_3" "${MOUNTDIR}/uEnv.txt"); then
+		echo "Auto-Detected $DETECTED_3" | tee -a ${LOG}
 		# Test_Image if proper "invert" colors parameter was loaded: 
 		dialog --defaultno --ok-label NO --cancel-label Inverted --stdout --title   "  Test Image" \
 		--colors --pause "\n\n  \ZuAre your colors Inverted?\Zn\n\nSelect an option & press START" 12 34 10
@@ -229,6 +232,30 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 			reboot
 			sleep 2
 		fi
+	elif (grep -q "$DETECTED_4" "${MOUNTDIR}/uEnv.txt"); then
+		echo "Auto-Detected $DETECTED_4" | tee -a ${LOG}
+		echo "CONSOLE_VARIANT=bittboy" > ${MOUNTDIR}/console.cfg
+	elif (grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt"); then
+		echo "Auto-Detected $DETECTED_5" | tee -a ${LOG}
+		echo "CONSOLE_VARIANT=bittboy2" > ${MOUNTDIR}/console.cfg
+	elif (grep -q "$DETECTED_6" "${MOUNTDIR}/uEnv.txt"); then
+		echo "Auto-Detected $DETECTED_6" | tee -a ${LOG}
+		echo "CONSOLE_VARIANT=bittboy3" > ${MOUNTDIR}/console.cfg
+	elif (grep -q "$DETECTED_7" "${MOUNTDIR}/uEnv.txt"); then
+		echo "Auto-Detected $DETECTED_7" | tee -a ${LOG}
+		echo "CONSOLE_VARIANT=m3_rm68090" > ${MOUNTDIR}/console.cfg
+	elif (grep -q "$DETECTED_8" "${MOUNTDIR}/uEnv.txt"); then
+		echo "Auto-Detected $DETECTED_8" | tee -a ${LOG}
+		#echo "CONSOLE_VARIANT=r61520" > ${MOUNTDIR}/console.cfg
+	elif (grep -q "$DETECTED_8" "${MOUNTDIR}/uEnv.txt"); then
+		echo "Auto-Detected $DETECTED_9" | tee -a ${LOG}
+		#echo "CONSOLE_VARIANT=r61505w" > ${MOUNTDIR}/console.cfg
+	elif (grep -q "$DETECTED_10" "${MOUNTDIR}/uEnv.txt"); then
+		echo "Auto-Detected $DETECTED_10" | tee -a ${LOG}
+		echo "CONSOLE_VARIANT=m3_hx8347d" > ${MOUNTDIR}/console.cfg
+	elif (grep -q "$DETECTED_11" "${MOUNTDIR}/uEnv.txt"); then
+		echo "Auto-Detected $DETECTED_11" | tee -a ${LOG}
+		#echo "CONSOLE_VARIANT=unknown-error" > ${MOUNTDIR}/console.cfg
 	fi
 	# Overwrite CONSOLE_VARIANT from new entry
 	source "${MOUNTDIR}/console.cfg"
@@ -467,7 +494,10 @@ rm $TEMP
 mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
 echo "Disabling the firstboot script." | tee -a ${LOG}
 mv "${MOUNTDIR}/firstboot" "${MOUNTDIR}/firstboot.done" | tee -a ${LOG}
-if test -e "${MOUNTDIR}/resize"; then rm "${MOUNTDIR}/resize"; reboot; fi
+if test -e "${MOUNTDIR}/resize"; then
+	rm "${MOUNTDIR}/resize"
+	reboot
+fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
 echo
