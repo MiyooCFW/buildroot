@@ -81,6 +81,27 @@ console_var_func(){
 	fi
 }
 
+# sync & unmount MAIN whenever needed
+safe_reboot_func(){
+	echo "please wait a few seconds for a reboot...." | tee -a ${LOG}
+	sync
+	sleep 0.1
+	umount /dev/mmcblk0p4 | tee -a ${LOG}
+	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
+	sleep 2
+	reboot
+}
+
+safe_poweroff_func(){
+	echo "please wait a few seconds for a shutdown...." | tee -a ${LOG}
+	sync
+	sleep 0.1
+	umount /dev/mmcblk0p4 | tee -a ${LOG}
+	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
+	sleep 2
+	poweroff
+}
+
 # list of available devices in u-boot Environment parameters' read from FORCE_VERSION
 devices_ID="
 bittboy2x_v1
@@ -158,7 +179,7 @@ fi
 detect_console_func
 if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	if (grep -q "$DETECTED_1" "${MOUNTDIR}/uEnv.txt"); then
-		echo "Auto-Detected $DETECTED_1" | tee -a ${LOG}
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_1" 0 0
 		# Test_Video if proper miyoo video's version driver was loaded:
 		test_video_func(){
 			dialog --defaultno --ok-label NO --cancel-label "Flipped!" --extra-button --extra-label YES --stdout --title   "   Test Video" \
@@ -179,18 +200,12 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				dialog --timeout 2 --msgbox "Image flipped! correct&reboot" 0 0
 				#TODO: use special Unicode characters to draw text upside-down e.g.:
 				## dialog --timeout 2 --msgbox "ƃuᴉʇooqǝɹ⅋uᴉʇɔǝɹɹoɔ 'pǝddᴉןɟ ǝƃɐɯᴉ \n\n image flipped, correcting&rebooting" 0 0
-				sync
-				sleep 0.1
-				reboot
-				sleep 2
+				safe_reboot_func
 			# "NO" or timeout choice for Test_Video msgbox thus DIALOG_OK exit code
 			elif test $CHOICE -eq 0; then
 				# Correct variant for bittboy2x_v1 (non forced)
 				echo "CONSOLE_VARIANT=bittboy" > ${MOUNTDIR}/console.cfg
-				sync
-				sleep 0.1
-				reboot
-				sleep 2
+				safe_reboot_func
 			# Error (DIALOG_ERROR) or ESCAPE button pressed (DIALOG_ESCAPE) thus exit code -1/255
 			else
 				dialog --timeout 2 --msgbox "Invalid choice, please redo the test!" 0 0
@@ -206,10 +221,10 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 			fi
 		done
 	elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
-		echo "Auto-Detected $DETECTED_2" | tee -a ${LOG}
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_2" 0 0
 		echo "CONSOLE_VARIANT=m3" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_3" "${MOUNTDIR}/uEnv.txt"); then
-		echo "Auto-Detected $DETECTED_3" | tee -a ${LOG}
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_3" 0 0
 		# Test_Image if proper "invert" colors parameter was loaded: 
 		dialog --defaultno --ok-label NO --cancel-label Inverted --stdout --title   "  Test Image" \
 		--colors --pause "\n\n  \ZuAre your colors Inverted?\Zn\n\nSelect an option & press START" 12 34 10
@@ -227,34 +242,31 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		else
 #TODO - make "invert" flag overwriting less dependent
 			echo "INVERT=0" >> /mnt/options.cfg
-			sync
-			sleep 0.1
-			reboot
-			sleep 2
+			safe_reboot_func
 		fi
 	elif (grep -q "$DETECTED_4" "${MOUNTDIR}/uEnv.txt"); then
-		echo "Auto-Detected $DETECTED_4" | tee -a ${LOG}
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_4" 0 0
 		echo "CONSOLE_VARIANT=bittboy" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt"); then
-		echo "Auto-Detected $DETECTED_5" | tee -a ${LOG}
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_5" 0 0
 		echo "CONSOLE_VARIANT=bittboy2" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_6" "${MOUNTDIR}/uEnv.txt"); then
-		echo "Auto-Detected $DETECTED_6" | tee -a ${LOG}
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_6" 0 0
 		echo "CONSOLE_VARIANT=bittboy3" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_7" "${MOUNTDIR}/uEnv.txt"); then
-		echo "Auto-Detected $DETECTED_7" | tee -a ${LOG}
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_7" 0 0
 		echo "CONSOLE_VARIANT=m3_rm68090" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_8" "${MOUNTDIR}/uEnv.txt"); then
-		echo "Auto-Detected $DETECTED_8" | tee -a ${LOG}
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_8" 0 0
 		#echo "CONSOLE_VARIANT=r61520" > ${MOUNTDIR}/console.cfg
-	elif (grep -q "$DETECTED_8" "${MOUNTDIR}/uEnv.txt"); then
-		echo "Auto-Detected $DETECTED_9" | tee -a ${LOG}
+	elif (grep -q "$DETECTED_9" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_9" 0 0
 		#echo "CONSOLE_VARIANT=r61505w" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_10" "${MOUNTDIR}/uEnv.txt"); then
-		echo "Auto-Detected $DETECTED_10" | tee -a ${LOG}
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_10" 0 0
 		echo "CONSOLE_VARIANT=m3_hx8347d" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_11" "${MOUNTDIR}/uEnv.txt"); then
-		echo "Auto-Detected $DETECTED_11" | tee -a ${LOG}
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_11" 0 0
 		#echo "CONSOLE_VARIANT=unknown-error" > ${MOUNTDIR}/console.cfg
 	fi
 	# Overwrite CONSOLE_VARIANT from new entry
@@ -350,10 +362,7 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				elif test "$CONSOLE_VARIANT" == "m3"; then
 					echo "CONSOLE_VARIANT=xyc" > ${MOUNTDIR}/console.cfg
 				fi
-				sync
-				sleep 0.1
-				reboot
-				sleep 2
+				safe_reboot_func
 			# Error (DIALOG_ERROR) or ESCAPE button pressed (DIALOG_ESCAPE) thus exit code -1/255
 			else
 				dialog --timeout 2 --msgbox "Invalid choice, please redo the test!" 0 0
@@ -383,10 +392,7 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		## correct variant to unknown and redo whole flashing_prd again
 		else
 			console_unknown_func			
-			sync
-			sleep 0.1
-			reboot
-			sleep 2
+			safe_reboot_func
 		fi
 	fi
 fi
@@ -448,10 +454,7 @@ if $FOUND_CONSOLE; then
 	## correct variant to unknown and redo whole flashing_prd again
 	if !(test $CHOICE -eq 1); then
 		console_unknown_func			
-		sync
-		sleep 0.1
-		reboot
-		sleep 2
+		safe_reboot_func
 	fi
 else
 	dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown\Zn" 5 18
@@ -464,13 +467,11 @@ if (dialog --clear --ok-label NO --cancel-label YES --stdout --title "   License
 	echo -en "     We understand. Have a nice day!\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
 	sleep 1
 	console_unknown_func
-	sync
-	sleep 0.1
-	poweroff
-	sleep 2
+	safe_poweroff_func
 fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
+export RESIZE_COMMENCED=false
 # resize the main partition if requested
 if ((test -e "${MOUNTDIR}/resize") && (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RESIZE" \
 	--colors --pause "\n\n       \ZuExpand MAIN partition?\Zn\n\n   Select an option & press START
@@ -485,6 +486,7 @@ if ((test -e "${MOUNTDIR}/resize") && (dialog --clear --stdout --ok-label YES --
 	echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
 	sync
 	mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 /mnt | tee -a ${LOG}
+	export RESIZE_COMMENCED=true
 fi
 
 # Cleanup - delete the temporary file storing variable value
@@ -496,7 +498,6 @@ echo "Disabling the firstboot script." | tee -a ${LOG}
 mv "${MOUNTDIR}/firstboot" "${MOUNTDIR}/firstboot.done" | tee -a ${LOG}
 if test -e "${MOUNTDIR}/resize"; then
 	rm "${MOUNTDIR}/resize"
-	reboot
 fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
@@ -507,17 +508,8 @@ echo "firstboot script finished." | tee -a ${LOG}
 
 echo
 
-if test -r "${BASEDIR}/firstboot.custom.sh"; then
-	echo "please wait a few seconds for shutdown...." | tee -a ${LOG}
-	umount /dev/mmcblk0p4 | tee -a ${LOG}
-	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
-	sleep 3
-	reboot
-fi
-
-# REBOOT device if CONSOLE_VARIANT was overwritten from $CHOICE
-## so that it could be applied in u-boot by readID
-if $CONSOLE_OVERWRITE; then
-	reboot
-	sleep 1
+# Reboot device if CONSOLE_VARIANT was overwritten from $CHOICE so that it could be applied in u-boot by readID 
+## or resizing FAT partition has completed / found firstboot custom script
+if ($CONSOLE_OVERWRITE || $RESIZE_COMMENCED || test -r "${BASEDIR}/firstboot.custom.sh"); then
+	safe_reboot_func
 fi
