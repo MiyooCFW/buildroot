@@ -20,29 +20,8 @@ echo
 
 BASEDIR="${MOUNTDIR}"
 
-# action time
-
-# copy over the config files
-echo "Copying default configuration files into place..." | tee -a ${LOG}
+# mount MAIN partition
 mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 /mnt | tee -a ${LOG}
-if test -r "${BASEDIR}/configs/manifest"; then
-	cat "${BASEDIR}/configs/manifest" | while read -r LINE; do
-		if test "${LINE}" == "${LINE#!}" -a "${LINE}" != "" ; then
-			set -- ${LINE}
-			# 1               2
-			# source_filename target_filename/inside main/
-			if test -r "${BASEDIR}/configs/$1"; then
-				TO="$2"
-				if test "${TO}" == ""; then
-					TO="$1"
-				fi
-				echo "Copying $1 to /mnt/$TO..." | tee -a ${LOG}
-				cp -f "${BASEDIR}/configs/$1" "/mnt/$TO" | tee -a ${LOG}
-			fi
-		fi
-	done
-fi
-echo
 
 # run a custom script if present - could be used to fix u-boot and such
 if test -r "${BASEDIR}/firstboot.custom.sh"; then
@@ -398,17 +377,21 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 fi
 
 detect_console_func
+export BITTBOY_CONFIG=false
 if $FOUND_CONSOLE; then
 	# Info_Box about selected/edited device in console.cfg
 	case $CONSOLE_VARIANT in
 		bittboy2x_v1)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy2x v1" 5 18
+				export BITTBOY_CONFIG=true
 				;;
 		bittboy2x_v2)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy2x v2" 5 18
+				export BITTBOY_CONFIG=true
 				;;
 		bittboy3.5)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy3.5" 5 18
+				export BITTBOY_CONFIG=true
 				;;
 		q20)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy Q20" 5 18
@@ -499,8 +482,30 @@ mv "${MOUNTDIR}/firstboot" "${MOUNTDIR}/firstboot.done" | tee -a ${LOG}
 if test -e "${MOUNTDIR}/resize"; then
 	rm "${MOUNTDIR}/resize"
 fi
-mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
+# copy over the config files
+echo "Copying default configuration files into place..." | tee -a ${LOG}
+if $BITTBOY_CONFIG; then
+	mv "${MOUNTDIR}/configs/input_bittboy.conf" "${MOUNTDIR}/configs/input.conf"
+fi
+mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
+if test -r "${BASEDIR}/configs/manifest"; then
+	cat "${BASEDIR}/configs/manifest" | while read -r LINE; do
+		if test "${LINE}" == "${LINE#!}" -a "${LINE}" != "" ; then
+			set -- ${LINE}
+			# 1               2
+			# source_filename target_filename/inside main/
+			if test -r "${BASEDIR}/configs/$1"; then
+				TO="$2"
+				if test "${TO}" == ""; then
+					TO="$1"
+				fi
+				echo "Copying $1 to /mnt/$TO..." | tee -a ${LOG}
+				cp -f "${BASEDIR}/configs/$1" "/mnt/$TO" | tee -a ${LOG}
+			fi
+		fi
+	done
+fi
 echo
 
 sync
