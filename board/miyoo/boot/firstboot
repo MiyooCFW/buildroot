@@ -63,8 +63,9 @@ console_var_func(){
 # sync & unmount MAIN whenever needed
 safe_reboot_func(){
 	echo "please wait a few seconds for a reboot...." | tee -a ${LOG}
+	dmesg > /mnt/dmesg.txt
 	sync
-	sleep 0.1
+	sleep 1
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
 	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
 	sleep 2
@@ -73,8 +74,9 @@ safe_reboot_func(){
 
 safe_poweroff_func(){
 	echo "please wait a few seconds for a shutdown...." | tee -a ${LOG}
+	dmesg > /mnt/dmesg.txt
 	sync
-	sleep 0.1
+	sleep 1
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
 	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
 	sleep 2
