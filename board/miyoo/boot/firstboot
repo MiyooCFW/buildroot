@@ -114,14 +114,13 @@ m3
 DETECTED_1="V90/Q90/Q20/PocketGo ST7789S controller"
 DETECTED_2="GC9306/GC9305 controller from gc9306fb"
 DETECTED_3="SUP M3 unknown controller Works with R61520"
-DETECTED_4="bittboy r61520fb controller"
-DETECTED_5="bittboy2 ST7789S controller"
-DETECTED_6="bittboy3 ST7789S controller"
-DETECTED_7="RM68090 controller"
-DETECTED_8="R61520 controller"
-DETECTED_9="R61505W controller"
-DETECTED_10="HX8347-D controller"
-DETECTED_11="UNKNOWN"
+DETECTED_4="bittboy2x_v1 r61520fb controller"
+DETECTED_5="bittboy3.5/bittboy2x_v2 ST7789S controller"
+DETECTED_6="RM68090 controller"
+DETECTED_7="R61520 controller"
+DETECTED_8="R61505W controller"
+DETECTED_9="HX8347-D controller"
+DETECTED_10="UNKNOWN"
 
 ## Defaulting to "not found the console in string list"
 FOUND_CONSOLE=false
@@ -153,10 +152,11 @@ detect_console_func(){
 
 CONSOLE_DETECTED=false
 #Checking if device at hand is operational within flashing procedure 
-if (grep -qE "${DETECTED_1}|${DETECTED_2}|${DETECTED_3}|${DETECTED_4}|${DETECTED_5}|${DETECTED_6}|${DETECTED_7}|${DETECTED_8}|${DETECTED_9}|${DETECTED_10}|${DETECTED_11}" "${MOUNTDIR}/uEnv.txt"); then
+if (grep -qE "${DETECTED_1}|${DETECTED_2}|${DETECTED_3}|${DETECTED_4}|${DETECTED_5}|${DETECTED_6}|${DETECTED_7}|${DETECTED_8}|${DETECTED_9}|${DETECTED_10}" "${MOUNTDIR}/uEnv.txt"); then
 	CONSOLE_DETECTED=true
 fi
 
+# I - Test_Block
 detect_console_func
 if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	if (grep -q "$DETECTED_1" "${MOUNTDIR}/uEnv.txt"); then
@@ -222,25 +222,24 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 			echo "INVERT=0" >> /mnt/options.cfg
 			safe_reboot_func
 		fi
-	# look in second test block for these DETECTED versions as these imply devices_auto_ID variants:
+	# look in II Test block for following DETECTED versions as these imply devices_auto_ID variants:
 	## DETECTED_2 - xyc/m3
 	## DETECTED_4 - bittboy
-	## DETECTED_5 - bittboy2
-	## DETECTED_6 - bittboy3
+	## DETECTED_5 - bittboy3/2
+	elif (grep -q "$DETECTED_6" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_6" 0 0
+		echo "CONSOLE_VARIANT=m3_rm68090" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_7" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_7" 0 0
-		echo "CONSOLE_VARIANT=m3_rm68090" > ${MOUNTDIR}/console.cfg
+		#echo "CONSOLE_VARIANT=r61520" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_8" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_8" 0 0
-		#echo "CONSOLE_VARIANT=r61520" > ${MOUNTDIR}/console.cfg
+		#echo "CONSOLE_VARIANT=r61505w" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_9" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_9" 0 0
-		#echo "CONSOLE_VARIANT=r61505w" > ${MOUNTDIR}/console.cfg
+		echo "CONSOLE_VARIANT=m3_hx8347d" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_10" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_10" 0 0
-		echo "CONSOLE_VARIANT=m3_hx8347d" > ${MOUNTDIR}/console.cfg
-	elif (grep -q "$DETECTED_11" "${MOUNTDIR}/uEnv.txt"); then
-		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_11" 0 0
 		#echo "CONSOLE_VARIANT=unknown-error" > ${MOUNTDIR}/console.cfg
 	fi
 	# Overwrite CONSOLE_VARIANT from new entry
@@ -303,11 +302,9 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				;;
 		esac
 	## Test_Keyboard-prompt if proper miyoo.kbd  version was loaded:
-	elif ((test "$CONSOLE_VARIANT" == "bittboy2" && grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt") || (test "$CONSOLE_VARIANT" == "bittboy3" && grep -q "$DETECTED_6" "${MOUNTDIR}/uEnv.txt") || ((test "$CONSOLE_VARIANT" == "xyc" || test "$CONSOLE_VARIANT" == "m3") && grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt")); then
+	elif (((test "$CONSOLE_VARIANT" == "bittboy2" || test "$CONSOLE_VARIANT" == "bittboy3") && grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt") || ((test "$CONSOLE_VARIANT" == "xyc" || test "$CONSOLE_VARIANT" == "m3") && grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt")); then
 		if (grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_5" 0 0
-		elif (grep -q "$DETECTED_6" "${MOUNTDIR}/uEnv.txt"); then
-		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_6" 0 0
 		elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_2" 0 0
 		fi
