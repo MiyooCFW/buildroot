@@ -60,7 +60,7 @@ console_var_func(){
 	fi
 }
 
-# sync & unmount MAIN whenever needed
+# write logs, sync & unmount MAIN then reboot/poweroff 
 safe_reboot_func(){
 	echo "please wait a few seconds for a reboot...." | tee -a ${LOG}
 	dmesg > /mnt/dmesg.txt
@@ -124,13 +124,13 @@ DETECTED_10="HX8347-D controller"
 DETECTED_11="UNKNOWN"
 
 ## Defaulting to "not found the console in string list"
-export FOUND_CONSOLE=false
-export FOUND_CONSOLE_AUTO=false
+FOUND_CONSOLE=false
+FOUND_CONSOLE_AUTO=false
 
 find_console_func(){
 for i in $devices_ID; do
 	if test "$i" = "$CONSOLE_VARIANT"; then
-		export FOUND_CONSOLE=true
+		FOUND_CONSOLE=true
 		break
 	fi
 done
@@ -139,7 +139,7 @@ done
 find_console_auto_func(){
 for i in $devices_auto_ID; do
 	if test "$i" = "$CONSOLE_VARIANT"; then
-		export FOUND_CONSOLE_AUTO=true
+		FOUND_CONSOLE_AUTO=true
 		break
 	fi
 done
@@ -151,7 +151,7 @@ detect_console_func(){
 	find_console_auto_func
 }
 
-export CONSOLE_DETECTED=false
+CONSOLE_DETECTED=false
 #Checking if device at hand is operational within flashing procedure 
 if (grep -qE "${DETECTED_1}|${DETECTED_2}|${DETECTED_3}|${DETECTED_4}|${DETECTED_5}|${DETECTED_6}|${DETECTED_7}|${DETECTED_8}|${DETECTED_9}|${DETECTED_10}|${DETECTED_11}" "${MOUNTDIR}/uEnv.txt"); then
 	CONSOLE_DETECTED=true
@@ -260,7 +260,7 @@ console_unknown_func(){
 }
 
 # Defaulting to console overwriting inactive
-export CONSOLE_OVERWRITE=false
+CONSOLE_OVERWRITE=false
 # Test if console have been found in devices_auto_ID
 detect_console_func
 # test if no device specified in console.cfg
@@ -276,13 +276,13 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		5 "PocketGO with TE pin" \
 		2> $TEMP
 		## Defaulting to console overwriting active
-		export CONSOLE_OVERWRITE=true
+		CONSOLE_OVERWRITE=true
 		
 		## Default CONSOLE_VARIANT for st7789s screns
 		default_console_func(){
 			echo "CONSOLE_VARIANT=pocketgo" > ${MOUNTDIR}/console.cfg
 			# No need to overwrite uboot FORCE version for default so continue procedure
-			export CONSOLE_OVERWRITE=false
+			CONSOLE_OVERWRITE=false
 		}
 		## Read the user's choice from the file
 		CHOICE=$(cat $TEMP)
@@ -379,21 +379,21 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 fi
 
 detect_console_func
-export BITTBOY_CONFIG=false
+BITTBOY_CONFIG=false
 if $FOUND_CONSOLE; then
 	# Info_Box about selected/edited device in console.cfg
 	case $CONSOLE_VARIANT in
 		bittboy2x_v1)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy2x v1" 5 18
-				export BITTBOY_CONFIG=true
+				BITTBOY_CONFIG=true
 				;;
 		bittboy2x_v2)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy2x v2" 5 18
-				export BITTBOY_CONFIG=true
+				BITTBOY_CONFIG=true
 				;;
 		bittboy3.5)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy3.5" 5 18
-				export BITTBOY_CONFIG=true
+				BITTBOY_CONFIG=true
 				;;
 		q20)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy Q20" 5 18
@@ -456,7 +456,7 @@ if (dialog --clear --ok-label NO --cancel-label YES --stdout --title "   License
 fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
-export RESIZE_COMMENCED=false
+RESIZE_COMMENCED=false
 # resize the main partition if requested
 if ((test -e "${MOUNTDIR}/resize") && (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RESIZE" \
 	--colors --pause "\n\n       \ZuExpand MAIN partition?\Zn\n\n   Select an option & press START
@@ -471,7 +471,7 @@ if ((test -e "${MOUNTDIR}/resize") && (dialog --clear --stdout --ok-label YES --
 	echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
 	sync
 	mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 /mnt | tee -a ${LOG}
-	export RESIZE_COMMENCED=true
+	RESIZE_COMMENCED=true
 fi
 
 # Cleanup - delete the temporary file storing variable value
