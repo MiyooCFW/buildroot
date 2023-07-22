@@ -60,7 +60,7 @@ console_var_func(){
 	fi
 }
 
-# write logs, sync & unmount MAIN then reboot/poweroff 
+# write logs, sync & unmount MAIN then reboot/poweroff
 safe_reboot_func(){
 	echo "please wait a few seconds for a reboot...." | tee -a ${LOG}
 	dmesg > /mnt/dmesg.txt
@@ -161,7 +161,7 @@ detect_console_func
 if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	if (grep -q "$DETECTED_1" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_1" 0 0
-		# Test_Video if proper miyoo video's version driver was loaded:
+		# Test_Video-prompt if proper miyoo video's version driver was loaded:
 		test_video_func(){
 			dialog --defaultno --ok-label NO --cancel-label "Flipped!" --extra-button --extra-label YES --stdout --title   "   Test Video" \
 			--colors --pause "\n\n   \ZuCan you see this message?\Zn\n\nSelect an option & press START" 12 34 10
@@ -201,12 +201,9 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				break
 			fi
 		done
-	elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
-		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_2" 0 0
-		echo "CONSOLE_VARIANT=m3" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_3" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_3" 0 0
-		# Test_Image if proper "invert" colors parameter was loaded: 
+		# Test_Image-prompt if proper "invert" colors parameter was loaded:
 		dialog --defaultno --ok-label NO --cancel-label Inverted --stdout --title   "  Test Image" \
 		--colors --pause "\n\n  \ZuAre your colors Inverted?\Zn\n\nSelect an option & press START" 12 34 10
 
@@ -221,19 +218,15 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		# "INVERTED" choice for Test_Iamge msgbox DIALOG_CANCEL exit code and -1/255
 		## thus correct "invert" colors parameter on video driver
 		else
-#TODO - make "invert" flag overwriting less dependent
+		#TODO - make "invert" flag overwriting less dependent
 			echo "INVERT=0" >> /mnt/options.cfg
 			safe_reboot_func
 		fi
-	elif (grep -q "$DETECTED_4" "${MOUNTDIR}/uEnv.txt"); then
-		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_4" 0 0
-		echo "CONSOLE_VARIANT=bittboy" > ${MOUNTDIR}/console.cfg
-	elif (grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt"); then
-		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_5" 0 0
-		echo "CONSOLE_VARIANT=bittboy2" > ${MOUNTDIR}/console.cfg
-	elif (grep -q "$DETECTED_6" "${MOUNTDIR}/uEnv.txt"); then
-		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_6" 0 0
-		echo "CONSOLE_VARIANT=bittboy3" > ${MOUNTDIR}/console.cfg
+	# look in second test block for these DETECTED versions as these imply devices_auto_ID variants:
+	## DETECTED_2 - xyc/m3
+	## DETECTED_4 - bittboy
+	## DETECTED_5 - bittboy2
+	## DETECTED_6 - bittboy3
 	elif (grep -q "$DETECTED_7" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_7" 0 0
 		echo "CONSOLE_VARIANT=m3_rm68090" > ${MOUNTDIR}/console.cfg
@@ -259,15 +252,15 @@ console_unknown_func(){
 	echo "##DO_NOT_REMOVE_THIS_LINE##" >> ${MOUNTDIR}/console.cfg
 }
 
-# Defaulting to console overwriting inactive
+# II - Test_Block
+## Defaulting to console overwriting inactive
 CONSOLE_OVERWRITE=false
-# Test if console have been found in devices_auto_ID
+## Test if console have been found in devices_auto_ID
 detect_console_func
-# test if no device specified in console.cfg
+## test if no device specified in console.cfg
 if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
-	## show selection menu for ST7789S devices
-	### TODO: test also if "<DETECTED_VERSION>"="$DETECTED_?" depending on current CONSOLE_VARIANT
-	if test "$CONSOLE_VARIANT" == "st7789s"; then
+	# show selection menu for ST7789S devices
+	if (test "$CONSOLE_VARIANT" == "st7789s" && grep -q "$DETECTED_1" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --clear --timeout 60 --title "Select your device:" --menu " " 15 40 5 \
 		1 "Powkiddy Q20" \
 		2 "Powkiddy Q90" \
@@ -309,8 +302,15 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				sleep 0.1
 				;;
 		esac
-	# Test_Keyboard if proper miyoo.kbd  version was loaded: 
-	elif test "$CONSOLE_VARIANT" == "bittboy3" || test "$CONSOLE_VARIANT" == "bittboy2" || test "$CONSOLE_VARIANT" == "xyc" || test "$CONSOLE_VARIANT" == "m3"; then
+	## Test_Keyboard-prompt if proper miyoo.kbd  version was loaded:
+	elif ((test "$CONSOLE_VARIANT" == "bittboy2" && grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt") || (test "$CONSOLE_VARIANT" == "bittboy3" && grep -q "$DETECTED_6" "${MOUNTDIR}/uEnv.txt") || ((test "$CONSOLE_VARIANT" == "xyc" || test "$CONSOLE_VARIANT" == "m3") && grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt")); then
+		if (grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_5" 0 0
+		elif (grep -q "$DETECTED_6" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_6" 0 0
+		elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_2" 0 0
+		fi
 		test_keyboard_func(){
 			dialog --ok-label NO --cancel-label YES --stdout --title   "  Test Keyboard" \
 			--colors --pause "\n\n  \ZuDoes D-pad works correctly?\Zn\n\nSelect an option & press START" 12 34 10
@@ -357,8 +357,9 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				break
 			fi
 		done
-	elif test "$CONSOLE_VARIANT" == "bittboy"; then
-		# Test_Video'2 if proper miyoo video's version driver was loaded:
+	elif (test "$CONSOLE_VARIANT" == "bittboy" && grep -q "$DETECTED_4" "${MOUNTDIR}/uEnv.txt") ; then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_4" 0 0
+		# Test_Video'2-prompt if proper miyoo video's version driver was loaded:
 		dialog --defaultno --ok-label NO --cancel-label YES --stdout --title   "   Test Video'2" \
 		--colors --pause "\n\n   \ZuCan you see this message?\Zn\n\nSelect an option & press START" 12 34 10
 		
@@ -378,6 +379,7 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	fi
 fi
 
+# III - Test_Block
 detect_console_func
 BITTBOY_CONFIG=false
 if $FOUND_CONSOLE; then
@@ -428,7 +430,7 @@ if $FOUND_CONSOLE; then
 		*)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown-Error\Zn" 5 18
 	esac
-	# Test_Variant if correct CONSOLE_VARIANT has been written to console.cfg
+	# Test_Variant-prompt if correct CONSOLE_VARIANT has been written to console.cfg
 	dialog --defaultno --ok-label NO --cancel-label YES --stdout --title   "   Test Variant" \
 	--colors --pause "Does this device match yours?" 0 0 15
 	
@@ -446,7 +448,7 @@ else
 	console_unknown_func
 fi
 
-#License prompt
+# License_agreement-prompt
 if (dialog --clear --ok-label NO --cancel-label YES --stdout --title "   License agreement" \
 	--colors --pause "\n              \ZbMiyooCFW\Zn\n$LICENSE" 22 60 30 || test $? -eq 255); then
 	echo -en "     We understand. Have a nice day!\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
