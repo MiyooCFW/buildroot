@@ -3,10 +3,6 @@
 MOUNTDIR=/boot
 # expect to be run from /boot, where the boot partition is mounted (readonly)
 
-# create swap
-mkswap /dev/mmcblk0p3 | tee -a ${LOG}
-swapon /dev/mmcblk0p3 | tee -a ${LOG}
-
 LOG=/dev/null
 
 # high brightness
@@ -19,9 +15,6 @@ echo "firstboot script running..." | tee -a ${LOG}
 echo
 
 BASEDIR="${MOUNTDIR}"
-
-# mount MAIN partition
-mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 /mnt | tee -a ${LOG}
 
 # run a custom script if present - could be used to fix u-boot and such
 if test -r "${BASEDIR}/firstboot.custom.sh"; then
@@ -66,6 +59,7 @@ safe_reboot_func(){
 	dmesg > /mnt/dmesg.txt
 	sync
 	sleep 1
+	mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
 	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
 	sleep 2
@@ -77,6 +71,7 @@ safe_poweroff_func(){
 	dmesg > /mnt/dmesg.txt
 	sync
 	sleep 1
+	mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
 	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
 	sleep 2
