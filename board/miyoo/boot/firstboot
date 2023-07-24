@@ -3,10 +3,6 @@
 MOUNTDIR=/boot
 # expect to be run from /boot, where the boot partition is mounted (readonly)
 
-# create swap
-mkswap /dev/mmcblk0p3 | tee -a ${LOG}
-swapon /dev/mmcblk0p3 | tee -a ${LOG}
-
 LOG=/dev/null
 
 # high brightness
@@ -19,30 +15,6 @@ echo "firstboot script running..." | tee -a ${LOG}
 echo
 
 BASEDIR="${MOUNTDIR}"
-
-# action time
-
-# copy over the config files
-echo "Copying default configuration files into place..." | tee -a ${LOG}
-mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 /mnt | tee -a ${LOG}
-if test -r "${BASEDIR}/configs/manifest"; then
-	cat "${BASEDIR}/configs/manifest" | while read -r LINE; do
-		if test "${LINE}" == "${LINE#!}" -a "${LINE}" != "" ; then
-			set -- ${LINE}
-			# 1               2
-			# source_filename target_filename/inside main/
-			if test -r "${BASEDIR}/configs/$1"; then
-				TO="$2"
-				if test "${TO}" == ""; then
-					TO="$1"
-				fi
-				echo "Copying $1 to /mnt/$TO..." | tee -a ${LOG}
-				cp -f "${BASEDIR}/configs/$1" "/mnt/$TO" | tee -a ${LOG}
-			fi
-		fi
-	done
-fi
-echo
 
 # run a custom script if present - could be used to fix u-boot and such
 if test -r "${BASEDIR}/firstboot.custom.sh"; then
@@ -81,6 +53,31 @@ console_var_func(){
 	fi
 }
 
+# write logs, sync & unmount MAIN then reboot/poweroff
+safe_reboot_func(){
+	echo "please wait a few seconds for a reboot...." | tee -a ${LOG}
+	dmesg > /mnt/dmesg.txt
+	sync
+	sleep 1
+	mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
+	umount /dev/mmcblk0p4 | tee -a ${LOG}
+	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
+	sleep 2
+	reboot
+}
+
+safe_poweroff_func(){
+	echo "please wait a few seconds for a shutdown...." | tee -a ${LOG}
+	dmesg > /mnt/dmesg.txt
+	sync
+	sleep 1
+	mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
+	umount /dev/mmcblk0p4 | tee -a ${LOG}
+	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
+	sleep 2
+	poweroff
+}
+
 # list of available devices in u-boot Environment parameters' read from FORCE_VERSION
 devices_ID="
 bittboy2x_v1
@@ -114,20 +111,20 @@ DETECTED_2="GC9306/GC9305 controller from gc9306fb"
 DETECTED_3="SUP M3 unknown controller Works with R61520"
 DETECTED_4="bittboy2x_v1 r61520fb controller"
 DETECTED_5="bittboy3.5/bittboy2x_v2 ST7789S controller"
-#DETECTED_6="RM68090 controller"
-#DETECTED_7="R61520 controller"
-#DETECTED_8="R61505W controller"
-#DETECTED_9="HX8347-D controller"
-#DETECTED_10="UNKNOWN"
+DETECTED_6="RM68090 controller"
+DETECTED_7="R61520 controller"
+DETECTED_8="R61505W controller"
+DETECTED_9="HX8347-D controller"
+DETECTED_10="UNKNOWN"
 
 ## Defaulting to "not found the console in string list"
-export FOUND_CONSOLE=false
-export FOUND_CONSOLE_AUTO=false
+FOUND_CONSOLE=false
+FOUND_CONSOLE_AUTO=false
 
 find_console_func(){
 for i in $devices_ID; do
 	if test "$i" = "$CONSOLE_VARIANT"; then
-		export FOUND_CONSOLE=true
+		FOUND_CONSOLE=true
 		break
 	fi
 done
@@ -136,7 +133,7 @@ done
 find_console_auto_func(){
 for i in $devices_auto_ID; do
 	if test "$i" = "$CONSOLE_VARIANT"; then
-		export FOUND_CONSOLE_AUTO=true
+		FOUND_CONSOLE_AUTO=true
 		break
 	fi
 done
@@ -148,16 +145,18 @@ detect_console_func(){
 	find_console_auto_func
 }
 
-export CONSOLE_DETECTED=false
+CONSOLE_DETECTED=false
 #Checking if device at hand is operational within flashing procedure 
-if (grep -qE "${DETECTED_1}|${DETECTED_2}|${DETECTED_3}|${DETECTED_4}|${DETECTED_5}" "${MOUNTDIR}/uEnv.txt"); then
+if (grep -qE "${DETECTED_1}|${DETECTED_2}|${DETECTED_3}|${DETECTED_4}|${DETECTED_5}|${DETECTED_6}|${DETECTED_7}|${DETECTED_8}|${DETECTED_9}|${DETECTED_10}" "${MOUNTDIR}/uEnv.txt"); then
 	CONSOLE_DETECTED=true
 fi
 
+# I - Test_Block
 detect_console_func
 if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	if (grep -q "$DETECTED_1" "${MOUNTDIR}/uEnv.txt"); then
-		# Test_Video if proper miyoo video's version driver was loaded:
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_1" 0 0
+		# Test_Video-prompt if proper miyoo video's version driver was loaded:
 		test_video_func(){
 			dialog --defaultno --ok-label NO --cancel-label "Flipped!" --extra-button --extra-label YES --stdout --title   "   Test Video" \
 			--colors --pause "\n\n   \ZuCan you see this message?\Zn\n\nSelect an option & press START" 12 34 10
@@ -172,23 +171,24 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				echo "CONSOLE_VARIANT=st7789s" > ${MOUNTDIR}/console.cfg	
 			# "Flipped!" choice for Test_Video msgbox DIALOG_CANCEL exit code
 			elif test $CHOICE -eq 1; then
-				# Correct variant for bittboy3.5 (non forced) and display info about flipped image
-				echo "CONSOLE_VARIANT=bittboy3" > ${MOUNTDIR}/console.cfg
-				dialog --timeout 2 --msgbox "Image flipped! correct&reboot" 0 0
-				#TODO: use special Unicode characters to draw text upside-down e.g.:
-				## dialog --timeout 2 --msgbox "ƃuᴉʇooqǝɹ⅋uᴉʇɔǝɹɹoɔ 'pǝddᴉןɟ ǝƃɐɯᴉ \n\n image flipped, correcting&rebooting" 0 0
-				sync
-				sleep 0.1
-				reboot
-				sleep 2
+				# Test_Flip-prompt double checks if user selected correct answer for 1'st video test
+				if (dialog --stdout --ok-label YES --cancel-label NO --title "Test Flip" --pause "  \n   Flipped? \n\nAre you sure?!" 12 15 10); then
+					# Correct variant for bittboy3.5 (non forced) and display info about flipped image
+					echo "CONSOLE_VARIANT=bittboy3" > ${MOUNTDIR}/console.cfg
+					dialog --timeout 2 --msgbox "Image flipped! correct&reboot" 0 0
+					sleep 1.5
+					#TODO: use special Unicode characters to draw text upside-down e.g.:
+					## dialog --timeout 2 --msgbox "ƃuᴉʇooqǝɹ⅋uᴉʇɔǝɹɹoɔ 'pǝddᴉןɟ ǝƃɐɯᴉ \n\n image flipped, correcting&rebooting" 0 0
+					safe_reboot_func
+				else
+					dialog --timeout 2 --msgbox "Invalid choice, please redo the test!" 0 0
+					sleep 1.5
+				fi
 			# "NO" or timeout choice for Test_Video msgbox thus DIALOG_OK exit code
 			elif test $CHOICE -eq 0; then
 				# Correct variant for bittboy2x_v1 (non forced)
 				echo "CONSOLE_VARIANT=bittboy" > ${MOUNTDIR}/console.cfg
-				sync
-				sleep 0.1
-				reboot
-				sleep 2
+				safe_reboot_func
 			# Error (DIALOG_ERROR) or ESCAPE button pressed (DIALOG_ESCAPE) thus exit code -1/255
 			else
 				dialog --timeout 2 --msgbox "Invalid choice, please redo the test!" 0 0
@@ -196,18 +196,17 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 			fi
 		}
 		
-		# Loop Test_Video until correct selection has been performed (CHOICE=0/1/3)
+		# Loop Test_Video until correct selection has been performed (CHOICE=0/3)
+		## former CHOICE=1 meant safe_reboot if correct and shouldn't reach to this point
 		while true; do
 			test_video_func
-			if !(test $CHOICE -eq -1 || test $CHOICE -eq 255); then
+			if !(test $CHOICE -eq -1 || test $CHOICE -eq 1 || test $CHOICE -eq 255); then
 				break
 			fi
 		done
-	elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
-		echo "CONSOLE_VARIANT=m3" > ${MOUNTDIR}/console.cfg
-
-	elif (grep -q "$DETECTED_3" "${MOUNTDIR}/uEnv.txt"); then 
-		# Test_Image if proper "invert" colors parameter was loaded: 
+	elif (grep -q "$DETECTED_3" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_3" 0 0
+		# Test_Image-prompt if proper "invert" colors parameter was loaded:
 		dialog --defaultno --ok-label NO --cancel-label Inverted --stdout --title   "  Test Image" \
 		--colors --pause "\n\n  \ZuAre your colors Inverted?\Zn\n\nSelect an option & press START" 12 34 10
 
@@ -222,13 +221,29 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		# "INVERTED" choice for Test_Iamge msgbox DIALOG_CANCEL exit code and -1/255
 		## thus correct "invert" colors parameter on video driver
 		else
-#TODO - make "invert" flag overwriting less dependent
+		#TODO - make "invert" flag overwriting less dependent
 			echo "INVERT=0" >> /mnt/options.cfg
-			sync
-			sleep 0.1
-			reboot
-			sleep 2
+			safe_reboot_func
 		fi
+	# look in II Test block for following DETECTED versions as these imply devices_auto_ID variants:
+	## DETECTED_2 - xyc/m3
+	## DETECTED_4 - bittboy
+	## DETECTED_5 - bittboy3/2
+	elif (grep -q "$DETECTED_6" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_6" 0 0
+		echo "CONSOLE_VARIANT=m3_rm68090" > ${MOUNTDIR}/console.cfg
+	elif (grep -q "$DETECTED_7" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_7" 0 0
+		#echo "CONSOLE_VARIANT=r61520" > ${MOUNTDIR}/console.cfg
+	elif (grep -q "$DETECTED_8" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_8" 0 0
+		#echo "CONSOLE_VARIANT=r61505w" > ${MOUNTDIR}/console.cfg
+	elif (grep -q "$DETECTED_9" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_9" 0 0
+		echo "CONSOLE_VARIANT=m3_hx8347d" > ${MOUNTDIR}/console.cfg
+	elif (grep -q "$DETECTED_10" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_10" 0 0
+		#echo "CONSOLE_VARIANT=unknown-error" > ${MOUNTDIR}/console.cfg
 	fi
 	# Overwrite CONSOLE_VARIANT from new entry
 	source "${MOUNTDIR}/console.cfg"
@@ -239,15 +254,15 @@ console_unknown_func(){
 	echo "##DO_NOT_REMOVE_THIS_LINE##" >> ${MOUNTDIR}/console.cfg
 }
 
-# Defaulting to console overwriting inactive
-export CONSOLE_OVERWRITE=false
-# Test if console have been found in devices_auto_ID
+# II - Test_Block
+## Defaulting to console overwriting inactive
+CONSOLE_OVERWRITE=false
+## Test if console have been found in devices_auto_ID
 detect_console_func
-# test if no device specified in console.cfg
+## test if no device specified in console.cfg
 if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
-	## show selection menu for ST7789S devices
-	### TODO: test also if "<DETECTED_VERSION>"="$DETECTED_?" depending on current CONSOLE_VARIANT
-	if test "$CONSOLE_VARIANT" == "st7789s"; then
+	# show selection menu for ST7789S devices
+	if (test "$CONSOLE_VARIANT" == "st7789s" && grep -q "$DETECTED_1" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --clear --timeout 60 --title "Select your device:" --menu " " 15 40 5 \
 		1 "Powkiddy Q20" \
 		2 "Powkiddy Q90" \
@@ -256,13 +271,13 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		5 "PocketGO with TE pin" \
 		2> $TEMP
 		## Defaulting to console overwriting active
-		export CONSOLE_OVERWRITE=true
+		CONSOLE_OVERWRITE=true
 		
 		## Default CONSOLE_VARIANT for st7789s screns
 		default_console_func(){
 			echo "CONSOLE_VARIANT=pocketgo" > ${MOUNTDIR}/console.cfg
 			# No need to overwrite uboot FORCE version for default so continue procedure
-			export CONSOLE_OVERWRITE=false
+			CONSOLE_OVERWRITE=false
 		}
 		## Read the user's choice from the file
 		CHOICE=$(cat $TEMP)
@@ -289,8 +304,13 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				sleep 0.1
 				;;
 		esac
-	# Test_Keyboard if proper miyoo.kbd  version was loaded: 
-	elif test "$CONSOLE_VARIANT" == "bittboy3" || test "$CONSOLE_VARIANT" == "bittboy2" || test "$CONSOLE_VARIANT" == "xyc" || test "$CONSOLE_VARIANT" == "m3"; then
+	## Test_Keyboard-prompt if proper miyoo.kbd  version was loaded:
+	elif (((test "$CONSOLE_VARIANT" == "bittboy2" || test "$CONSOLE_VARIANT" == "bittboy3") && grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt") || ((test "$CONSOLE_VARIANT" == "xyc" || test "$CONSOLE_VARIANT" == "m3") && grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt")); then
+		if (grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_5" 0 0
+		elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_2" 0 0
+		fi
 		test_keyboard_func(){
 			dialog --ok-label NO --cancel-label YES --stdout --title   "  Test Keyboard" \
 			--colors --pause "\n\n  \ZuDoes D-pad works correctly?\Zn\n\nSelect an option & press START" 12 34 10
@@ -323,10 +343,7 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				elif test "$CONSOLE_VARIANT" == "m3"; then
 					echo "CONSOLE_VARIANT=xyc" > ${MOUNTDIR}/console.cfg
 				fi
-				sync
-				sleep 0.1
-				reboot
-				sleep 2
+				safe_reboot_func
 			# Error (DIALOG_ERROR) or ESCAPE button pressed (DIALOG_ESCAPE) thus exit code -1/255
 			else
 				dialog --timeout 2 --msgbox "Invalid choice, please redo the test!" 0 0
@@ -340,8 +357,9 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				break
 			fi
 		done
-	elif test "$CONSOLE_VARIANT" == "bittboy"; then
-		# Test_Video'2 if proper miyoo video's version driver was loaded:
+	elif (test "$CONSOLE_VARIANT" == "bittboy" && grep -q "$DETECTED_4" "${MOUNTDIR}/uEnv.txt") ; then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_4" 0 0
+		# Test_Video'2-prompt if proper miyoo video's version driver was loaded:
 		dialog --defaultno --ok-label NO --cancel-label YES --stdout --title   "   Test Video'2" \
 		--colors --pause "\n\n   \ZuCan you see this message?\Zn\n\nSelect an option & press START" 12 34 10
 		
@@ -356,61 +374,74 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		## correct variant to unknown and redo whole flashing_prd again
 		else
 			console_unknown_func			
-			sync
-			sleep 0.1
-			reboot
-			sleep 2
+			safe_reboot_func
 		fi
 	fi
 fi
 
+# III - Test_Block
 detect_console_func
+BITTBOY_CONFIG=false
+MIYOO_CONFIG=false
 if $FOUND_CONSOLE; then
 	# Info_Box about selected/edited device in console.cfg
 	case $CONSOLE_VARIANT in
 		bittboy2x_v1)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy2x v1" 5 18
+				BITTBOY_CONFIG=true
 				;;
 		bittboy2x_v2)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy2x v2" 5 18
+				BITTBOY_CONFIG=true
 				;;
 		bittboy3.5)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " BittBoy3.5" 5 18
+				BITTBOY_CONFIG=true
 				;;
 		q20)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy Q20" 5 18
+				MIYOO_CONFIG=true
 				;;
 		q90)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy Q90" 5 18
+				MIYOO_CONFIG=true
 				;;
 		v90)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy V90" 5 18
+				MIYOO_CONFIG=true
 				;;
 		pocketgo)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " PocketGo" 5 18
+				MIYOO_CONFIG=true
 				;;
 		pocketgo_TE)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " PocketGo+TE" 5 18
+				MIYOO_CONFIG=true
 				;;
 		xyc_gc9306)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " XYC Q8" 5 18
+				MIYOO_CONFIG=true
 				;;
 		m3_r61520)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "         SUP M3\n (controller of r61520fb)" 6 29
+				MIYOO_CONFIG=true
 				;;
 		m3_rm68090)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "      SUP M3\n(RM68090 controller)" 6 24
+				MIYOO_CONFIG=true
 				;;
 		m3_hx8347d)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "      SUP M3\n(HX8347D controller)" 6 24
+				MIYOO_CONFIG=true
 				;;
 		m3_gc9306)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "      SUP M3\n(GC9306 controller)" 6 24
+				MIYOO_CONFIG=true
 				;;
 		*)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown-Error\Zn" 5 18
 	esac
-	# Test_Variant if correct CONSOLE_VARIANT has been written to console.cfg
+	# Test_Variant-prompt if correct CONSOLE_VARIANT has been written to console.cfg
 	dialog --defaultno --ok-label NO --cancel-label YES --stdout --title   "   Test Variant" \
 	--colors --pause "Does this device match yours?" 0 0 15
 	
@@ -421,29 +452,24 @@ if $FOUND_CONSOLE; then
 	## correct variant to unknown and redo whole flashing_prd again
 	if !(test $CHOICE -eq 1); then
 		console_unknown_func			
-		sync
-		sleep 0.1
-		reboot
-		sleep 2
+		safe_reboot_func
 	fi
 else
 	dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown\Zn" 5 18
 	console_unknown_func
 fi
 
-#License prompt
+# License_agreement-prompt
 if (dialog --clear --ok-label NO --cancel-label YES --stdout --title "   License agreement" \
 	--colors --pause "\n              \ZbMiyooCFW\Zn\n$LICENSE" 22 60 30 || test $? -eq 255); then
 	echo -en "     We understand. Have a nice day!\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
 	sleep 1
 	console_unknown_func
-	sync
-	sleep 0.1
-	poweroff
-	sleep 2
+	safe_poweroff_func
 fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
+RESIZE_COMMENCED=false
 # resize the main partition if requested
 if ((test -e "${MOUNTDIR}/resize") && (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RESIZE" \
 	--colors --pause "\n\n       \ZuExpand MAIN partition?\Zn\n\n   Select an option & press START
@@ -458,6 +484,7 @@ if ((test -e "${MOUNTDIR}/resize") && (dialog --clear --stdout --ok-label YES --
 	echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
 	sync
 	mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 /mnt | tee -a ${LOG}
+	RESIZE_COMMENCED=true
 fi
 
 # Cleanup - delete the temporary file storing variable value
@@ -467,9 +494,35 @@ rm $TEMP
 mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
 echo "Disabling the firstboot script." | tee -a ${LOG}
 mv "${MOUNTDIR}/firstboot" "${MOUNTDIR}/firstboot.done" | tee -a ${LOG}
-if test -e "${MOUNTDIR}/resize"; then rm "${MOUNTDIR}/resize"; reboot; fi
-mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
+if test -e "${MOUNTDIR}/resize"; then
+	rm "${MOUNTDIR}/resize"
+fi
 
+# copy over the config files
+echo "Copying default configuration files into place..." | tee -a ${LOG}
+if $BITTBOY_CONFIG; then
+	cp "${MOUNTDIR}/configs/input_bittboy.conf" "${MOUNTDIR}/configs/input.conf"
+elif $MIYOO_CONFIG; then
+	cp "${MOUNTDIR}/configs/input_miyoo.conf" "${MOUNTDIR}/configs/input.conf"
+fi
+mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
+if test -r "${BASEDIR}/configs/manifest"; then
+	cat "${BASEDIR}/configs/manifest" | while read -r LINE; do
+		if test "${LINE}" == "${LINE#!}" -a "${LINE}" != "" ; then
+			set -- ${LINE}
+			# 1               2
+			# source_filename target_filename/inside main/
+			if test -r "${BASEDIR}/configs/$1"; then
+				TO="$2"
+				if test "${TO}" == ""; then
+					TO="$1"
+				fi
+				echo "Copying $1 to /mnt/$TO..." | tee -a ${LOG}
+				cp -f "${BASEDIR}/configs/$1" "/mnt/$TO" | tee -a ${LOG}
+			fi
+		fi
+	done
+fi
 echo
 
 sync
@@ -477,17 +530,8 @@ echo "firstboot script finished." | tee -a ${LOG}
 
 echo
 
-if test -r "${BASEDIR}/firstboot.custom.sh"; then
-	echo "please wait a few seconds for shutdown...." | tee -a ${LOG}
-	umount /dev/mmcblk0p4 | tee -a ${LOG}
-	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
-	sleep 3
-	reboot
-fi
-
-# REBOOT device if CONSOLE_VARIANT was overwritten from $CHOICE
-## so that it could be applied in u-boot by readID
-if $CONSOLE_OVERWRITE; then
-	reboot
-	sleep 1
+# Reboot device if CONSOLE_VARIANT was overwritten from $CHOICE so that it could be applied in u-boot by readID 
+## or resizing FAT partition has completed / found firstboot custom script
+if ($CONSOLE_OVERWRITE || $RESIZE_COMMENCED || test -r "${BASEDIR}/firstboot.custom.sh"); then
+	safe_reboot_func
 fi
