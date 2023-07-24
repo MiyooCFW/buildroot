@@ -382,6 +382,7 @@ fi
 # III - Test_Block
 detect_console_func
 BITTBOY_CONFIG=false
+MIYOO_CONFIG=false
 if $FOUND_CONSOLE; then
 	# Info_Box about selected/edited device in console.cfg
 	case $CONSOLE_VARIANT in
@@ -399,33 +400,43 @@ if $FOUND_CONSOLE; then
 				;;
 		q20)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy Q20" 5 18
+				MIYOO_CONFIG=true
 				;;
 		q90)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy Q90" 5 18
+				MIYOO_CONFIG=true
 				;;
 		v90)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " Powkiddy V90" 5 18
+				MIYOO_CONFIG=true
 				;;
 		pocketgo)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " PocketGo" 5 18
+				MIYOO_CONFIG=true
 				;;
 		pocketgo_TE)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " PocketGo+TE" 5 18
+				MIYOO_CONFIG=true
 				;;
 		xyc_gc9306)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox " XYC Q8" 5 18
+				MIYOO_CONFIG=true
 				;;
 		m3_r61520)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "         SUP M3\n (controller of r61520fb)" 6 29
+				MIYOO_CONFIG=true
 				;;
 		m3_rm68090)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "      SUP M3\n(RM68090 controller)" 6 24
+				MIYOO_CONFIG=true
 				;;
 		m3_hx8347d)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "      SUP M3\n(HX8347D controller)" 6 24
+				MIYOO_CONFIG=true
 				;;
 		m3_gc9306)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "      SUP M3\n(GC9306 controller)" 6 24
+				MIYOO_CONFIG=true
 				;;
 		*)
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown-Error\Zn" 5 18
@@ -490,7 +501,9 @@ fi
 # copy over the config files
 echo "Copying default configuration files into place..." | tee -a ${LOG}
 if $BITTBOY_CONFIG; then
-	mv "${MOUNTDIR}/configs/input_bittboy.conf" "${MOUNTDIR}/configs/input.conf"
+	cp "${MOUNTDIR}/configs/input_bittboy.conf" "${MOUNTDIR}/configs/input.conf"
+elif $MIYOO_CONFIG; then
+	cp "${MOUNTDIR}/configs/input_miyoo.conf" "${MOUNTDIR}/configs/input.conf"
 fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 if test -r "${BASEDIR}/configs/manifest"; then
