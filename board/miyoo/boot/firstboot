@@ -501,9 +501,9 @@ fi
 # copy over the config files
 echo "Copying default configuration files into place..." | tee -a ${LOG}
 if $BITTBOY_CONFIG; then
-	cp "${MOUNTDIR}/configs/input_bittboy.conf" "${MOUNTDIR}/configs/input.conf"
+	cp "/mnt/gmenu2x/input_bittboy.conf" "${MOUNTDIR}/configs/input.conf"
 elif $MIYOO_CONFIG; then
-	cp "${MOUNTDIR}/configs/input_miyoo.conf" "${MOUNTDIR}/configs/input.conf"
+	cp "/mnt/gmenu2x/input_miyoo.conf" "${MOUNTDIR}/configs/input.conf"
 fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 if test -r "${BASEDIR}/configs/manifest"; then
