@@ -22,6 +22,7 @@
 ::sysinit:/bin/hostname -F /etc/hostname
 ::sysinit:/bin/mount /dev/mmcblk0p4 /mnt -t vfat -o rw,sync,utf8
 ::sysinit:/bin/mount /dev/mmcblk0p1 /boot -t vfat -o ro,exec,sync,utf8
+::sysinit:/sbin/mkswap /dev/mmcblk0p3
 ::sysinit:/sbin/swapon /dev/mmcblk0p3
 
 # now run any rc scripts
