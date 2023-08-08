@@ -53,28 +53,26 @@ console_var_func(){
 	fi
 }
 
-# write logs, sync & unmount MAIN then reboot/poweroff
-safe_reboot_func(){
+# write logs, sync & unmount MAIN before reboot/poweroff
+safe_shutdown_func(){
 	echo "please wait a few seconds for a reboot...." | tee -a ${LOG}
 	dmesg > ${HOME}/dmesg.txt
+	mv ${LOG} ${HOME}/log_firstboot.txt
 	sync
 	sleep 1
 	mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
 	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
-	sleep 2
+	sleep 4
+}
+
+safe_reboot_func(){
+	safe_shutdown_func
 	reboot
 }
 
 safe_poweroff_func(){
-	echo "please wait a few seconds for a shutdown...." | tee -a ${LOG}
-	dmesg > ${HOME}/dmesg.txt
-	sync
-	sleep 1
-	mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
-	umount /dev/mmcblk0p4 | tee -a ${LOG}
-	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
-	sleep 2
+	safe_shutdown_func
 	poweroff
 }
 
@@ -373,7 +371,7 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		# "NO" or timeout choice for Test_Video msgbox thus DIALOG_OK exit code 0 (or ERROR/ESCAPE with -1/255)
 		## correct variant to unknown and redo whole flashing_prd again
 		else
-			console_unknown_func			
+			console_unknown_func
 			safe_reboot_func
 		fi
 	fi
@@ -451,7 +449,7 @@ if $FOUND_CONSOLE; then
 	# Any choice different than "YES" from Test_Variant - that is 0/-1/255 exit code
 	## correct variant to unknown and redo whole flashing_prd again
 	if !(test $CHOICE -eq 1); then
-		console_unknown_func			
+		console_unknown_func
 		safe_reboot_func
 	fi
 else
@@ -493,8 +491,9 @@ if (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RE
 	--colors --pause "\n\n       \ZuExpand MAIN partition?\Zn\n\n   Select an option & press START
 	\n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 15 60 10); then
 	clear
-	echo "The full size of your SD is ${SD_SIZE_IN_MiB}MiB large"  | tee -a ${LOG}
-	echo "Unallocated space available for resizing equals ${SD_MAX_UNALL_SIZE_IN_GB}GB"  | tee -a ${LOG}
+	echo "The full size of your SD is ${SD_SIZE_IN_MiB}MiB large" | tee -a ${LOG}
+	echo "Unallocated space available for resizing equals ${SD_MAX_UNALL_SIZE_IN_GB}GB," | tee -a ${LOG}
+	echo "and more precisely it's ${SD_MAX_UNALL_SIZE_IN_MB}MB big" | tee -a ${LOG}
 	echo "Going to resize the MAIN partition." | tee -a ${LOG}
 	echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
@@ -544,8 +543,7 @@ echo
 
 sync
 echo "firstboot script finished." | tee -a ${LOG}
-#grep logs from temp directory
-mv ${LOG} ${HOME}/log_firstboot.txt
+
 echo
 
 # Reboot device if CONSOLE_VARIANT was overwritten from $CHOICE so that it could be applied in u-boot by readID 
@@ -553,4 +551,7 @@ echo
 if ($CONSOLE_OVERWRITE || $RESIZE_COMMENCED || test -r "${BASEDIR}/firstboot.custom.sh"); then
 	touch ${HOME}/firstboot.completed
 	safe_reboot_func
+else
+#just grep logs from temp directory before continuing
+	mv ${LOG} ${HOME}/log_firstboot.txt
 fi
