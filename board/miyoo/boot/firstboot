@@ -480,8 +480,9 @@ BOOT_SIZE=$(((1016+1) * 1024 / 512)) #bootloader partition=1016K (see `genimage`
 
 #Calculate unallocated left space to expand MAIN:
 SD_MAX_UNALL_SIZE="$((${SD_SIZE} - (${P1_SIZE} + ${P2_SIZE} + ${P3_SIZE} + ${P4_SIZE}) - $BOOT_SIZE))"
-SD_MAX_UNALL_SIZE_IN_MB=$((SD_MAX_UNALL_SIZE * 512 / 1024 / 1000))
-SD_MAX_UNALL_SIZE_IN_GB=$((SD_MAX_UNALL_SIZE * 512 / 1024 / 1000 / 1000))
+SD_MAX_UNALL_SIZE_IN_MiB=$((SD_MAX_UNALL_SIZE * 512 / 1024 / 1024))
+SD_MAX_UNALL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_UNALL_SIZE} * 512 / 1024 / 1024 / 1024" | bc)
+
 #Calculate available space for 4'th partition (MAIN):
 SD_MAX_AVAIL_SIZE="$((${SD_SIZE} - (${P1_SIZE} + ${P2_SIZE} + ${P3_SIZE}) - $BOOT_SIZE))"
 SD_MAX_AVAIL_SIZE_IN_KiB=$((SD_MAX_AVAIL_SIZE * 512 / 1024))
@@ -491,9 +492,9 @@ if (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RE
 	--colors --pause "\n\n       \ZuExpand MAIN partition?\Zn\n\n   Select an option & press START
 	\n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 15 60 10); then
 	clear
-	echo "The full size of your SD is ${SD_SIZE_IN_MiB}MiB large" | tee -a ${LOG}
-	echo "Unallocated space available for resizing equals ${SD_MAX_UNALL_SIZE_IN_GB}GB," | tee -a ${LOG}
-	echo "and more precisely it's ${SD_MAX_UNALL_SIZE_IN_MB}MB big" | tee -a ${LOG}
+	echo "The full size of your SD is ${SD_SIZE_IN_MiB}MB large" | tee -a ${LOG}
+	echo "Unallocated space available for resizing equals ${SD_MAX_UNALL_SIZE_IN_GiB}GB," | tee -a ${LOG}
+	echo "and more precisely it's ${SD_MAX_UNALL_SIZE_IN_MiB}MB big" | tee -a ${LOG}
 	echo "Going to resize the MAIN partition." | tee -a ${LOG}
 	echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
@@ -543,13 +544,12 @@ echo
 
 sync
 echo "firstboot script finished." | tee -a ${LOG}
-
+touch ${HOME}/firstboot.completed
 echo
 
 # Reboot device if CONSOLE_VARIANT was overwritten from $CHOICE so that it could be applied in u-boot by readID 
 ## or resizing FAT partition has completed / found firstboot custom script
 if ($CONSOLE_OVERWRITE || $RESIZE_COMMENCED || test -r "${BASEDIR}/firstboot.custom.sh"); then
-	touch ${HOME}/firstboot.completed
 	safe_reboot_func
 else
 #just grep logs from temp directory before continuing
