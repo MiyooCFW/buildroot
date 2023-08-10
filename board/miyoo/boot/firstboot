@@ -467,7 +467,6 @@ if (dialog --clear --ok-label NO --cancel-label YES --stdout --title "   License
 fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
-RESIZE_COMMENCED=false
 #grep all partitions current size
 SD_SIZE=$(cat "/sys/block/mmcblk0/size")
 P1_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p1/size")
@@ -475,6 +474,7 @@ P2_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p2/size")
 P3_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p3/size")
 P4_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p4/size")
 SD_SIZE_IN_MiB=$((SD_SIZE * 512 / 1024 / 1024))
+SD_SIZE_IN_GiB=$((SD_SIZE * 512 / 1024 / 1024 / 1024))
 BOOT_SIZE=$(((1016+1) * 1024 / 512)) #bootloader partition=1016K (see `genimage` script in buildroot)
 ## boot_size calculated to 512 byte sector size blocks, adding +1K as a safety measure for roundups (at fatresize we use KibiBits)
 
@@ -487,23 +487,45 @@ SD_MAX_UNALL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_UNALL_SIZE} * 512 / 1024 / 10
 SD_MAX_AVAIL_SIZE="$((${SD_SIZE} - (${P1_SIZE} + ${P2_SIZE} + ${P3_SIZE}) - $BOOT_SIZE))"
 SD_MAX_AVAIL_SIZE_IN_KiB=$((SD_MAX_AVAIL_SIZE * 512 / 1024))
 
+RESIZE_COMMENCED=false
 # resize the main partition if requested
 if (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RESIZE" \
-	--colors --pause "\n\n       \ZuExpand MAIN partition?\Zn\n\n   Select an option & press START
-	\n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 15 60 10); then
+   --colors --pause "\n\n       \ZuExpand MAIN partition?\Zn\n\n   Select an option & press START
+   \n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 15 60 10); then
 	clear
+	RESIZE_ABORT=false
+	if test "$SD_SIZE_IN_GiB" -ge 128; then
+		if (dialog --clear --stdout --ok-label NO --cancel-label YES --title "   \Zb\Z1WARNING!\Zn" \
+		--colors --pause "\nYour SD card exceeds max. size for auto-resizing! 
+		\n\nWe could however expand it to 118GB. \n\n           \ZuDo you AGREE?\Zn
+		\n\n\ZbINFO: For microSD >128GB big we\n      recommend to use your PC!\Zn" 0 0 30 || test $? -eq 255); then
+			dialog --clear --colors --timeout 2 --msgbox " FAT resizing \ZuABORTED!\Zn" 5 27
+			clear
+			RESIZE_ABORT=true
+		else
+			SD_MAX_AVAIL_SIZE_IN_KiB=123731968
+		fi
+	fi
+	SD_MAX_AVAIL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_AVAIL_SIZE_IN_KiB} / 1024 / 1024" | bc)
 	echo "The full size of your SD is ${SD_SIZE_IN_MiB}MB large" | tee -a ${LOG}
 	echo "Unallocated space available for resizing equals ${SD_MAX_UNALL_SIZE_IN_GiB}GB," | tee -a ${LOG}
 	echo "and more precisely it's ${SD_MAX_UNALL_SIZE_IN_MiB}MB big" | tee -a ${LOG}
-	echo "Going to resize the MAIN partition." | tee -a ${LOG}
-	echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
-	umount /dev/mmcblk0p4 | tee -a ${LOG}
-	fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
-	fatresize --size="${SD_MAX_AVAIL_SIZE_IN_KiB}"ki -v -p /dev/mmcblk0p4 -n4 | tee -a ${LOG}
-	fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
-	echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
-	sync
-	mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 ${HOME} | tee -a ${LOG}
+	#TODO: prevail resizing beyond real AVAILABLE SD space after overwrite of SD_MAX_AVAIL_SIZE_IN_KiB 
+	if ! $RESIZE_ABORT; then
+		echo "Resizing the MAIN partition to ${SD_MAX_AVAIL_SIZE_IN_GiB}GB." | tee -a ${LOG}
+		echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
+		umount /dev/mmcblk0p4 | tee -a ${LOG}
+		fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
+		#TODO: fix outputting logs from fatresize stdout
+		fatresize --size="${SD_MAX_AVAIL_SIZE_IN_KiB}"ki -v -p /dev/mmcblk0p4 -n4 | tee -a ${LOG}
+		fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
+		echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
+		sync
+		mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 ${HOME} | tee -a ${LOG}
+	else
+		echo "MAIN fat partition resizing was aborted!" | tee -a ${LOG}
+		sleep 2
+	fi
 	RESIZE_COMMENCED=true
 fi
 
