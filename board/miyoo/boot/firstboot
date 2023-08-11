@@ -494,7 +494,7 @@ if (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RE
    \n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 15 60 10); then
 	clear
 	RESIZE_ABORT=false
-	if test "$SD_SIZE_IN_GiB" -ge 128; then
+	if test "$SD_SIZE_IN_GiB" -gt 128; then
 		if (dialog --clear --stdout --ok-label NO --cancel-label YES --title "   \Zb\Z1WARNING!\Zn" \
 		--colors --pause "\nYour SD card exceeds max. size for auto-resizing! 
 		\n\nWe could however expand it to 118GB. \n\n           \ZuDo you AGREE?\Zn
