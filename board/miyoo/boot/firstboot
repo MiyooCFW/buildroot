@@ -507,10 +507,19 @@ if (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RE
 		fi
 	fi
 	SD_MAX_AVAIL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_AVAIL_SIZE_IN_KiB} / 1024 / 1024" | bc)
+	P4_SIZE_IN_GiB=$(echo "scale=1; ${P4_SIZE} * 512 / 1024 / 1024 / 1024" | bc)
+	# roundup GiB value to 0,1GB for integer calculations:
+	SD_MAX_AVAIL_SIZE_IN_GiBx10=$(echo "$SD_MAX_AVAIL_SIZE_IN_GiB" | tr -d ".")
+	P4_SIZE_IN_GiBx10=$(echo "$P4_SIZE_IN_GiB" | tr -d ".")
+	#Sanity checks if we don't down- or over-resize partition:
+	if (test "$P4_SIZE_IN_GiBx10" -ge "$SD_MAX_AVAIL_SIZE_IN_GiBx10" || test "$SD_MAX_UNALL_SIZE_IN_MiB" -le 0); then
+		echo "Your MAIN partition is greater than available space for resizing or you lack unallocated sectors space" | tee -a ${LOG}
+		sleep 1.5
+		RESIZE_ABORT=true
+	fi
 	echo "The full size of your SD is ${SD_SIZE_IN_MiB}MB large" | tee -a ${LOG}
 	echo "Unallocated space available for resizing equals ${SD_MAX_UNALL_SIZE_IN_GiB}GB," | tee -a ${LOG}
 	echo "and more precisely it's ${SD_MAX_UNALL_SIZE_IN_MiB}MB big" | tee -a ${LOG}
-	#TODO: prevail resizing beyond real AVAILABLE SD space after overwrite of SD_MAX_AVAIL_SIZE_IN_KiB 
 	if ! $RESIZE_ABORT; then
 		echo "Resizing the MAIN partition to ${SD_MAX_AVAIL_SIZE_IN_GiB}GB." | tee -a ${LOG}
 		echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
