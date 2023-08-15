@@ -55,7 +55,7 @@ console_var_func(){
 
 # write logs, sync & unmount MAIN before reboot/poweroff
 safe_shutdown_func(){
-	echo "please wait a few seconds for a reboot...." | tee -a ${LOG}
+	echo "please wait a few seconds for a ${SHUTDOWN}...." | tee -a ${LOG}
 	dmesg > ${HOME}/dmesg.txt
 	mv ${LOG} ${HOME}/log_firstboot.txt
 	sync
@@ -67,11 +67,13 @@ safe_shutdown_func(){
 }
 
 safe_reboot_func(){
+	SHUTDOWN=reboot
 	safe_shutdown_func
 	reboot
 }
 
 safe_poweroff_func(){
+	SHUTDOWN=poweroff
 	safe_shutdown_func
 	poweroff
 }
