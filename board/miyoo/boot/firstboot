@@ -506,9 +506,10 @@ if (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RE
 			SD_MAX_AVAIL_SIZE_IN_KiB=123731968
 		fi
 	fi
+	SD_MAX_AVAIL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_AVAIL_SIZE_IN_KiB} / 1024 / 1024" | bc) #only to inform user about end point for resize
 	SD_MAX_AVAIL_SIZE_IN_GB=$(echo "scale=1; ${SD_MAX_AVAIL_SIZE_IN_KiB} * 1024 / 1000 / 1000 / 1000" | bc)
 	P4_SIZE_IN_GB=$(echo "scale=1; ${P4_SIZE} * 512 / 1000 / 1000 / 1000" | bc)
-	# roundup GiB value to 0,1GB for integer calculations:
+	# roundup GB value to 0,1GB for integer calculations:
 	SD_MAX_AVAIL_SIZE_IN_GBx10=$(echo "$SD_MAX_AVAIL_SIZE_IN_GB" | tr -d ".")
 	P4_SIZE_IN_GBx10=$(echo "$P4_SIZE_IN_GB" | tr -d ".")
 	#Sanity checks if we don't down- or over-resize partition:
