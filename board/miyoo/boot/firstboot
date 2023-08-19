@@ -204,6 +204,9 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				break
 			fi
 		done
+	elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
+		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_2" 0 0
+		echo "CONSOLE_VARIANT=m3" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_3" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_3" 0 0
 		# Test_Image-prompt if proper "invert" colors parameter was loaded:
@@ -226,7 +229,6 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 			safe_reboot_func
 		fi
 	# look in II Test block for following DETECTED versions as these imply devices_auto_ID variants:
-	## DETECTED_2 - xyc/m3
 	## DETECTED_4 - bittboy
 	## DETECTED_5 - bittboy3/2
 	elif (grep -q "$DETECTED_6" "${MOUNTDIR}/uEnv.txt"); then
@@ -309,7 +311,7 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		if (grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_5" 0 0
 		elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
-		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_2" 0 0
+		dialog --timeout 4 --msgbox  "Correcting $DETECTED_2 - wait for further instructions" 0 0
 		fi
 		test_keyboard_func(){
 			dialog --ok-label NO --cancel-label YES --stdout --title   "  Test Keyboard" \
@@ -326,6 +328,7 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 					echo "CONSOLE_VARIANT=bittboy3.5" > ${MOUNTDIR}/console.cfg
 				elif test "$CONSOLE_VARIANT" == "bittboy2"; then
 					echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
+				#TODO: add Test_Image inverted colors after adding it in gc9306fb kernel code
 				elif test "$CONSOLE_VARIANT" == "xyc"; then
 					echo "CONSOLE_VARIANT=xyc_gc9306" > ${MOUNTDIR}/console.cfg
 				elif test "$CONSOLE_VARIANT" == "m3"; then
