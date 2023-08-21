@@ -41,42 +41,9 @@ consequences arising from the use or misuse of this software.
 
 ## Create temp file to store variable for menu choice
 TEMP=$(mktemp) 
+
 ## Access /boot directory
 mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
-
-# try to read what handheld we're on when calling func
-console_var_func(){
-	if (test -r "${MOUNTDIR}/console.cfg"); then
-		source "${MOUNTDIR}/console.cfg"
-	else 
-		export CONSOLE_VARIANT="unknown"
-	fi
-}
-
-# write logs, sync & unmount MAIN before reboot/poweroff
-safe_shutdown_func(){
-	echo "please wait a few seconds for a ${SHUTDOWN}...." | tee -a ${LOG}
-	dmesg > ${HOME}/dmesg.txt
-	mv ${LOG} ${HOME}/log_firstboot.txt
-	sync
-	sleep 1
-	mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
-	umount /dev/mmcblk0p4 | tee -a ${LOG}
-	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
-	sleep 4
-}
-
-safe_reboot_func(){
-	SHUTDOWN=reboot
-	safe_shutdown_func
-	reboot
-}
-
-safe_poweroff_func(){
-	SHUTDOWN=poweroff
-	safe_shutdown_func
-	poweroff
-}
 
 # list of available devices in u-boot Environment parameters' read from FORCE_VERSION
 devices_ID="
@@ -139,14 +106,200 @@ for i in $devices_auto_ID; do
 done
 }
 
+# try to read what handheld we're on when calling func
+console_var_func(){
+	if (test -r "${MOUNTDIR}/console.cfg"); then
+		source "${MOUNTDIR}/console.cfg"
+	else 
+		export CONSOLE_VARIANT="unknown"
+	fi
+}
+
 detect_console_func(){
 	console_var_func
 	find_console_func
 	find_console_auto_func
 }
 
+# write logs, sync & unmount MAIN before reboot/poweroff
+safe_shutdown_func(){
+	echo "please wait a few seconds for a ${SHUTDOWN}...." | tee -a ${LOG}
+	dmesg > ${HOME}/dmesg.txt
+	mv ${LOG} ${HOME}/log_firstboot.txt
+	sync
+	sleep 1
+	mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
+	umount /dev/mmcblk0p4 | tee -a ${LOG}
+	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
+	sleep 4
+}
+
+safe_reboot_func(){
+	SHUTDOWN=reboot
+	safe_shutdown_func
+	reboot
+}
+
+safe_poweroff_func(){
+	SHUTDOWN=poweroff
+	safe_shutdown_func
+	poweroff
+}
+
+console_unknown_func(){
+	echo "CONSOLE_VARIANT=unknown" > ${MOUNTDIR}/console.cfg
+	echo "##DO_NOT_REMOVE_THIS_LINE##" >> ${MOUNTDIR}/console.cfg
+}
+
+default_console_func(){
+	echo "CONSOLE_VARIANT=pocketgo" > ${MOUNTDIR}/console.cfg
+	# No need to overwrite uboot FORCE version for default so continue procedure
+	CONSOLE_OVERWRITE=false
+}
+
+#Test-prompt dialogs fo various scenarios
+test_image(){
+	dialog --defaultno --ok-label NO --cancel-label Inverted --stdout --title   "  Test Image" \
+	--colors --pause "\n\n  \ZuAre your colors Inverted?\Zn\n\nSelect an option & press START" 12 34 10
+
+	echo $? > $TEMP
+	## Read the user's last choice from the tmp file
+	CHOICE=$(cat $TEMP)
+	# "NO" choice for Test_Image msgbox DIALOG_OK exit code
+	## thus we have valid version and simply continue
+	if test $CHOICE -eq 0; then
+		dialog --timeout 2 --msgbox "Colors are correct, proceed with flashing" 0 0
+	# "INVERTED" choice for Test_Iamge msgbox DIALOG_CANCEL exit code and -1/255
+	## thus correct "invert" colors parameter on video driver
+	else
+	#TODO - make "invert" flag overwriting less dependent
+		echo "$INVERSION" >> ${HOME}/options.cfg
+		safe_reboot_func
+	fi
+}
+
+test_video_func(){
+	dialog --defaultno --ok-label NO --cancel-label "Flipped!" --extra-button --extra-label YES --stdout --title   "   Test Video" \
+	--colors --pause "\n\n   \ZuCan you see this message?\Zn\n\nSelect an option & press START" 12 34 10
+
+	echo $? > $TEMP
+	## Read the user's first choice from the tmp file
+	CHOICE=$(cat $TEMP)
+
+	# "YES" choice for Test_Video msgbox DIALOG_EXTRA exit code
+	if test $CHOICE -eq 3; then
+		# Correct variant for st7789s (non forced)
+		echo "CONSOLE_VARIANT=st7789s" > ${MOUNTDIR}/console.cfg	
+	# "Flipped!" choice for Test_Video msgbox DIALOG_CANCEL exit code
+	elif test $CHOICE -eq 1; then
+		# Test_Flip-prompt double checks if user selected correct answer for 1'st video test
+		test_flip_func
+	# "NO" or timeout choice for Test_Video msgbox thus DIALOG_OK exit code
+	elif test $CHOICE -eq 0; then
+		# Correct variant for bittboy2x_v1 (non forced)
+		echo "CONSOLE_VARIANT=bittboy" > ${MOUNTDIR}/console.cfg
+		safe_reboot_func
+	# Error (DIALOG_ERROR) or ESCAPE button pressed (DIALOG_ESCAPE) thus exit code -1/255
+	else
+		dialog --timeout 2 --msgbox "Invalid choice, please redo the test!" 0 0
+		sleep 1.5
+	fi
+}
+
+test_video-2_func(){
+	dialog --defaultno --ok-label NO --cancel-label YES --stdout --title   "   Test Video'2" \
+	--colors --pause "\n\n   \ZuCan you see this message?\Zn\n\nSelect an option & press START" 12 34 10
+	
+	echo $? > $TEMP
+	## Read the user's last choice from the tmp file
+	CHOICE=$(cat $TEMP)
+	# "YES" choice for Test_Video'2 msgbox DIALOG_CANCEL exit code
+	## thus we have valid version, just update to FORCE_VERSION and continue
+	if test $CHOICE -eq 1; then
+		echo "CONSOLE_VARIANT=bittboy2x_v1" > ${MOUNTDIR}/console.cfg
+	# "NO" or timeout choice for Test_Video msgbox thus DIALOG_OK exit code 0 (or ERROR/ESCAPE with -1/255)
+	## correct variant to unknown and redo whole flashing_prd again
+	else
+		console_unknown_func
+		safe_reboot_func
+	fi
+}
+
+test_keyboard_func(){
+	dialog --ok-label NO --cancel-label YES --stdout --title   "  Test Keyboard" \
+	--colors --pause "\n\n  \ZuDoes D-pad works correctly?\Zn\n\nSelect an option & press START" 12 34 10
+
+	echo $? > $TEMP
+	## Read the user's last choice from the tmp file
+	CHOICE=$(cat $TEMP)
+
+	# "YES" choice for Test_Keyboard msgbox DIALOG_CANCEL exit code
+	## thus we have valid version, just update to FORCE_VERSION and continue
+	if test $CHOICE -eq 1; then
+		if test "$CONSOLE_VARIANT" == "bittboy3"; then
+			echo "CONSOLE_VARIANT=bittboy3.5" > ${MOUNTDIR}/console.cfg
+		elif test "$CONSOLE_VARIANT" == "bittboy2"; then
+			echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
+		elif test "$CONSOLE_VARIANT" == "xyc"; then
+			echo "CONSOLE_VARIANT=xyc_gc9306" > ${MOUNTDIR}/console.cfg
+			# Test_Image-prompt if proper "invert" colors parameter was loaded:
+			INVERSION=1 #applied only if colors are inverted
+			test_image_func
+		elif test "$CONSOLE_VARIANT" == "m3"; then
+			echo "CONSOLE_VARIANT=m3_gc9306" > ${MOUNTDIR}/console.cfg
+		fi
+	# "NO" or timeout choice for Test_Keyboard msgbox DIALOG_OK exit code
+	## thus correct Auto-Detection variant and reboot
+	elif test $CHOICE -eq 0; then
+		if test "$CONSOLE_VARIANT" == "bittboy3"; then
+			echo "CONSOLE_VARIANT=bittboy2" > ${MOUNTDIR}/console.cfg
+		elif test "$CONSOLE_VARIANT" == "bittboy2"; then
+			console_unknown_func
+		elif test "$CONSOLE_VARIANT" == "xyc"; then
+			console_unknown_func
+		elif test "$CONSOLE_VARIANT" == "m3"; then
+			echo "CONSOLE_VARIANT=xyc" > ${MOUNTDIR}/console.cfg
+		fi
+		safe_reboot_func
+	# Error (DIALOG_ERROR) or ESCAPE button pressed (DIALOG_ESCAPE) thus exit code -1/255
+	else
+		dialog --timeout 2 --msgbox "Invalid choice, please redo the test!" 0 0
+		sleep 1.5
+	fi
+}
+
+test_variant_func(){
+	dialog --defaultno --ok-label NO --cancel-label YES --stdout --title   "   Test Variant" \
+	--colors --pause "Does this device match yours?" 0 0 15
+	
+	echo $? > $TEMP
+	## Read the user's last choice from the tmp file
+	CHOICE=$(cat $TEMP)
+	# Any choice different than "YES" from Test_Variant - that is 0/-1/255 exit code
+	## correct variant to unknown and redo whole flashing_prd again
+	if !(test $CHOICE -eq 1); then
+		console_unknown_func
+		safe_reboot_func
+	fi
+}
+
+test_flip_func(){
+	if (dialog --stdout --ok-label YES --cancel-label NO --title "Test Flip" --pause "  \n   Flipped? \n\nAre you sure?!" 12 15 10); then
+		# Correct variant for bittboy3.5 (non forced) and display info about flipped image
+		echo "CONSOLE_VARIANT=bittboy3" > ${MOUNTDIR}/console.cfg
+		dialog --timeout 2 --msgbox "Image flipped! correct&reboot" 0 0
+		sleep 1.5
+		#TODO: use special Unicode characters to draw text upside-down e.g.:
+		## dialog --timeout 2 --msgbox "ƃuᴉʇooqǝɹ⅋uᴉʇɔǝɹɹoɔ 'pǝddᴉןɟ ǝƃɐɯᴉ \n\n image flipped, correcting&rebooting" 0 0
+		safe_reboot_func
+	else
+		dialog --timeout 2 --msgbox "Invalid choice, please redo the test!" 0 0
+		sleep 1.5
+	fi
+}
+
+#Checking if device at hand is operational within flashing procedure
 CONSOLE_DETECTED=false
-#Checking if device at hand is operational within flashing procedure 
 if (grep -qE "${DETECTED_1}|${DETECTED_2}|${DETECTED_3}|${DETECTED_4}|${DETECTED_5}|${DETECTED_6}|${DETECTED_7}|${DETECTED_8}|${DETECTED_9}|${DETECTED_10}" "${MOUNTDIR}/uEnv.txt"); then
 	CONSOLE_DETECTED=true
 fi
@@ -157,44 +310,7 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	if (grep -q "$DETECTED_1" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_1" 0 0
 		# Test_Video-prompt if proper miyoo video's version driver was loaded:
-		test_video_func(){
-			dialog --defaultno --ok-label NO --cancel-label "Flipped!" --extra-button --extra-label YES --stdout --title   "   Test Video" \
-			--colors --pause "\n\n   \ZuCan you see this message?\Zn\n\nSelect an option & press START" 12 34 10
-
-			echo $? > $TEMP
-			## Read the user's first choice from the tmp file
-			CHOICE=$(cat $TEMP)
-
-			# "YES" choice for Test_Video msgbox DIALOG_EXTRA exit code
-			if test $CHOICE -eq 3; then
-				# Correct variant for st7789s (non forced)
-				echo "CONSOLE_VARIANT=st7789s" > ${MOUNTDIR}/console.cfg	
-			# "Flipped!" choice for Test_Video msgbox DIALOG_CANCEL exit code
-			elif test $CHOICE -eq 1; then
-				# Test_Flip-prompt double checks if user selected correct answer for 1'st video test
-				if (dialog --stdout --ok-label YES --cancel-label NO --title "Test Flip" --pause "  \n   Flipped? \n\nAre you sure?!" 12 15 10); then
-					# Correct variant for bittboy3.5 (non forced) and display info about flipped image
-					echo "CONSOLE_VARIANT=bittboy3" > ${MOUNTDIR}/console.cfg
-					dialog --timeout 2 --msgbox "Image flipped! correct&reboot" 0 0
-					sleep 1.5
-					#TODO: use special Unicode characters to draw text upside-down e.g.:
-					## dialog --timeout 2 --msgbox "ƃuᴉʇooqǝɹ⅋uᴉʇɔǝɹɹoɔ 'pǝddᴉןɟ ǝƃɐɯᴉ \n\n image flipped, correcting&rebooting" 0 0
-					safe_reboot_func
-				else
-					dialog --timeout 2 --msgbox "Invalid choice, please redo the test!" 0 0
-					sleep 1.5
-				fi
-			# "NO" or timeout choice for Test_Video msgbox thus DIALOG_OK exit code
-			elif test $CHOICE -eq 0; then
-				# Correct variant for bittboy2x_v1 (non forced)
-				echo "CONSOLE_VARIANT=bittboy" > ${MOUNTDIR}/console.cfg
-				safe_reboot_func
-			# Error (DIALOG_ERROR) or ESCAPE button pressed (DIALOG_ESCAPE) thus exit code -1/255
-			else
-				dialog --timeout 2 --msgbox "Invalid choice, please redo the test!" 0 0
-				sleep 1.5
-			fi
-		}
+		test_video_func
 		
 		# Loop Test_Video until correct selection has been performed (CHOICE=0/3)
 		## former CHOICE=1 meant safe_reboot if correct and shouldn't reach to this point
@@ -209,25 +325,10 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		echo "CONSOLE_VARIANT=m3" > ${MOUNTDIR}/console.cfg
 	elif (grep -q "$DETECTED_3" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_3" 0 0
-		# Test_Image-prompt if proper "invert" colors parameter was loaded:
-		dialog --defaultno --ok-label NO --cancel-label Inverted --stdout --title   "  Test Image" \
-		--colors --pause "\n\n  \ZuAre your colors Inverted?\Zn\n\nSelect an option & press START" 12 34 10
-
-		echo $? > $TEMP
 		echo "CONSOLE_VARIANT=m3_r61520" > ${MOUNTDIR}/console.cfg
-		## Read the user's last choice from the tmp file
-		CHOICE=$(cat $TEMP)
-		# "NO" choice for Test_Image msgbox DIALOG_OK exit code
-		## thus we have valid version and simply continue
-		if test $CHOICE -eq 0; then
-			echo "Colors are correct, proceed with flashing"
-		# "INVERTED" choice for Test_Iamge msgbox DIALOG_CANCEL exit code and -1/255
-		## thus correct "invert" colors parameter on video driver
-		else
-		#TODO - make "invert" flag overwriting less dependent
-			echo "INVERT=0" >> ${HOME}/options.cfg
-			safe_reboot_func
-		fi
+		# Test_Image-prompt if proper "invert" colors parameter was loaded:
+		INVERSION=0 #applied only if colors are inverted 
+		test_image_func
 	# look in II Test block for following DETECTED versions as these imply devices_auto_ID variants:
 	## DETECTED_4 - bittboy
 	## DETECTED_5 - bittboy3/2
@@ -251,11 +352,6 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	source "${MOUNTDIR}/console.cfg"
 fi
 
-console_unknown_func(){
-	echo "CONSOLE_VARIANT=unknown" > ${MOUNTDIR}/console.cfg
-	echo "##DO_NOT_REMOVE_THIS_LINE##" >> ${MOUNTDIR}/console.cfg
-}
-
 # II - Test_Block
 ## Defaulting to console overwriting inactive
 CONSOLE_OVERWRITE=false
@@ -275,12 +371,8 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		## Defaulting to console overwriting active
 		CONSOLE_OVERWRITE=true
 		
-		## Default CONSOLE_VARIANT for st7789s screns
-		default_console_func(){
-			echo "CONSOLE_VARIANT=pocketgo" > ${MOUNTDIR}/console.cfg
-			# No need to overwrite uboot FORCE version for default so continue procedure
-			CONSOLE_OVERWRITE=false
-		}
+		## Default CONSOLE_VARIANT for st7789s screens
+		default_console_func
 		## Read the user's choice from the file
 		CHOICE=$(cat $TEMP)
 		## Perform actions based on the user's choice
@@ -306,53 +398,14 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				sleep 0.1
 				;;
 		esac
-	## Test_Keyboard-prompt if proper miyoo.kbd  version was loaded:
 	elif (((test "$CONSOLE_VARIANT" == "bittboy2" || test "$CONSOLE_VARIANT" == "bittboy3") && grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt") || ((test "$CONSOLE_VARIANT" == "xyc" || test "$CONSOLE_VARIANT" == "m3") && grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt")); then
 		if (grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_5" 0 0
 		elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 4 --msgbox  "Correcting $DETECTED_2 - wait for further instructions" 0 0
 		fi
-		test_keyboard_func(){
-			dialog --ok-label NO --cancel-label YES --stdout --title   "  Test Keyboard" \
-			--colors --pause "\n\n  \ZuDoes D-pad works correctly?\Zn\n\nSelect an option & press START" 12 34 10
-
-			echo $? > $TEMP
-			## Read the user's last choice from the tmp file
-			CHOICE=$(cat $TEMP)
-
-			# "YES" choice for Test_Keyboard msgbox DIALOG_CANCEL exit code
-			## thus we have valid version, just update to FORCE_VERSION and continue
-			if test $CHOICE -eq 1; then
-				if test "$CONSOLE_VARIANT" == "bittboy3"; then
-					echo "CONSOLE_VARIANT=bittboy3.5" > ${MOUNTDIR}/console.cfg
-				elif test "$CONSOLE_VARIANT" == "bittboy2"; then
-					echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
-				#TODO: add Test_Image inverted colors after adding it in gc9306fb kernel code
-				elif test "$CONSOLE_VARIANT" == "xyc"; then
-					echo "CONSOLE_VARIANT=xyc_gc9306" > ${MOUNTDIR}/console.cfg
-				elif test "$CONSOLE_VARIANT" == "m3"; then
-					echo "CONSOLE_VARIANT=m3_gc9306" > ${MOUNTDIR}/console.cfg
-				fi
-			# "NO" or timeout choice for Test_Keyboard msgbox DIALOG_OK exit code
-			## thus correct Auto-Detection variant and reboot
-			elif test $CHOICE -eq 0; then
-				if test "$CONSOLE_VARIANT" == "bittboy3"; then
-					echo "CONSOLE_VARIANT=bittboy2" > ${MOUNTDIR}/console.cfg
-				elif test "$CONSOLE_VARIANT" == "bittboy2"; then
-					console_unknown_func
-				elif test "$CONSOLE_VARIANT" == "xyc"; then
-					console_unknown_func
-				elif test "$CONSOLE_VARIANT" == "m3"; then
-					echo "CONSOLE_VARIANT=xyc" > ${MOUNTDIR}/console.cfg
-				fi
-				safe_reboot_func
-			# Error (DIALOG_ERROR) or ESCAPE button pressed (DIALOG_ESCAPE) thus exit code -1/255
-			else
-				dialog --timeout 2 --msgbox "Invalid choice, please redo the test!" 0 0
-				sleep 1.5
-			fi
-		}
+		## Test_Keyboard-prompt if proper miyoo.kbd  version was loaded:
+		test_keyboard_func
 		# Loop Test_Keyboard until correct selection has been performed (CHOICE=0/1)
 		while true; do
 			test_keyboard_func
@@ -363,22 +416,7 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	elif (test "$CONSOLE_VARIANT" == "bittboy" && grep -q "$DETECTED_4" "${MOUNTDIR}/uEnv.txt") ; then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_4" 0 0
 		# Test_Video'2-prompt if proper miyoo video's version driver was loaded:
-		dialog --defaultno --ok-label NO --cancel-label YES --stdout --title   "   Test Video'2" \
-		--colors --pause "\n\n   \ZuCan you see this message?\Zn\n\nSelect an option & press START" 12 34 10
-		
-		echo $? > $TEMP
-		## Read the user's last choice from the tmp file
-		CHOICE=$(cat $TEMP)
-		# "YES" choice for Test_Video'2 msgbox DIALOG_CANCEL exit code
-		## thus we have valid version, just update to FORCE_VERSION and continue
-		if test $CHOICE -eq 1; then
-			echo "CONSOLE_VARIANT=bittboy2x_v1" > ${MOUNTDIR}/console.cfg
-		# "NO" or timeout choice for Test_Video msgbox thus DIALOG_OK exit code 0 (or ERROR/ESCAPE with -1/255)
-		## correct variant to unknown and redo whole flashing_prd again
-		else
-			console_unknown_func
-			safe_reboot_func
-		fi
+		test_video-2_func
 	fi
 fi
 
@@ -445,18 +483,7 @@ if $FOUND_CONSOLE; then
 				dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown-Error\Zn" 5 18
 	esac
 	# Test_Variant-prompt if correct CONSOLE_VARIANT has been written to console.cfg
-	dialog --defaultno --ok-label NO --cancel-label YES --stdout --title   "   Test Variant" \
-	--colors --pause "Does this device match yours?" 0 0 15
-	
-	echo $? > $TEMP
-	## Read the user's last choice from the tmp file
-	CHOICE=$(cat $TEMP)
-	# Any choice different than "YES" from Test_Variant - that is 0/-1/255 exit code
-	## correct variant to unknown and redo whole flashing_prd again
-	if !(test $CHOICE -eq 1); then
-		console_unknown_func
-		safe_reboot_func
-	fi
+	test_variant_func
 else
 	dialog --colors --timeout 2 --ok-label " Your device " --msgbox "\Zb\Z1 Unknown\Zn" 5 18
 	console_unknown_func
@@ -492,8 +519,8 @@ SD_MAX_UNALL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_UNALL_SIZE} * 512 / 1024 / 10
 SD_MAX_AVAIL_SIZE="$((${SD_SIZE} - (${P1_SIZE} + ${P2_SIZE} + ${P3_SIZE}) - $BOOT_SIZE))"
 SD_MAX_AVAIL_SIZE_IN_KiB=$((SD_MAX_AVAIL_SIZE * 512 / 1024))
 
+# Expand_MAIN_Partition-prompt for fatresize the p4 partition if requested
 RESIZE_COMMENCED=false
-# resize the main partition if requested
 if (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RESIZE" \
    --colors --pause "\n\n       \ZuExpand MAIN partition?\Zn\n\n   Select an option & press START
    \n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 15 60 10); then
