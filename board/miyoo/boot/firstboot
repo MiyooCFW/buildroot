@@ -151,6 +151,7 @@ console_unknown_func(){
 	echo "##DO_NOT_REMOVE_THIS_LINE##" >> ${MOUNTDIR}/console.cfg
 }
 
+## Default CONSOLE_VARIANT for st7789s screens
 default_console_func(){
 	echo "CONSOLE_VARIANT=pocketgo" > ${MOUNTDIR}/console.cfg
 	# No need to overwrite uboot FORCE version for default so continue procedure
@@ -206,7 +207,7 @@ test_video_func(){
 	fi
 }
 
-test_video-2_func(){
+test_video2_func(){
 	dialog --defaultno --ok-label NO --cancel-label YES --stdout --title   "   Test Video'2" \
 	--colors --pause "\n\n   \ZuCan you see this message?\Zn\n\nSelect an option & press START" 12 34 10
 	
@@ -310,10 +311,8 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	if (grep -q "$DETECTED_1" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_1" 0 0
 		# Test_Video-prompt if proper miyoo video's version driver was loaded:
-		test_video_func
-		
-		# Loop Test_Video until correct selection has been performed (CHOICE=0/3)
-		## former CHOICE=1 meant safe_reboot if correct and shouldn't reach to this point
+		## Loop Test_Video until correct selection has been performed (CHOICE=0/3)
+		### former CHOICE=1 meant safe_reboot if correct and shouldn't reach to this point
 		while true; do
 			test_video_func
 			if !(test $CHOICE -eq -1 || test $CHOICE -eq 1 || test $CHOICE -eq 255); then
@@ -370,9 +369,6 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		2> $TEMP
 		## Defaulting to console overwriting active
 		CONSOLE_OVERWRITE=true
-		
-		## Default CONSOLE_VARIANT for st7789s screens
-		default_console_func
 		## Read the user's choice from the file
 		CHOICE=$(cat $TEMP)
 		## Perform actions based on the user's choice
@@ -404,9 +400,8 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
 		dialog --timeout 4 --msgbox  "Correcting $DETECTED_2 - wait for further instructions" 0 0
 		fi
-		## Test_Keyboard-prompt if proper miyoo.kbd  version was loaded:
-		test_keyboard_func
-		# Loop Test_Keyboard until correct selection has been performed (CHOICE=0/1)
+		# Test_Keyboard-prompt if proper miyoo.kbd  version was loaded:
+		## Loop Test_Keyboard until correct selection has been performed (CHOICE=0/1)
 		while true; do
 			test_keyboard_func
 			if !(test $CHOICE -eq -1 || test $CHOICE -eq 255); then
@@ -416,7 +411,7 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	elif (test "$CONSOLE_VARIANT" == "bittboy" && grep -q "$DETECTED_4" "${MOUNTDIR}/uEnv.txt") ; then
 		dialog --timeout 3 --msgbox  "Auto-Detected $DETECTED_4" 0 0
 		# Test_Video'2-prompt if proper miyoo video's version driver was loaded:
-		test_video-2_func
+		test_video2_func
 	fi
 fi
 
