@@ -159,7 +159,7 @@ default_console_func(){
 }
 
 #Test-prompt dialogs fo various scenarios
-test_image(){
+test_image_func(){
 	dialog --defaultno --ok-label NO --cancel-label Inverted --stdout --title   "  Test Image" \
 	--colors --pause "\n\n  \ZuAre your colors Inverted?\Zn\n\nSelect an option & press START" 12 34 10
 
@@ -174,7 +174,7 @@ test_image(){
 	## thus correct "invert" colors parameter on video driver
 	else
 	#TODO - make "invert" flag overwriting less dependent
-		echo "$INVERSION" >> ${HOME}/options.cfg
+		echo "INVERT=${INVERSION}" >> ${HOME}/options.cfg
 		safe_reboot_func
 	fi
 }
@@ -190,7 +190,7 @@ test_video_func(){
 	# "YES" choice for Test_Video msgbox DIALOG_EXTRA exit code
 	if test $CHOICE -eq 3; then
 		# Correct variant for st7789s (non forced)
-		echo "CONSOLE_VARIANT=st7789s" > ${MOUNTDIR}/console.cfg	
+		echo "CONSOLE_VARIANT=st7789s" > ${MOUNTDIR}/console.cfg
 	# "Flipped!" choice for Test_Video msgbox DIALOG_CANCEL exit code
 	elif test $CHOICE -eq 1; then
 		# Test_Flip-prompt double checks if user selected correct answer for 1'st video test
