@@ -37,12 +37,16 @@ gadget-ms /dev/mmcblk0p1 /dev/mmcblk0p4 >> "${LOGS}" 2>&1
 video=`cat ${BOOTDIR}/uEnv.txt |grep -a "CONSOLE_VIDEO" | cut -d "=" -f 2 | cut -d "." -f 1`
 params=`cat ${BOOTDIR}/uEnv.txt |grep -a "CONSOLE_PARAMETERS" | cut -d "=" -f 2-`
 
+BACKLIGHT=$(cat ${HOME}/.backlight.conf)
+
 # TVout scripting backend
 tvout=`cat ${HOME}/tvout`
 if ((test -r "${HOME}/tvout")); then
 	echo 0 > /sys/class/backlight/backlight/brightness
 	echo 0 > /sys/class/vtconsole/vtcon1/bind
-	cp ${HOME}/.backlight.conf ${HOME}/.backlight.bak
+	if test $BACKLIGHT -ne 0; then
+		cp ${HOME}/.backlight.conf ${HOME}/.backlight.bak
+	fi
 	echo 0 > ${HOME}/.backlight.conf
 	modprobe -r $video
 	#TVMODE options.cfg setting 
