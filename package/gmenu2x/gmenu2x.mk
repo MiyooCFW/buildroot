@@ -15,7 +15,7 @@ endif
 endif
 CFLAGS += -Isrc 
 CFLAGS += -O0 -ggdb -g3 $(SDL_CFLAGS)
-CFLAGS += -DTARGET_MIYOO -DHW_LIDVOL
+CFLAGS += -DTARGET_MIYOO -DHW_LIDVOL -DIPK_SUPPORT
 
 define GMENU2X_BUILD_CMDS
     $(MAKE) CFLAGS="$(CFLAGS) -D__COMMIT_HASH__=$(shell git -C $(GMENU2X_DL_DIR)/git rev-parse --short HEAD)" CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" STRIP="$(TARGET_STRIP)" LD="$(TARGET_LD)" -C $(@D) -f Makefile.miyoo dist
