@@ -1,0 +1,3 @@
+title=Joymap
+description=Joy to keyboard mapper
+exec=/mnt/apps/joymap/joymap.sh

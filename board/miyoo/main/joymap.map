@@ -1,0 +1,15 @@
+button vendor=0x045e product=0x2ea src=16 target=kbd button="leftalt"
+button vendor=0x045e product=0x2ea src=17 target=kbd button="leftctrl"
+button vendor=0x045e product=0x2ea src=18 target=kbd button=""
+button vendor=0x045e product=0x2ea src=19 target=kbd button="leftshift"
+button vendor=0x045e product=0x2ea src=20 target=kbd button="space"
+button vendor=0x045e product=0x2ea src=21 target=kbd button=""
+button vendor=0x045e product=0x2ea src=22 target=kbd button="tab"
+button vendor=0x045e product=0x2ea src=23 target=kbd button="backspace"
+button vendor=0x045e product=0x2ea src=24 target=kbd button="rightalt"
+button vendor=0x045e product=0x2ea src=25 target=kbd button="rightshift"
+button vendor=0x045e product=0x2ea src=26 target=kbd button="esc"
+
+
+axis vendor=0x045e product=0x2ea src=16 target=kbd plus="right" minus="left" flags=trinary
+axis vendor=0x045e product=0x2ea src=17 target=kbd plus="down" minus="up" flags=trinary
