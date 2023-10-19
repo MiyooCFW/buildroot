@@ -1,4 +1,4 @@
-name: Build Root Filesystem
+name: Build SDK static musl
 
 on:
   push:
@@ -12,40 +12,21 @@ on:
 
 jobs:   
   rootfs:
-    runs-on: ubuntu-20.04
-    container:
-      image: miyoocfw/toolchain:master
+    runs-on: ubuntu-22.04
     env:
       FORCE_UNSAFE_CONFIGURE: 1
     steps:
     - uses: actions/checkout@v3
     - if: inputs.submodule
-      run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}
-    
-    - name: Generate cache key
-      if: inputs.submodule
-      id: cache-key
-      run: |
-        cd ${{ inputs.submodule }}
-        echo "::set-output name=key::${{ inputs.submodule }}-$(git rev-parse --short HEAD)"
-      
-    - uses: actions/cache@v3
-      if: inputs.submodule
-      with:
-        path: ${{ inputs.submodule || '.' }}/output/images/rootfs.tar.xz
-        key: ${{ steps.cache-key.outputs.key }}
-      id: cache
+      run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}  
         
-    - name: build
-      if: steps.cache.outputs.cache-hit != 'true'
+    - name: build SDK static
       run: |
         cd ${{ inputs.submodule || '.' }}
-        make
-        cd output/images/
-        xz rootfs.tar
+        make sdk
       
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
-        name: rootfs.tar.xz
-        path: ${{ inputs.submodule || '.' }}/output/images/rootfs.tar.xz
-        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+        name: SDK (static-musl)
+        path: ${{ inputs.submodule || '.' }}/output/images/arm-buildroot-linux-musleabi_sdk-buildroot.tar.gz
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
