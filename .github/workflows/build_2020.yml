@@ -4,25 +4,17 @@ on:
   push:
   pull_request:
   workflow_call:
-    inputs:
-      submodule:
-        description: The directory of the submodule, if this workflow is being called on a submodule
-        required: true
-        type: string
 
 jobs:   
-  rootfs:
+  sdk-2020:
     runs-on: ubuntu-22.04
     env:
       FORCE_UNSAFE_CONFIGURE: 1
     steps:
     - uses: actions/checkout@v3
-    - if: inputs.submodule
-      run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}  
-        
     - name: build SDK static
       run: |
-        cd ${{ inputs.submodule || '.' }}
+        sudo apt-get update -qq && sudo apt-get -y install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         make sdk
       
     - uses: actions/upload-artifact@v3
