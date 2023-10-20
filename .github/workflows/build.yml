@@ -15,6 +15,16 @@ jobs:
     env:
       FORCE_UNSAFE_CONFIGURE: 1
     steps:
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@master
+      with:
+        overprovision-lvm: true
+        remove-dotnet: true
+        remove-android: true
+        remove-haskell: true
+        remove-codeql: true
+        remove-docker-images: true
+
     - uses: actions/checkout@v3
     - if: inputs.submodule
       run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}
@@ -75,6 +85,16 @@ jobs:
     env:
       FORCE_UNSAFE_CONFIGURE: 1
     steps:
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@master
+      with:
+        overprovision-lvm: true
+        remove-dotnet: true
+        remove-android: true
+        remove-haskell: true
+        remove-codeql: true
+        remove-docker-images: true
+
     - uses: actions/checkout@v3
     - if: inputs.submodule
       run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}
