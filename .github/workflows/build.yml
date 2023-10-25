@@ -47,6 +47,7 @@ jobs:
       run: |
         cd ${{ inputs.submodule || '.' }}
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
+        sudo apt update && sudo apt install -y gsfonts
         make miyoo_uclibc_defconfig
         make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}"
  
@@ -117,6 +118,7 @@ jobs:
       run: |
         cd ${{ inputs.submodule || '.' }}
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
+        sudo apt update && sudo apt install -y gsfonts
         make miyoo_musl_defconfig
         make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}"
 
