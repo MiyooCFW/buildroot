@@ -172,7 +172,7 @@ jobs:
     - name: retrieve ccache
       uses: actions/cache@v3
       with:
-        path: ~/.buildroot-ccache-static
+        path: ~/.buildroot-ccache
         key: ${{ inputs.submodule }}uclibc-static-ccache-${{ github.sha }}
         restore-keys: |
           ${{ inputs.submodule }}uclibc-static-ccache-
@@ -211,7 +211,7 @@ jobs:
     - name: retrieve ccache
       uses: actions/cache@v3
       with:
-        path: ~/.buildroot-ccache-static
+        path: ~/.buildroot-ccache
         key: ${{ inputs.submodule }}musl-static-ccache-${{ github.sha }}
         restore-keys: |
           ${{ inputs.submodule }}musl-static-ccache-
