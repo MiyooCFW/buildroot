@@ -187,7 +187,7 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: SDK (uclibc_static)
+        name: SDK (uClibc static)
         path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-uclibcgnueabi_sdk-buildroot.tar.gz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
 
@@ -226,6 +226,6 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: SDK (musl_static)
+        name: SDK (musl static)
         path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-musleabi_sdk-buildroot.tar.gz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
