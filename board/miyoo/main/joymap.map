@@ -33,3 +33,24 @@ axis vendor=0x2563 product=0x0575 src=2 target=kbd minus="left" plus="right" min
 axis vendor=0x2563 product=0x0575 src=5 target=kbd minus="up" plus="down" min=0 max=255 deadzone=129 flags=trinary #LStick
 axis vendor=0x2563 product=0x0575 src=16 target=kbd minus="left" plus="right" flags=trinary #D-PAD ANALOG
 axis vendor=0x2563 product=0x0575 src=17 target=kbd minus="up" plus="down" flags=trinary #D-PAD ANALOG
+
+#Generic USB 2.4GHz gamepad (device "shanwan Twin USB Joystick")
+##mapping for 12 physical buttons and 6 axis (D-PAD + 2 analog sticks)
+button vendor=0x0810 product=0x0001 src=0 target=kbd button="leftshift" #Δ
+button vendor=0x0810 product=0x0001 src=1 target=kbd button="leftalt" #O
+button vendor=0x0810 product=0x0001 src=2 target=kbd button="leftctrl" #X
+button vendor=0x0810 product=0x0001 src=3 target=kbd button="space" #█
+button vendor=0x0810 product=0x0001 src=4 target=kbd button="tab" #L1
+button vendor=0x0810 product=0x0001 src=5 target=kbd button="backspace" #R1
+button vendor=0x0810 product=0x0001 src=6 target=kbd button="pgup" #L2
+button vendor=0x0810 product=0x0001 src=7 target=kbd button="pgdn" #R2
+button vendor=0x0810 product=0x0001 src=8 target=kbd button="esc" #SELECT
+button vendor=0x0810 product=0x0001 src=9 target=kbd button="enter" #START
+button vendor=0x0810 product=0x0001 src=10 target=kbd button="rightalt" #L3
+button vendor=0x0810 product=0x0001 src=11 target=kbd button="rightshift" #R3
+axis vendor=0x0810 product=0x0001 src=0 target=kbd minus="left" plus="right" min=0 max=255 deadzone=129 flags=trinary #D-PAD or RStick ANALOG
+axis vendor=0x0810 product=0x0001 src=1 target=kbd minus="up" plus="down" min=0 max=255 deadzone=129 flags=trinary #D-PAD or RStick ANALOG
+axis vendor=0x0810 product=0x0001 src=2 target=kbd minus="left" plus="right" min=0 max=255 deadzone=129 flags=trinary #LStick
+axis vendor=0x0810 product=0x0001 src=5 target=kbd minus="up" plus="down" min=0 max=255 deadzone=129 flags=trinary #LStick
+axis vendor=0x0810 product=0x0001 src=16 target=kbd minus="left" plus="right" flags=trinary #D-PAD ANALOG
+axis vendor=0x0810 product=0x0001 src=17 target=kbd minus="up" plus="down" flags=trinary #D-PAD ANALOG
