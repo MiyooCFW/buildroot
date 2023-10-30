@@ -1,4 +1,4 @@
-title=FFPLAY video
-description=Start/Stop playing movie or audio file
+title=FFPLAY
+description=Play a movie/audio file
 exec=/mnt/apps/ffmpeg/ffplay_launch.sh
 selectordir=/mnt/output
