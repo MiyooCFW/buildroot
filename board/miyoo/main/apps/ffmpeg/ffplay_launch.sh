@@ -1,10 +1,11 @@
 #!/bin/sh
-if test "$1" == "mp4"
+
+if ffprobe -v error -select_streams v:0 -show_entries stream=codec_type "$1" | grep -q "video"; then
 	ffplay -autoexit -i "$1"
-else if
+elif ffprobe -v error -select_streams a:0 -show_entries stream=codec_type "$1" | grep -q "audio"; then
 	ffplay -nodisp -autoexit -i "$1"
 else
-	sleep 1
 	clear
 	echo -en "     Invalid video/audio format!\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+	sleep 2
 fi
