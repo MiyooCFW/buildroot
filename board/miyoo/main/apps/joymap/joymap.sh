@@ -1,7 +1,7 @@
 #!/bin/busybox sh
 
 if pgrep "loadmap" 2> /dev/null; then
-    killall -2 loadmap
+    pkill loadmap
 else
-    loadmap /mnt/joymap.map -d -b
+    loadmap /mnt/joymap.map -d
 fi
