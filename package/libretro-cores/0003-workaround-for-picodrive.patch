@@ -1,0 +1,7 @@
+diff --git a/Makefile.libretro-picodrive b/Makefile.libretro-picodrive
+new file mode 100644
+index 00000000..8cdfb5fe
+--- /dev/null
++++ b/Makefile.libretro-picodrive
+@@ -0,0 +1 @@
++	CC = $(TARGET_CC)

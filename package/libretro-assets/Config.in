@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_ASSETS
+    bool "retroarch assets"
+    help
+    The retroarch-assets repository is the home of the user interface elements used to generate the various User Experience (UX) environments.
+    The UX environments are referred as "menu drivers" and you can switch between environments on most platforms at any time.
+
+      https://github.com/libretro/libretro-assets

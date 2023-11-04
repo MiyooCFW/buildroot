@@ -13,6 +13,7 @@ cp -r board/miyoo/boot "${BINARIES_DIR}"
 cp -r board/miyoo/main "${BINARIES_DIR}"
 mkdir -p "${BINARIES_DIR}/gmenu2x"
 cp -r "${BINARIES_DIR}/gmenu2x" "${BINARIES_DIR}/main/"
+cp -r "${BINARIES_DIR}/retroarch/" "${BINARIES_DIR}/main/"
 
 #BR2 Version is tracked by git
 BR2_HASH=$(echo $BR2_VERSION_FULL | sed 's/^[-]g//')
