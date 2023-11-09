@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_UW8
+	bool "libretro-uw8"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro port of uw8, a game.
+
+	  http://www.libretro.com

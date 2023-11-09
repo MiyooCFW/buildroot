@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBRETRO_MAME2003_PLUS
+	bool "libretro-mame2003-plus"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro mame2003 core for ARM with added game support
+	  plus many fixes and improvements.
+
+	  http://www.libretro.com

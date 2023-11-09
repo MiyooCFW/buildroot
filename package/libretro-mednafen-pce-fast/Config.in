@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_MEDNAFEN_PCE_FAST
+	bool "libretro-mednafen-pce-fast"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro port of mednafen-pce-fast, a game.
+
+	  http://www.libretro.com

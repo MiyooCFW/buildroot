@@ -599,6 +599,8 @@ if test -r "${BASEDIR}/configs/manifest"; then
 		fi
 	done
 fi
+mv "${HOME}/retroarch" "${HOME}/.retroarch" | tee -a ${LOG}
+
 echo
 
 sync

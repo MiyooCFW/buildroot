@@ -1,6 +1,0 @@
-config BR2_PACKAGE_LIBRETRO_CORES
-    bool "retroarch cores"
-    help
-      Package to fetch, build and install Retroarch cores
-
-      https://github.com/libretro/libretro-super

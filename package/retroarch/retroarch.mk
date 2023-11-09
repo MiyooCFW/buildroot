@@ -3,6 +3,7 @@ RETROARCH_SITE = $(call github,libretro,RetroArch,v$(RETROARCH_VERSION))
 RETROARCH_LICENSE = GPL-3.0
 RETROARCH_LICENSE_FILES = COPYING
 RETROARCH_DEPENDENCIES = host-pkgconf sdl sdl_image sdl_mixer sdl_sound sdl_ttf freetype
+RETROARCH_LIBRETRO_PLATFORM = miyoo
 define RETROARCH_BUILD_CMDS
     $(MAKE) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" -C $(@D) -f Makefile.miyoo
     $(TARGET_STRIP) --strip-unneeded $(@D)/retroarch

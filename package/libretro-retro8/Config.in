@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_RETRO8
+	bool "libretro-retro8"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro PICO-8 emulator core.
+
+	  https://github.com/libretro/retro8

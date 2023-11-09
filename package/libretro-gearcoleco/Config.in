@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_GEARCOLECO
+	bool "libretro-gearcoleco"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  An accurate ColecoVision emulator.
+
+	  http://www.libretro.com

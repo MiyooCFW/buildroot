@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_TYRQUAKE
+	bool "libretro-tyrquake"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro Quake 1 core.
+
+	  http://www.libretro.com

@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_GW
+	bool "libretro-gw"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro core for Game & Watch simulators
+
+	  http://www.libretro.com

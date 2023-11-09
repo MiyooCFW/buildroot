@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_MRBOOM
+	bool "libretro-mrboom"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro 8 players Bomberman clone.
+
+	  http://www.libretro.com

@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_LOWRES_NX
+	bool "libretro-lowres-nx"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro Virtual Game Console LowRes-NX emulator core.
+
+	  https://github.com/timoinutilis/lowres-nx
