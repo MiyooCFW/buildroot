@@ -24,6 +24,8 @@ define LIBRETRO_FMSX_INSTALL_TARGET_CMDS
     mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/fmsx_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/fmsx_libretro.so
+        $(INSTALL) -D $(@D)/fMSX/ROMs/* \
+                ${BINARIES_DIR}/retroarch/system/
 endef
 
 $(eval $(generic-package))

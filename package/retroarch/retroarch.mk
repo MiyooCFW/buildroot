@@ -10,7 +10,8 @@ define RETROARCH_BUILD_CMDS
 endef
 
 define RETROARCH_INSTALL_TARGET_CMDS
-    $(INSTALL) -D -m 0755 $(@D)/retroarch $(TARGET_DIR)/usr/bin
+    mkdir -p "${BINARIES_DIR}/emus/retroarch"
+    $(INSTALL) -D -m 0755 $(@D)/retroarch "${BINARIES_DIR}/emus/retroarch"
     mkdir -p "${BINARIES_DIR}/retroarch/filters/audio"
     mkdir -p "${BINARIES_DIR}/retroarch/filters/video"
     $(INSTALL) -D -m 0644 $(@D)/libretro-common/audio/dsp_filters/*.dsp "${BINARIES_DIR}/retroarch/filters/audio"

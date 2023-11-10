@@ -23,8 +23,11 @@ endef
 
 define LIBRETRO_MAME2003_INSTALL_TARGET_CMDS
     mkdir -p "${BINARIES_DIR}/retroarch/cores"
+    mkdir -p "${BINARIES_DIR}/retroarch/system/mame2003"
 	$(INSTALL) -D $(@D)/mame2003_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/mame2003_libretro.so
+	$(INSTALL) -D $(@D)/metadata/* \
+		${BINARIES_DIR}/retroarch/system/mame2003
 endef
 
 $(eval $(generic-package))

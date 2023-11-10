@@ -19,8 +19,14 @@ endef
 
 define LIBRETRO_CANNONBALL_INSTALL_TARGET_CMDS
     mkdir -p "${BINARIES_DIR}/retroarch/cores"
+    mkdir -p "${BINARIES_DIR}/retroarch/system/cannonball/res"
 	$(INSTALL) -D $(@D)/cannonball_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/cannonball_libretro.so
+        $(INSTALL) -D $(@D)/res/* \
+                ${BINARIES_DIR}/retroarch/system/cannonball/res
+        $(INSTALL) -D $(@D)/roms/* \
+                ${BINARIES_DIR}/retroarch/system/cannonball
+
 endef
 
 $(eval $(generic-package))

@@ -19,8 +19,11 @@ endef
 
 define LIBRETRO_GPSP_INSTALL_TARGET_CMDS
     mkdir -p "${BINARIES_DIR}/retroarch/cores"
+    mkdir -p "${BINARIES_DIR}/retroarch/system"
 	$(INSTALL) -D $(@D)/gpsp_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/gpsp_libretro.so
+	$(INSTALL) -D $(@D)/bios/open_gba_bios.bin \
+		${BINARIES_DIR}/retroarch/system
 endef
 
 $(eval $(generic-package))
