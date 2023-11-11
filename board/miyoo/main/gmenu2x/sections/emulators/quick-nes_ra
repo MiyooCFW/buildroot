@@ -1,0 +1,4 @@
+title=Quick NES
+description=Quick Nintendo Entertainment System Emulator (lbr. core)
+exec=/mnt/emus/retroarch/fceux_quick-nes.sh
+selectordir=/mnt/roms/NES

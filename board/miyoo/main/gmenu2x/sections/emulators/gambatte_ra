@@ -1,0 +1,4 @@
+title=Game Boy/GBC emu
+description=Gambatte Emulator (lbr core)
+exec=/mnt/emus/retroarch/gambatte.sh
+selectordir=/mnt/roms/GB
