@@ -19,8 +19,8 @@ define LIBRETRO_XRICK_BUILD_CMDS
 endef
 
 define LIBRETRO_XRICK_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
-    mkdir -p "${BINARIES_DIR}/retroarch/system/xrick"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/system/xrick"
 	$(INSTALL) -D $(@D)/xrick_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/xrick_libretro.so
 	$(INSTALL) -D $(@D)/data.zip \

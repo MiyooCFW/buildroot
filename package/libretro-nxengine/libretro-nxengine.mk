@@ -19,9 +19,12 @@ define LIBRETRO_NXENGINE_BUILD_CMDS
 endef
 
 define LIBRETRO_NXENGINE_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/system/nxengine"
 	$(INSTALL) -D $(@D)/nxengine_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/nxengine_libretro.so
+	cp -R $(@D)/datafiles/* \
+		${BINARIES_DIR}/retroarch/system/nxengine
 endef
 
 $(eval $(generic-package))

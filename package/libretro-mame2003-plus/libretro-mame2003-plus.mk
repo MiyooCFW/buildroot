@@ -21,8 +21,8 @@ define LIBRETRO_MAME2003_PLUS_BUILD_CMDS
 endef
 
 define LIBRETRO_MAME2003_PLUS_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
-    mkdir -p "${BINARIES_DIR}/retroarch/system/mame2003-plus"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/system/mame2003-plus"
 	$(INSTALL) -D $(@D)/mame2003_plus_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/mame2003_plus_libretro.so
 	cp -R $(@D)/metadata/* \

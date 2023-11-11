@@ -26,12 +26,12 @@ define LIBRETRO_DINOTHAWR_BUILD_CMDS
 endef
 
 define LIBRETRO_DINOTHAWR_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
-    mkdir -p "${BINARIES_DIR}/retroarch/system/dinothawr/assets"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/system/dinothawr/assets"
 	$(INSTALL) -D $(@D)/dinothawr_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/dinothawr_libretro.so
-        cp -R $(@D)/dinothawr/* \
-                ${BINARIES_DIR}/retroarch/system/dinothawr
+	cp -R $(@D)/dinothawr/* \
+		${BINARIES_DIR}/retroarch/system/dinothawr
 endef
 
 $(eval $(generic-package))

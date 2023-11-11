@@ -22,8 +22,8 @@ define LIBRETRO_MAME2000_BUILD_CMDS
 endef
 
 define LIBRETRO_MAME2000_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
-    mkdir -p "${BINARIES_DIR}/retroarch/system/mame2000"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/system/mame2000"
 	$(INSTALL) -D $(@D)/mame2000_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/mame2000_libretro.so
 	$(INSTALL) -D $(@D)/metadata/* \
