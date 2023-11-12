@@ -15,8 +15,26 @@ cp -r board/miyoo/main "${BINARIES_DIR}"
 
 # Workaround for build apss and configs being placed in /usr/ after img generation (as we use MAIN)
 test -d "${BINARIES_DIR}/gmenu2x" && cp -r "${BINARIES_DIR}/gmenu2x/" "${BINARIES_DIR}/main/"
-test -d "${BINARIES_DIR}/retroarch" && cp -r "${BINARIES_DIR}/retroarch/" "${BINARIES_DIR}/main/"
 test -d "${BINARIES_DIR}/emus" && cp -r "${BINARIES_DIR}/emus/" "${BINARIES_DIR}/main/"
+if test -d "${BINARIES_DIR}/retroarch";then
+	cp -r "${BINARIES_DIR}/retroarch/" "${BINARIES_DIR}/main/"
+	## Generate list of cores to be used
+	CORES_DIR="${BINARIES_DIR}/retroarch/cores"
+	for file in $CORES_DIR/*; do
+		if test -f "$file"; then
+			RA_WDIR="${BINARIES_DIR}/main/emus/retroarch"
+			CORE_FILE="$(echo "$file" | sed 's/.*\///')"
+			CORE_NAME="$(echo "${CORE_FILE}" | sed 's/_libretro.so//g')"
+			CORE_SCRIPT="${CORE_NAME}.sh"
+			touch $RA_WDIR/"${CORE_SCRIPT}" 
+			echo -e "#!/bin/sh\n/mnt/emus/retroarch/retroarch -v -L /mnt/.retroarch/cores/${CORE_FILE} \"\$1\"" > $RA_WDIR/"${CORE_SCRIPT}"
+			# RA_LDIR="${BINARIES_DIR}/main/gmenu2x/sections/cores"
+			# CORE_LINK="blank.${CORE_NAME}.ra"
+			# touch $RA_LDIR/"${CORE_LINK}"
+			# echo -e "title=${CORE_NAME}\ndescription=${CORE_NAME} libretro core\nexec=/mnt/emus/retroarch/${CORE_SCRIPT}\nselectordir=/mnt" > $RA_LDIR/"${CORE_LINK}"
+		fi
+	done
+fi
 
 # BR2 Version is tracked by git
 BR2_HASH=$(echo $BR2_VERSION_FULL | sed 's/^[-]g//')
