@@ -21,9 +21,12 @@ define LIBRETRO_PRBOOM_BUILD_CMDS
 endef
 
 define LIBRETRO_PRBOOM_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/system/prboom"
 	$(INSTALL) -D $(@D)/prboom_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/prboom_libretro.so
+	$(INSTALL) -D $(@D)/prboom.wad \
+		${BINARIES_DIR}/retroarch/system/prboom
 endef
 
 $(eval $(generic-package))
