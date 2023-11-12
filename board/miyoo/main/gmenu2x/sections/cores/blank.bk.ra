@@ -1,0 +1,4 @@
+title=bk
+description=bk libretro core
+exec=/mnt/emus/retroarch/bk.sh
+selectordir=/mnt

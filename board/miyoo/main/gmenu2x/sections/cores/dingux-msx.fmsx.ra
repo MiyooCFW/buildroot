@@ -1,0 +1,4 @@
+title=fmsx
+description=fmsx libretro core
+exec=/mnt/emus/retroarch/fmsx.sh
+selectordir=/mnt

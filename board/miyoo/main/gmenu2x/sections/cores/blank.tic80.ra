@@ -1,0 +1,4 @@
+title=tic80
+description=tic80 libretro core
+exec=/mnt/emus/retroarch/tic80.sh
+selectordir=/mnt

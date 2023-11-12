@@ -1,0 +1,4 @@
+title=jumpnbump
+description=jumpnbump libretro core
+exec=/mnt/emus/retroarch/jumpnbump.sh
+selectordir=/mnt

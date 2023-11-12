@@ -1,0 +1,4 @@
+title=wasm4
+description=wasm4 libretro core
+exec=/mnt/emus/retroarch/wasm4.sh
+selectordir=/mnt

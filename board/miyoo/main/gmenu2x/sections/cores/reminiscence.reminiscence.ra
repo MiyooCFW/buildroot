@@ -1,0 +1,4 @@
+title=reminiscence
+description=reminiscence libretro core
+exec=/mnt/emus/retroarch/reminiscence.sh
+selectordir=/mnt

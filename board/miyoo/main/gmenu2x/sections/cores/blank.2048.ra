@@ -1,0 +1,3 @@
+title=2048
+description=2048 libretro core
+exec=/mnt/emus/retroarch/2048.sh

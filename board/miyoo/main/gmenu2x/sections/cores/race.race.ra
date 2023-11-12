@@ -1,0 +1,4 @@
+title=race
+description=race libretro core
+exec=/mnt/emus/retroarch/race.sh
+selectordir=/mnt

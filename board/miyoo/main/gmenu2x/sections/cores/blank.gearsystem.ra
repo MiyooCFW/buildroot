@@ -1,0 +1,4 @@
+title=gearsystem
+description=gearsystem libretro core
+exec=/mnt/emus/retroarch/gearsystem.sh
+selectordir=/mnt

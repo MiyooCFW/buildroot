@@ -1,0 +1,4 @@
+title=quasi88
+description=quasi88 libretro core
+exec=/mnt/emus/retroarch/quasi88.sh
+selectordir=/mnt

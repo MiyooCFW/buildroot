@@ -1,0 +1,4 @@
+title=genesisplusgx
+description=genesisplusgx libretro core
+exec=/mnt/emus/retroarch/genesisplusgx.sh
+selectordir=/mnt
