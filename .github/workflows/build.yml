@@ -49,7 +49,7 @@ jobs:
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         sudo apt update && sudo apt install -y gsfonts
         make miyoo_uclibc_defconfig
-        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}"
+        make -s sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}"
  
     - name: generate-graphs
       run: |
@@ -120,7 +120,7 @@ jobs:
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         sudo apt update && sudo apt install -y gsfonts
         make miyoo_musl_defconfig
-        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}"
+        make -s sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}"
 
     - name: generate-graphs
       run: |
@@ -183,7 +183,7 @@ jobs:
       run: |
         cd ${{ inputs.submodule || '.' }}
         make miyoo_uclibc_static_defconfig
-        make sdk
+        make -s sdk
 
     - uses: actions/upload-artifact@v3
       with:
@@ -222,7 +222,7 @@ jobs:
       run: |
         cd ${{ inputs.submodule || '.' }}
         make miyoo_musl_static_defconfig
-        make sdk
+        make -s sdk
 
     - uses: actions/upload-artifact@v3
       with:
