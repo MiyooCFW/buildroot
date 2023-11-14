@@ -29,7 +29,7 @@ if test -d "${BINARIES_DIR}/retroarch";then
 			touch $RA_WDIR/"${CORE_SCRIPT}" 
 			echo -e "#!/bin/sh\n/mnt/emus/retroarch/retroarch -L ${CORE_FILE} \"\$1\"" > $RA_WDIR/"${CORE_SCRIPT}"
 			# RA_LDIR="${BINARIES_DIR}/main/gmenu2x/sections/cores"
-			# CORE_LINK="blank.${CORE_NAME}.ra"
+			# CORE_LINK="zblank.${CORE_NAME}.ra"
 			# touch $RA_LDIR/"${CORE_LINK}"
 			# echo -e "title=${CORE_NAME}\ndescription=${CORE_NAME} libretro core\nexec=/mnt/emus/retroarch/${CORE_SCRIPT}\nselectordir=/mnt" > $RA_LDIR/"${CORE_LINK}"
 		fi
