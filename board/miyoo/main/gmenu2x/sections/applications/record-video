@@ -1,0 +1,4 @@
+title=VIDEO Rec
+description=Start/Stop recording FB0 video in the background
+exec=/mnt/apps/ffmpeg/video_record.sh
+params=&
