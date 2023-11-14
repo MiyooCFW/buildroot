@@ -50,9 +50,12 @@ jobs:
         sudo apt update && sudo apt install -y gsfonts
         make miyoo_uclibc_defconfig
         set -o pipefail
-        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" 2>&1  \
-        |tee build.log   \
-        |grep ">>>"
+        if ! ( \
+        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" 2>&1 \
+        | tee build.log \
+        | grep ">>>" \
+        ); then tail -n100 build.log && exit 1
+        fi
  
     - name: Archive build logs (uClibc)
       if: success() || failure()
@@ -131,9 +134,12 @@ jobs:
         sudo apt update && sudo apt install -y gsfonts
         make miyoo_musl_defconfig
         set -o pipefail
-        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" 2>&1  \
-        |tee build.log   \
-        |grep ">>>"
+        if ! ( \
+        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" 2>&1 \
+        | tee build.log \
+        | grep ">>>" \
+        ); then tail -n100 build.log && exit 1
+        fi
  
     - name: Archive build logs (musl)
       if: success() || failure()
@@ -204,9 +210,12 @@ jobs:
         cd ${{ inputs.submodule || '.' }}
         make miyoo_uclibc_static_defconfig
         set -o pipefail
-        make sdk 2>&1  \
-        |tee build.log   \
-        |grep ">>>"
+        if ! ( \
+        make sdk 2>&1 \
+        | tee build.log \
+        | grep ">>>" \
+        ); then tail -n100 build.log && exit 1
+        fi
  
     - name: Archive build logs (uClibc static)
       if: success() || failure()
@@ -253,9 +262,12 @@ jobs:
         cd ${{ inputs.submodule || '.' }}
         make miyoo_musl_static_defconfig
         set -o pipefail
-        make sdk 2>&1  \
-        |tee build.log   \
-        |grep ">>>"
+        if ! ( \
+        make sdk 2>&1 \
+        | tee build.log \
+        | grep ">>>" \
+        ); then tail -n100 build.log && exit 1
+        fi
  
     - name: Archive build logs (musl static)
       if: success() || failure()
