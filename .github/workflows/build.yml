@@ -49,8 +49,18 @@ jobs:
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         sudo apt update && sudo apt install -y gsfonts
         make miyoo_uclibc_defconfig
-        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}"
+        set -o pipefail
+        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" 2>&1  \
+        |tee build.log   \
+        |grep ">>>"
  
+    - name: Archive build logs (uClibc)
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs (uClibc)
+        path: build.log
+
     - name: generate-graphs
       run: |
         cd ${{ inputs.submodule || '.' }}
@@ -120,7 +130,17 @@ jobs:
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         sudo apt update && sudo apt install -y gsfonts
         make miyoo_musl_defconfig
-        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}"
+        set -o pipefail
+        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" 2>&1  \
+        |tee build.log   \
+        |grep ">>>"
+ 
+    - name: Archive build logs (musl)
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs (musl)
+        path: build.log
 
     - name: generate-graphs
       run: |
@@ -183,7 +203,17 @@ jobs:
       run: |
         cd ${{ inputs.submodule || '.' }}
         make miyoo_uclibc_static_defconfig
-        make sdk
+        set -o pipefail
+        make sdk 2>&1  \
+        |tee build.log   \
+        |grep ">>>"
+ 
+    - name: Archive build logs (uClibc static)
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs (uClibc static)
+        path: build.log
 
     - uses: actions/upload-artifact@v3
       with:
@@ -222,7 +252,18 @@ jobs:
       run: |
         cd ${{ inputs.submodule || '.' }}
         make miyoo_musl_static_defconfig
-        make sdk
+        set -o pipefail
+        make sdk 2>&1  \
+        |tee build.log   \
+        |grep ">>>"
+ 
+    - name: Archive build logs (musl static)
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs (musl static)
+        path: build.log
+
 
     - uses: actions/upload-artifact@v3
       with:
