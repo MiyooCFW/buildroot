@@ -62,7 +62,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: build-logs (uClibc)
-        path: build.log
+        path: ${{ inputs.submodule || '.' }}/build.log
 
     - name: generate-graphs
       run: |
@@ -146,7 +146,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: build-logs (musl)
-        path: build.log
+        path: ${{ inputs.submodule || '.' }}/build.log
 
     - name: generate-graphs
       run: |
@@ -222,7 +222,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: build-logs (uClibc static)
-        path: build.log
+        path: ${{ inputs.submodule || '.' }}/build.log
 
     - uses: actions/upload-artifact@v3
       with:
@@ -274,7 +274,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: build-logs (musl static)
-        path: build.log
+        path: ${{ inputs.submodule || '.' }}/build.log
 
 
     - uses: actions/upload-artifact@v3
