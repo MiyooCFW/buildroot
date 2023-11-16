@@ -1,0 +1,3 @@
+title=gong
+description=gong libretro core
+exec=/mnt/emus/retroarch/gong.sh

@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_2048
+	bool "libretro-2048"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro port of 2048, a game.
+
+	  http://www.libretro.com

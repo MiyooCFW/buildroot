@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_CAP32
+	bool "libretro-cap32"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro AMSTRAD CPC(+) emulator core.
+
+	  http://www.libretro.com

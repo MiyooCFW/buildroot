@@ -1,0 +1,4 @@
+title=lutro
+description=lutro libretro core
+exec=/mnt/emus/retroarch/lutro.sh
+selectordir=/mnt

@@ -1,0 +1,4 @@
+title=picodrive
+description=picodrive libretro core
+exec=/mnt/emus/retroarch/picodrive.sh
+selectordir=/mnt

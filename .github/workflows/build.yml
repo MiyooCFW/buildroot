@@ -47,9 +47,23 @@ jobs:
       run: |
         cd ${{ inputs.submodule || '.' }}
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
+        sudo apt update && sudo apt install -y gsfonts
         make miyoo_uclibc_defconfig
-        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}"
+        set -o pipefail
+        if ! ( \
+        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" 2>&1 \
+        | tee build.log \
+        | grep ">>>" \
+        ); then tail -n100 build.log && exit 1
+        fi
  
+    - name: Archive build logs (uClibc)
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs (uClibc)
+        path: ${{ inputs.submodule || '.' }}/build.log
+
     - name: generate-graphs
       run: |
         cd ${{ inputs.submodule || '.' }}
@@ -117,8 +131,22 @@ jobs:
       run: |
         cd ${{ inputs.submodule || '.' }}
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
+        sudo apt update && sudo apt install -y gsfonts
         make miyoo_musl_defconfig
-        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}"
+        set -o pipefail
+        if ! ( \
+        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" 2>&1 \
+        | tee build.log \
+        | grep ">>>" \
+        ); then tail -n100 build.log && exit 1
+        fi
+ 
+    - name: Archive build logs (musl)
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs (musl)
+        path: ${{ inputs.submodule || '.' }}/build.log
 
     - name: generate-graphs
       run: |
@@ -148,4 +176,109 @@ jobs:
       with:
         name: rootfs (musl)
         path: ${{ inputs.submodule || '.' }}/output/images/rootfs.ext4
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
+
+  build-sdk-uclibc-static:
+    runs-on: ubuntu-22.04
+    env:
+      FORCE_UNSAFE_CONFIGURE: 1
+    steps:
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@v8
+      with:
+        overprovision-lvm: true
+        remove-dotnet: true
+        remove-android: true
+        remove-haskell: true
+        remove-codeql: true
+        remove-docker-images: true
+
+    - uses: actions/checkout@v3
+    - if: inputs.submodule
+      run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}
+
+    - name: retrieve ccache
+      uses: actions/cache@v3
+      with:
+        path: ~/.buildroot-ccache
+        key: ${{ inputs.submodule }}uclibc-static-ccache-${{ github.sha }}
+        restore-keys: |
+          ${{ inputs.submodule }}uclibc-static-ccache-
+
+    - name: build
+      run: |
+        cd ${{ inputs.submodule || '.' }}
+        make miyoo_uclibc_static_defconfig
+        set -o pipefail
+        if ! ( \
+        make sdk 2>&1 \
+        | tee build.log \
+        | grep ">>>" \
+        ); then tail -n100 build.log && exit 1
+        fi
+ 
+    - name: Archive build logs (uClibc static)
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs (uClibc static)
+        path: ${{ inputs.submodule || '.' }}/build.log
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: SDK (uClibc static)
+        path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-uclibcgnueabi_sdk-buildroot.tar.gz
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
+
+  build-sdk-musl-static:
+    runs-on: ubuntu-22.04
+    env:
+      FORCE_UNSAFE_CONFIGURE: 1
+    steps:
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@v8
+      with:
+        overprovision-lvm: true
+        remove-dotnet: true
+        remove-android: true
+        remove-haskell: true
+        remove-codeql: true
+        remove-docker-images: true
+
+    - uses: actions/checkout@v3
+    - if: inputs.submodule
+      run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}
+
+    - name: retrieve ccache
+      uses: actions/cache@v3
+      with:
+        path: ~/.buildroot-ccache
+        key: ${{ inputs.submodule }}musl-static-ccache-${{ github.sha }}
+        restore-keys: |
+          ${{ inputs.submodule }}musl-static-ccache-
+
+    - name: build
+      run: |
+        cd ${{ inputs.submodule || '.' }}
+        make miyoo_musl_static_defconfig
+        set -o pipefail
+        if ! ( \
+        make sdk 2>&1 \
+        | tee build.log \
+        | grep ">>>" \
+        ); then tail -n100 build.log && exit 1
+        fi
+ 
+    - name: Archive build logs (musl static)
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs (musl static)
+        path: ${{ inputs.submodule || '.' }}/build.log
+
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: SDK (musl static)
+        path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-musleabi_sdk-buildroot.tar.gz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 

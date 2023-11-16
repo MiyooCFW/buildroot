@@ -1,0 +1,3 @@
+title=Cave Story
+description=Metroidvania NXEngine game (libretro core)
+exec=/mnt/emus/retroarch/nxengine.sh

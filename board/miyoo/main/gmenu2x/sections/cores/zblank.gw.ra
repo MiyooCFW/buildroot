@@ -1,0 +1,4 @@
+title=gw
+description=gw libretro core
+exec=/mnt/emus/retroarch/gw.sh
+selectordir=/mnt

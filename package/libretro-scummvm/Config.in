@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_SCUMMVM
+	bool "libretro-scummvm"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro SCUMMVM emulator core for ARM.
+
+	  http://www.libretro.com

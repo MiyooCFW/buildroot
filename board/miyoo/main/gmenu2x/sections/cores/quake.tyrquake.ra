@@ -1,0 +1,4 @@
+title=tyrquake
+description=tyrquake libretro core
+exec=/mnt/emus/retroarch/tyrquake.sh
+selectordir=/mnt

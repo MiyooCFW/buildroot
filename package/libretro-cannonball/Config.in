@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_CANNONBALL
+	bool "libretro-cannonball"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  Cannonball: An Enhanced OutRun Engine.
+
+	  http://www.libretro.com

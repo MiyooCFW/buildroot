@@ -40,8 +40,7 @@ params=`cat ${BOOTDIR}/uEnv.txt |grep -a "CONSOLE_PARAMETERS" | cut -d "=" -f 2-
 BACKLIGHT=$(cat ${HOME}/.backlight.conf)
 
 # TVout scripting backend
-tvout=`cat ${HOME}/tvout`
-if ((test -r "${HOME}/tvout")); then
+if test -r "${HOME}/tvout"; then
 	echo 0 > /sys/class/backlight/backlight/brightness
 	echo 0 > /sys/class/vtconsole/vtcon1/bind
 	if test $BACKLIGHT -ne 0; then
@@ -122,7 +121,7 @@ fi
 if test "x${DEBUG_MSG}" == "xyes"; then
 	sleep 1
 	dmesg > ${HOME}/dmesg.txt
-	mv ${LOGS} ${HOME}/log.txt
+	yes | mv ${LOGS} ${HOME}/log.txt
 fi
 
 while [ 1 ]

@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_FUSE
+	bool "libretro-fuse"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro ZX SPECTRUM emulator core.
+
+	  http://www.libretro.com

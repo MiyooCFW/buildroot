@@ -1,0 +1,3 @@
+title=xrick
+description=xrick libretro core
+exec=/mnt/emus/retroarch/xrick.sh

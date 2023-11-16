@@ -1,0 +1,4 @@
+title=genesisplusgxwide
+description=genesisplusgxwide libretro core
+exec=/mnt/emus/retroarch/genesisplusgxwide.sh
+selectordir=/mnt

@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_FREEINTV
+	bool "libretro-freeintv"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro Mattel Intellivision emulator core.
+
+	  http://www.libretro.com

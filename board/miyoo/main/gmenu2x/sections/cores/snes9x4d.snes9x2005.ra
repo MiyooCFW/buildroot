@@ -1,0 +1,4 @@
+title=snes9x2005
+description=snes9x2005 libretro core
+exec=/mnt/emus/retroarch/snes9x2005.sh
+selectordir=/mnt

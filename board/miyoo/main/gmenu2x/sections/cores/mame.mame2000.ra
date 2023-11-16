@@ -1,0 +1,4 @@
+title=mame2000
+description=mame2000 libretro core
+exec=/mnt/emus/retroarch/mame2000.sh
+selectordir=/mnt

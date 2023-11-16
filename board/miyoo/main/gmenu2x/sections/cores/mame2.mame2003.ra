@@ -1,0 +1,4 @@
+title=mame2003
+description=mame2003 libretro core
+exec=/mnt/emus/retroarch/mame2003.sh
+selectordir=/mnt

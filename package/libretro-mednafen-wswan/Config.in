@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_MEDNAFEN_WSWAN
+	bool "libretro-mednafen-wswan"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro port of mednafen-wswan, a game.
+
+	  http://www.libretro.com

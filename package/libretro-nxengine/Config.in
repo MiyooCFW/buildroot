@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_NXENGINE
+	bool "libretro-nxengine"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  NXEngine is a Cave Story game engine clone.
+
+	  http://www.libretro.com

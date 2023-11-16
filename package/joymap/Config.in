@@ -1,0 +1,4 @@
+config BR2_PACKAGE_JOYMAP
+	bool "joymap"
+	help
+	  Joymap will translate your joystick movements into the equivilent keystrokes

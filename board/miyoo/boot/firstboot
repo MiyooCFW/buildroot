@@ -540,7 +540,7 @@ if (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RE
 	SD_MAX_AVAIL_SIZE_IN_GBx10=$(echo "$SD_MAX_AVAIL_SIZE_IN_GB" | tr -d ".")
 	P4_SIZE_IN_GBx10=$(echo "$P4_SIZE_IN_GB" | tr -d ".")
 	#Sanity checks if we don't down- or over-resize partition:
-	if (test "$P4_SIZE_IN_GBx10" -ge "$SD_MAX_AVAIL_SIZE_IN_GBx10" || test "$SD_MAX_UNALL_SIZE_IN_MiB" -le 0); then
+	if (test "$P4_SIZE_IN_GBx10" -ge "$SD_MAX_AVAIL_SIZE_IN_GBx10" || test "$SD_MAX_UNALL_SIZE_IN_MiB" -le 15); then
 		echo "Your MAIN partition is greater than available space for resizing or you lack unallocated sectors space" | tee -a ${LOG}
 		sleep 1.5
 		RESIZE_ABORT=true
@@ -599,6 +599,9 @@ if test -r "${BASEDIR}/configs/manifest"; then
 		fi
 	done
 fi
+echo "Renaming ${HOME}/retroarch directory to ${HOME}/.retroarch" | tee -a ${LOG}
+mv "${HOME}/retroarch" "${HOME}/.retroarch" | tee -a ${LOG}
+
 echo
 
 sync
@@ -612,5 +615,5 @@ if ($CONSOLE_OVERWRITE || $RESIZE_COMMENCED || test -r "${BASEDIR}/firstboot.cus
 	safe_reboot_func
 else
 #just grep logs from temp directory before continuing
-	mv ${LOG} ${HOME}/log_firstboot.txt
+	yes | mv ${LOG} ${HOME}/log_firstboot.txt
 fi

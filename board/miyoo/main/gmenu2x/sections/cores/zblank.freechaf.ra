@@ -1,0 +1,4 @@
+title=freechaf
+description=freechaf libretro core
+exec=/mnt/emus/retroarch/freechaf.sh
+selectordir=/mnt

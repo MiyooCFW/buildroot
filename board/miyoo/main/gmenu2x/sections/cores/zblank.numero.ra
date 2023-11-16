@@ -1,0 +1,4 @@
+title=numero
+description=numero libretro core
+exec=/mnt/emus/retroarch/numero.sh
+selectordir=/mnt

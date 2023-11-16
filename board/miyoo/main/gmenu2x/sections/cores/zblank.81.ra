@@ -1,0 +1,4 @@
+title=81
+description=81 libretro core
+exec=/mnt/emus/retroarch/81.sh
+selectordir=/mnt

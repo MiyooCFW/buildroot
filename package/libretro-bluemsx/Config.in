@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBRETRO_BLUEMSX
+	bool "libretro-bluemsx"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro MSX/ColecoVision/Spectravideo
+	  emulator core for ARM.
+
+	  http://www.libretro.com

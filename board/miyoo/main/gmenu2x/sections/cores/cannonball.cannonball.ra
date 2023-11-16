@@ -1,0 +1,3 @@
+title=cannonball
+description=cannonball libretro core
+exec=/mnt/emus/retroarch/cannonball.sh

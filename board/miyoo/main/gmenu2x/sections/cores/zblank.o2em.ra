@@ -1,0 +1,4 @@
+title=o2em
+description=o2em libretro core
+exec=/mnt/emus/retroarch/o2em.sh
+selectordir=/mnt

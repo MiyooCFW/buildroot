@@ -1,0 +1,4 @@
+title=Game Boy/GBC
+description=Gambatte (libretro core)
+exec=/mnt/emus/retroarch/gambatte.sh
+selectordir=/mnt/roms/GB

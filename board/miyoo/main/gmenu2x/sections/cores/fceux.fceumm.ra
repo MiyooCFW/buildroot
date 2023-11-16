@@ -1,0 +1,4 @@
+title=fceumm
+description=fceumm libretro core
+exec=/mnt/emus/retroarch/fceumm.sh
+selectordir=/mnt

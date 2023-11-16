@@ -1,0 +1,4 @@
+title=prosystem
+description=prosystem libretro core
+exec=/mnt/emus/retroarch/prosystem.sh
+selectordir=/mnt

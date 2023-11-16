@@ -1,0 +1,4 @@
+title=pocketcdg
+description=pocketcdg libretro core
+exec=/mnt/emus/retroarch/pocketcdg.sh
+selectordir=/mnt
