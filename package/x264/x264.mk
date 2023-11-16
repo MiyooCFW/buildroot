@@ -5,7 +5,7 @@
 ################################################################################
 
 X264_VERSION = 72d53ab2ac7af24597a824e868f2ef363a22f5d4
-X264_SITE = https://code.videolan.org/videolan/x264/-/archive/$(VERSION)/x264-$(VERSION).tar.gz
+X264_SITE = http://sources.buildroot.net
 X264_LICENSE = GPLv2+
 X264_DEPENDENCIES = host-pkgconf
 X264_LICENSE_FILES = COPYING
