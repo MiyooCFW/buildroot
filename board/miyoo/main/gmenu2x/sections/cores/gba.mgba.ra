@@ -1,0 +1,4 @@
+title=mgba
+description=mgba libretro core
+exec=/mnt/emus/retroarch/mgba.sh
+selectordir=/mnt

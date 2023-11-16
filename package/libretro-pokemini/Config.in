@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_POKEMINI
+	bool "libretro-pokemini"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro Pokémon Mini emulator core.
+
+	  http://www.libretro.com

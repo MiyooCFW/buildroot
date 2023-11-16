@@ -1,0 +1,4 @@
+title=retro8
+description=retro8 libretro core
+exec=/mnt/emus/retroarch/retro8.sh
+selectordir=/mnt

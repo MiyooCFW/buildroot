@@ -1,0 +1,4 @@
+title=x1
+description=x1 libretro core
+exec=/mnt/emus/retroarch/x1.sh
+selectordir=/mnt

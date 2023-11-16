@@ -1,0 +1,4 @@
+title=gearboy
+description=gearboy libretro core
+exec=/mnt/emus/retroarch/gearboy.sh
+selectordir=/mnt

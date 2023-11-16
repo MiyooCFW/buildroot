@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBRETRO_DATABASE
+    bool "retroarch database"
+    depends on BR2_PACKAGE_RETROARCH
+    help
+      RetroArch incoporates a ROM scanning system to automatically produce playlists.
+      Each ROM that is scanned by the playlist generator is checked against a database of ROMs that are known to be good copies.
+
+      https://github.com/libretro/libretro-database

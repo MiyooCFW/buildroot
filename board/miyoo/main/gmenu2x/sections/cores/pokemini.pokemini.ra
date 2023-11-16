@@ -1,0 +1,4 @@
+title=pokemini
+description=pokemini libretro core
+exec=/mnt/emus/retroarch/pokemini.sh
+selectordir=/mnt

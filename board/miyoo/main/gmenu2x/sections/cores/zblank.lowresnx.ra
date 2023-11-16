@@ -1,0 +1,4 @@
+title=lowresnx
+description=lowresnx libretro core
+exec=/mnt/emus/retroarch/lowresnx.sh
+selectordir=/mnt

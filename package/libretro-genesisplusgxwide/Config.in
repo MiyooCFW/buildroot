@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBRETRO_GENESISPLUSGXWIDE
+	bool "libretro-genesisplusgxwide"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro SEGA 8 / 16 bits emulator core for ARM,
+	  with wide screen support
+
+	  https://github.com/libretro/Genesis-Plus-GX-Wide

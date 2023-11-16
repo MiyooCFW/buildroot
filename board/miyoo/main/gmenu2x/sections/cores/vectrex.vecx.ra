@@ -1,0 +1,4 @@
+title=vecx
+description=vecx libretro core
+exec=/mnt/emus/retroarch/vecx.sh
+selectordir=/mnt

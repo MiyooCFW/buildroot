@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_JAXE
+	bool "libretro-jaxe"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro port of Jaxe, a game.
+
+	  http://www.libretro.com

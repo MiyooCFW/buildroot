@@ -1,0 +1,22 @@
+diff --git a/config.def.h b/config.def.h
+index a59e56441b..0c002b97b6 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -1119,7 +1119,7 @@
+ #endif
+ 
+ /* Will sync audio. (recommended) */
+-#define DEFAULT_AUDIO_SYNC true
++#define DEFAULT_AUDIO_SYNC false
+ 
+ /* Audio rate control. */
+ #if !defined(RARCH_CONSOLE)
+@@ -1357,7 +1357,7 @@
+ #define DEFAULT_FASTFORWARD_FRAMESKIP true
+ 
+ /* Enable runloop for variable refresh rate screens. Force x1 speed while handling fast forward too. */
+-#define DEFAULT_VRR_RUNLOOP_ENABLE false
++#define DEFAULT_VRR_RUNLOOP_ENABLE true
+ 
+ /* Run core logic one or more frames ahead then load the state back to reduce perceived input lag. */
+ #define DEFAULT_RUN_AHEAD_FRAMES 1

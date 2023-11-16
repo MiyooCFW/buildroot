@@ -1,0 +1,4 @@
+title=prboom
+description=prboom libretro core
+exec=/mnt/emus/retroarch/prboom.sh
+selectordir=/mnt

@@ -1,0 +1,4 @@
+title=gearcoleco
+description=gearcoleco libretro core
+exec=/mnt/emus/retroarch/gearcoleco.sh
+selectordir=/mnt

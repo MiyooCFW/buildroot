@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_TIC80
+	bool "libretro-tic80"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro TIC-80 emulator core.
+
+	  https://github.com/libretro/TIC-80.git

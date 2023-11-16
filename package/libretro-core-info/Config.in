@@ -1,0 +1,6 @@
+config BR2_PACKAGE_LIBRETRO_CORE_INFO
+    bool "libretro-core-info"
+    depends on BR2_PACKAGE_RETROARCH
+    help
+      libretro's core info files
+      https://github.com/libretro/libretro-core-info

@@ -1,0 +1,4 @@
+title=smsplus
+description=smsplus libretro core
+exec=/mnt/emus/retroarch/smsplus.sh
+selectordir=/mnt

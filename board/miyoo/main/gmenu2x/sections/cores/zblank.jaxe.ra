@@ -1,0 +1,4 @@
+title=jaxe
+description=jaxe libretro core
+exec=/mnt/emus/retroarch/jaxe.sh
+selectordir=/mnt

@@ -1,0 +1,4 @@
+title=freeintv
+description=freeintv libretro core
+exec=/mnt/emus/retroarch/freeintv.sh
+selectordir=/mnt

@@ -1,0 +1,4 @@
+title=gme
+description=gme libretro core
+exec=/mnt/emus/retroarch/gme.sh
+selectordir=/mnt

@@ -1,0 +1,29 @@
+diff --git a/Makefile.miyoo b/Makefile.miyoo
+index 751cdf2639..df9c37fc33 100644
+--- a/Makefile.miyoo
++++ b/Makefile.miyoo
+@@ -3,7 +3,7 @@
+ #########################
+ 
+ # Default toolchain directory
+-TOOLCHAIN_DIR=/opt/miyoo
++TOOLCHAIN_DIR="$(STAGING_DIR)"
+ 
+ # All toolchain-related variables may be
+ # overridden via the command line
+@@ -26,11 +26,11 @@ else
+ STRIP                 = $(TOOLCHAIN_DIR)/usr/bin/arm-linux-strip
+ endif
+ 
+-GCW0_SDL_CONFIG      ?= $(TOOLCHAIN_DIR)/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/bin/sdl-config
+-GCW0_FREETYPE_CONFIG ?= $(TOOLCHAIN_DIR)/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/bin/freetype-config
++GCW0_SDL_CONFIG      ?= $(TOOLCHAIN_DIR)/usr/bin/sdl-config
++GCW0_FREETYPE_CONFIG ?= $(TOOLCHAIN_DIR)/usr/bin/freetype-config
+ 
+-GCW0_INC_DIR         ?= $(TOOLCHAIN_DIR)/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/include
+-GCW0_LIB_DIR         ?= $(TOOLCHAIN_DIR)/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/lib
++GCW0_INC_DIR         ?= $(TOOLCHAIN_DIR)/usr/include
++GCW0_LIB_DIR         ?= $(TOOLCHAIN_DIR)/usr/lib
+ 
+ #########################
+ #########################

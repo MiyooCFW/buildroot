@@ -1,0 +1,3 @@
+title=mrboom
+description=mrboom libretro core
+exec=/mnt/emus/retroarch/mrboom.sh
