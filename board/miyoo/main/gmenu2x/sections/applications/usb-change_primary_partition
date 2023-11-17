@@ -1,3 +1,0 @@
-title=USB change part.
-description=USB switch FAT partition
-exec=/mnt/apps/usb-serial-mass-storage/usb-change_primary_partition.sh
