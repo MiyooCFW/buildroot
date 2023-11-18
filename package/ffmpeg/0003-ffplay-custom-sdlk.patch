@@ -1,0 +1,36 @@
+diff --git a/ffplay.c b/ffplay.c
+index f28e0877..b08d7598 100644
+--- a/ffplay.c
++++ b/root/ffplay.c
+@@ -3367,25 +3367,31 @@ static void event_loop(VideoState *cur_stream)
+                 do_exit(cur_stream);
+                 break;
+             case SDLK_f:
++            case SDLK_LSHIFT:
+                 toggle_full_screen(cur_stream);
+                 cur_stream->force_refresh = 1;
+                 break;
+             case SDLK_p:
+             case SDLK_SPACE:
++            case SDLK_RETURN:
+                 toggle_pause(cur_stream);
+                 break;
+             case SDLK_m:
++            case SDLK_LCTRL:
+                 toggle_mute(cur_stream);
+                 break;
+             case SDLK_KP_MULTIPLY:
+             case SDLK_0:
++            case SDLK_RSHIFT:
+                 update_volume(cur_stream, 1, SDL_VOLUME_STEP);
+                 break;
+             case SDLK_KP_DIVIDE:
+             case SDLK_9:
++            case SDLK_RALT:
+                 update_volume(cur_stream, -1, SDL_VOLUME_STEP);
+                 break;
+             case SDLK_s: // S: Step to next frame
++            case SDLK_LALT:
+                 step_to_next_frame(cur_stream);
+                 break;
+             case SDLK_a:
