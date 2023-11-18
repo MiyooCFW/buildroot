@@ -1,0 +1,4 @@
+title=AUDIO rec
+description=Start/Stop recording alsa HW audio output
+exec=/mnt/apps/arecord/audio_record.sh
+params=&

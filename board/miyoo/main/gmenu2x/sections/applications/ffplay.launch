@@ -1,0 +1,5 @@
+title=FFPLAY
+description=Play a movie/audio file
+exec=/mnt/apps/ffmpeg/ffplay_launch.sh
+manual=/mnt/apps/ffmpeg/manual.txt
+selectordir=/mnt/output

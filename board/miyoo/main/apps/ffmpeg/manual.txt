@@ -1,0 +1,11 @@
+FFPLAY shortcuts:
+-----------------------
+ESCAPE ("Select") = quit
+LSHIFT ("X"); f = fullscreen
+SPACE ("Y"); RETURN ("Start")= pause
+LCTRL ("B"); m = mute
+RSHIFT/RALT ("R3/L3"); 0/9 = increase/decrease volume
+LALT ("A"); s = step to next frame
+LEFT/RIGHT (-) = Seek backward/forward 10 seconds.
+DOWN/UP (-)= Seek backward/forward 1 minute.
+PAGEUP/PAGEDOWN ("L2/R2")= Seek to the previous/next chapter. If there are no chapters seek backward/forward 10 minutes.
