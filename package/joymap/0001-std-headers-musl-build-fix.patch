@@ -1,0 +1,283 @@
+diff --git a/clock.h b/clock.h
+index 3bf19e2..cc3d52f 100644
+--- a/clock.h
++++ b/clock.h
+@@ -1,14 +1,16 @@
+ #include <sys/types.h>
+ #include <sys/time.h>
++#include <stdint.h>
++#include <unistd.h>
+ 
+-static __uint64_t clock_millis() {
++static uint64_t clock_millis() {
+     struct timeval tv;
+-    static __uint64_t last = 0;
++    static uint64_t last = 0;
+     int result = gettimeofday(&tv, NULL);
+     if (result != 0) {
+         printf("Failed to read clock\n");
+         return last;
+     }
+-    last = (__uint64_t)tv.tv_sec * 1000 + (__uint64_t)tv.tv_usec / 1000;
++    last = (uint64_t)tv.tv_sec * 1000 + (uint64_t)tv.tv_usec / 1000;
+     return last;
+ }
+diff --git a/devices.c b/devices.c
+index 439652c..8fb8128 100644
+--- a/devices.c
++++ b/devices.c
+@@ -365,9 +365,9 @@ void move_mouse(int rdx, int rdy) {
+ }
+ 
+ void repeat_mouse_move() {
+-    static __uint64_t last = 0;
++    static uint64_t last = 0;
+     int mdx = 0, mdy = 0, mdw = 0;
+-    __uint64_t current, delta;
++    uint64_t current, delta;
+ 
+     if (last == 0) {
+         last = clock_millis();
+diff --git a/events.c b/events.c
+index 1a2dacf..edc6026 100644
+--- a/events.c
++++ b/events.c
+@@ -41,8 +41,8 @@ struct event_device;
+ 
+ struct mapping {
+     int fd; /* /dev/input/event* file descriptor */
+-    __uint16_t vendor;
+-    __uint16_t product;
++    uint16_t vendor;
++    uint16_t product;
+     int event_id;
+     int jsnum;
+     int mapped;
+@@ -68,9 +68,9 @@ struct event_device {
+ 
+ static int shifted=0;
+ static int event_calibrate=0;
+-static __uint16_t shift_vendor;
+-static __uint16_t shift_product;
+-static __uint16_t shift_button;
++static uint16_t shift_vendor;
++static uint16_t shift_product;
++static uint16_t shift_button;
+ struct mapping *devices[MAX_DEVICES];
+ struct event_device event_devices[MAX_EVENTS] = {0};
+ 
+@@ -78,7 +78,7 @@ void set_event_input_calibrate(int set) {
+     event_calibrate = set;
+ }
+ 
+-struct mapping *get_device_by_id(__uint16_t event_id, int create) {
++struct mapping *get_device_by_id(uint16_t event_id, int create) {
+     struct mapping *mapper;
+     int i, j;
+ 
+@@ -127,7 +127,7 @@ struct mapping *get_device_by_id(__uint16_t event_id, int create) {
+     return mapper;
+ }
+ 
+-struct mapping *get_device_by_vendor(__uint16_t vendor, __uint16_t product, int create) {
++struct mapping *get_device_by_vendor(uint16_t vendor, uint16_t product, int create) {
+     struct mapping *mapper;
+     int i, j;
+ 
+@@ -177,7 +177,7 @@ struct mapping *get_device_by_vendor(__uint16_t vendor, __uint16_t product, int
+     return mapper;
+ }
+ 
+-struct mapping *get_device(__uint16_t vendor, __uint16_t product, __uint16_t event_id, int create) {
++struct mapping *get_device(uint16_t vendor, uint16_t product, uint16_t event_id, int create) {
+     struct mapping *map;
+ 
+     if (create) {
+@@ -550,7 +550,7 @@ static void process_axis(struct mapping *mapper, int axis, int value) {
+     int button=0;
+     int i, j;
+     struct program_axis_remap **axes_remap;
+-    __uint16_t *sequence, *off;
++    uint16_t *sequence, *off;
+     int release = 0;
+ 
+     if ((mapper->vendor!=0x00ff)||(mapper->product!=0x0000))
+@@ -752,7 +752,7 @@ void remap_button(struct program_button_remap *btn) {
+     }
+ }
+ 
+-void set_joystick_number(__uint16_t vendor, __uint16_t product, __uint16_t event_id, int device) {
++void set_joystick_number(uint16_t vendor, uint16_t product, uint16_t event_id, int device) {
+     struct mapping *mapper;
+     mapper = get_device(vendor, product, event_id, 1);
+ 
+diff --git a/mapparser.c b/mapparser.c
+index e48a2fe..924cd6e 100644
+--- a/mapparser.c
++++ b/mapparser.c
+@@ -185,7 +185,7 @@ static int parse_flags(char *s) {
+     return flags;
+ }
+ 
+-static void parse_sequence(__uint16_t *sequence, char *s, int base, int type) {
++static void parse_sequence(uint16_t *sequence, char *s, int base, int type) {
+     char *p;
+     int releaseflag=0;
+     int value;
+diff --git a/mapper.h b/mapper.h
+index cea53cd..cd765b5 100644
+--- a/mapper.h
++++ b/mapper.h
+@@ -37,7 +37,7 @@ void release_mouse_buttons(void);
+ void release_keys(void);
+ void remap_button(struct program_button_remap *btn);
+ void remap_axis(struct program_axis_remap *axis);
+-void set_joystick_number(__uint16_t vendor, __uint16_t product, __uint16_t event_id, int device);
++void set_joystick_number(uint16_t vendor, uint16_t product, uint16_t event_id, int device);
+ int mapper_code_install(void);
+ int mapper_code_uninstall(void);
+ void program_run();
+diff --git a/program.h b/program.h
+index c3533e1..cd5a8b7 100644
+--- a/program.h
++++ b/program.h
+@@ -2,6 +2,8 @@
+ #define __program_h
+ 
+ #include <sys/types.h>
++#include <stdint.h>
++#include <unistd.h>
+ 
+ #define DEVICE_JOYSTICK        128
+ #define DEVICE_KBD        64
+@@ -104,53 +106,53 @@
+ //    system. Otherwise the map is ignored.
+ // if vendor=255 and product=0, then this refers to the virtual CODE joystick
+ struct program_axis_remap {
+-    __uint8_t program;   //PROGRAM_AXIS_REMAP
+-    __uint8_t joystick;
+-    __uint16_t vendor;
+-    __uint16_t product;
+-    __uint8_t srcaxis;
+-    __uint8_t device;    //low bits of device identify joystick
+-    __uint8_t type;
+-    __uint8_t flags;
+-    __uint16_t axis;
+-    __uint16_t plus[MAX_SEQUENCE];   //if top bit set, release
+-    __uint16_t minus[MAX_SEQUENCE];   //if top bit set, release
+-    __int32_t saved_value;  // for implementing binary decisions
+-    __int32_t min;
+-    __int32_t max;
+-    __int32_t deadzone;
+-    __int32_t speed;
++    uint8_t program;   //PROGRAM_AXIS_REMAP
++    uint8_t joystick;
++    uint16_t vendor;
++    uint16_t product;
++    uint8_t srcaxis;
++    uint8_t device;    //low bits of device identify joystick
++    uint8_t type;
++    uint8_t flags;
++    uint16_t axis;
++    uint16_t plus[MAX_SEQUENCE];   //if top bit set, release
++    uint16_t minus[MAX_SEQUENCE];   //if top bit set, release
++    int32_t saved_value;  // for implementing binary decisions
++    int32_t min;
++    int32_t max;
++    int32_t deadzone;
++    int32_t speed;
+ };
+ 
+ struct program_axis_properties {
+-    __uint8_t program;   //PROGRAM_AXIS_PROPERTIES
+-    __uint8_t joystick;
+-    __uint16_t vendor;
+-    __uint16_t product;
+-    __uint8_t srcaxis;
+-    __uint8_t flags;
+-    __int16_t scale;    //8.8 fixed point
+-    __int16_t bias;    //shift after scale
+-    __uint16_t threshhold;
++    uint8_t program;   //PROGRAM_AXIS_PROPERTIES
++    uint8_t joystick;
++    uint16_t vendor;
++    uint16_t product;
++    uint8_t srcaxis;
++    uint8_t flags;
++    int16_t scale;    //8.8 fixed point
++    int16_t bias;    //shift after scale
++    uint16_t threshhold;
+ };
+ 
+ #define press sequence[0]
+ #define release sequence[0]
+ struct program_button_remap {
+-    __uint8_t program;   //PROGRAM_BUTTON_REMAP
+-    __uint8_t joystick;
+-    __uint16_t vendor;
+-    __uint16_t product;
+-    __uint16_t srcbutton;
+-    __uint8_t device;    //low bits of device identify joystick
+-    __uint8_t type;
+-    __uint8_t flags;
+-    __uint16_t sequence[MAX_SEQUENCE];   //if top bit set, release
+-    __int32_t speed;
++    uint8_t program;   //PROGRAM_BUTTON_REMAP
++    uint8_t joystick;
++    uint16_t vendor;
++    uint16_t product;
++    uint16_t srcbutton;
++    uint8_t device;    //low bits of device identify joystick
++    uint8_t type;
++    uint8_t flags;
++    uint16_t sequence[MAX_SEQUENCE];   //if top bit set, release
++    int32_t speed;
+ };
+ 
+ struct program_code {
+-    __uint8_t program;   //PROGRAM_CODE
++    uint8_t program;   //PROGRAM_CODE
+     unsigned char code[MAX_CODE_SIZE]; //1024 4 byte codes
+ };
+ 
+diff --git a/vm.c b/vm.c
+index 48371fc..1103a58 100644
+--- a/vm.c
++++ b/vm.c
+@@ -38,24 +38,24 @@ static int installed=0;
+ 
+ static int timestamp=0;
+ static int tick=0;
+-static __uint64_t started=0;
++static uint64_t started=0;
+ static int executing=0;
+ 
+ //controller variables
+-static __int16_t code_analog[64];
++static int16_t code_analog[64];
+ //controller variables
+-static __uint8_t code_bit[128];
++static uint8_t code_bit[128];
+ //controller variables
+-static __int16_t js_analog[16][64];
++static int16_t js_analog[16][64];
+ //controller variables
+-static __uint8_t js_bit[16][128];
+-static __int16_t currentmode=0;
+-static __int16_t firstscan=1;
+-static __int16_t clocktick=1;
+-static __int16_t xrel=0;
+-static __int16_t yrel=0;
+-static __int16_t zrel=0;
+-static __uint8_t code[MAX_CODE_SIZE];
++static uint8_t js_bit[16][128];
++static int16_t currentmode=0;
++static int16_t firstscan=1;
++static int16_t clocktick=1;
++static int16_t xrel=0;
++static int16_t yrel=0;
++static int16_t zrel=0;
++static uint8_t code[MAX_CODE_SIZE];
+ //registers inaccessible to user
+ //allocated by compiler
+ static int status=0;        //0 = no valid program 1=valid program
