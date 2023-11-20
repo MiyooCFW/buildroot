@@ -1,4 +1,5 @@
-JOYMAP_VERSION = origin/master
+# linuxjoymap release 0.5.5
+JOYMAP_VERSION = 705bf560ae926a367f00adf9723581313c4e2c7c
 JOYMAP_SITE_METHOD = git
 JOYMAP_SITE = https://git.code.sf.net/p/linuxjoymap/git
 define JOYMAP_BUILD_CMDS
