@@ -8,5 +8,5 @@ else
 	echo -en "Invalid video/audio format!"
 	# We're using SDL terminal to display above echo msg 
 	## because all stdout is parsed to /dev/null from gmenu2x and it's child ps
-	/mnt/apps/st/st -e "/bin/sh" "-c" "echo -e \"\n\n\n\n\n\n          Invalid video or audio format!\"; sleep 2"
+	st -k -e "/bin/sh" "-c" "echo -e \"\n\n\n\n\n\n          Invalid video or audio format!\"; sleep 2"
 fi
