@@ -2213,6 +2213,7 @@ menu "Miscellaneous"
 	source "package/miyoo-ctl/Config.in"
 	source "package/fbcat/Config.in"
 	source "package/st-sdl/Config.in"
+	source "package/commander/Config.in"
 
 endmenu
 
