@@ -1,3 +1,0 @@
-title=TVout OFF
-description=TV output disabled
-exec=/mnt/apps/tvoff/tvout-off.sh

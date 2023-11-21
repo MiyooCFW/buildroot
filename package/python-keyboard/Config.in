@@ -1,0 +1,7 @@
+config BR2_PACKAGE_PYTHON_KEYBOARD
+	select BR2_PACKAGE_KBD
+	bool "python-keyboard"
+	help
+	  Hook and simulate keyboard events on Windows and Linux
+	  https://pypi.org/project/keyboard
+

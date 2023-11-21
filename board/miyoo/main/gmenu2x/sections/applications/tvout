@@ -1,0 +1,3 @@
+title=TVout ON/OFF
+description=TV output ON/OFF
+exec=/mnt/apps/tvout/tvout.sh
