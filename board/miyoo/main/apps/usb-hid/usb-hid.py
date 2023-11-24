@@ -7,21 +7,32 @@ hidCodeDict = {
 108:81, #down
 105:80, #left
 106:79, #right
-29:1, #b mapped to l_ctrl
+29:224, #b mapped to l_ctrl
 56:44, #a mapped to space
-57:2, #y mapped to l_shift
+57:225, #y mapped to l_shift
 42:27, #x mapped to x
 1:42, #select mapped to backspace
 28:40, #start mapped to enter
-15:4, #lpad1 mapped to l_alt
+15:226, #lpad1 mapped to l_alt
 14:43, #rpad1 mapped to tab
 104:75, #lpad2 mapped to pg_up
 109:78, #rpad2 mapped to pg_down
 97:0, #reset not mapped, used to quit
 }
 
+specialCodeDict = {
+224:1,
+225:2,
+226:4,
+227:8,
+228:16,
+229:32,
+230:64,
+231:128,
+}
+
 NULL_CHAR = chr(0)
-SPECIAL_KEY_CODES=[1,2,4,8,16,32,64,128]
+SPECIAL_KEY_CODES=[224,225,226,227,228,229,230,231]
 def write_report(report):
     with open('/dev/hidg0', 'rb+') as fd:
         fd.write(report.encode())
@@ -42,7 +53,7 @@ def write_pressed_keys(e):
     for s_key in SPECIAL_KEY_CODES:
         if s_key in all_keys:
             all_keys.remove(s_key)
-            special_keys += s_key
+            special_keys += translate(s_key,specialCodeDict)
   
     if not len(all_keys):
         write_report(chr(special_keys)+NULL_CHAR*7)
