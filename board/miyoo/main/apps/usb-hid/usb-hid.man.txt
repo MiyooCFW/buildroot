@@ -1,0 +1,21 @@
+Turn your handheld into USB gamepad for PC/Android
+
+Usage:
+- Connect handheld to PC via USB
+- Run this USB HID app
+- Now you should be able to control PC/phone via handheld buttons
+- Press RESET button to leave USB HID mode
+
+Mappings:
+	DPAD mapped to ARROWS
+	B mapped to L_CTRL
+	A mapped to SPACE
+	Y mapped to L_SHIFT
+	X mapped to X
+	SELECT mapped to BACKSPACE
+	START mapped to ENTER
+	L1 mapped to L_ALT
+	R1 mapped to TAB
+	L2 mapped to PG_UP
+	R2 mapped to PG_DOWN
+	RESET not mapped, press to QUIT
