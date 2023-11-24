@@ -1,4 +1,0 @@
-This is a list of unused Game Boy Color Preset Palettes
-
-To get an idea of the colors, this website has the colors listed:
-https://tcrf.net/Game_Boy_Color_Bootstrap_ROM
