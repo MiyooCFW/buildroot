@@ -8,5 +8,5 @@ gadget-vid-pid-remove 0x1d6b:0x0104
 gadget-hid
 echo -e "\e[32mStarting USB HID mode...\e[0m"&>$(tty)
 python /mnt/apps/usb-hid/usb-hid.py&>$(tty)
-gadget-vid-pid-remove 0x1d6b:0x0104
+gadget-vid-pid-remove 0x1d6b:0x0105
 gadget-ms /dev/mmcblk0p1 /dev/mmcblk0p4
