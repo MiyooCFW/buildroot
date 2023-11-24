@@ -1,0 +1,4 @@
+config BR2_PACKAGE_COMMANDER
+	bool "commander"
+	help
+	  Dual pane file manager
