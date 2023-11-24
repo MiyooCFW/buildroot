@@ -1,4 +1,3 @@
 title=Commander
-description=file utility
-exec=/mnt/apps/commander/commander
-selectorbrowser=true
+description=File manager utility
+exec=/usr/bin/commander
