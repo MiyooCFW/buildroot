@@ -16,9 +16,13 @@ else
 mgba_platform="miyoo"
 endif
 
+LIBRETRO_MGBA_CFLAGS = $(TARGET_CFLAGS) $(COMPILER_COMMONS_CFLAGS_SO)
+ifeq ($(BR2_TOOLCHAIN_BUILDROOT_LOCALE),y)
+LIBRETRO_MGBA_CFLAGS += -DHAVE_LOCALE
+endif
+
 define LIBRETRO_MGBA_BUILD_CMDS
-	
-	CFLAGS="$(TARGET_CFLAGS) $(COMPILER_COMMONS_CFLAGS_SO)" \
+	CFLAGS="$(LIBRETRO_MGBA_CFLAGS)" \
 		CXXFLAGS="$(TARGET_CXXFLAGS) $(COMPILER_COMMONS_CXXFLAGS_SO)" \
 		LDFLAGS="$(TARGET_LDFLAGS) $(COMPILER_COMMONS_LDFLAGS_SO)" \
 		$(MAKE) CXX="$(TARGET_CXX)" CC="$(TARGET_CC)" -C $(@D)/ -f Makefile.libretro platform="$(mgba_platform)"
@@ -26,9 +30,9 @@ define LIBRETRO_MGBA_BUILD_CMDS
 endef
 
 define LIBRETRO_MGBA_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p $(BINARIES_DIR)/retroarch/cores
 	$(INSTALL) -D $(@D)/mgba_libretro.so \
-		${BINARIES_DIR}/retroarch/cores/mgba_libretro.so
+		$(BINARIES_DIR)/retroarch/cores/mgba_libretro.so
 endef
 
 $(eval $(generic-package))
