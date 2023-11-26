@@ -14,14 +14,14 @@ ifneq ($(BR2_ENABLE_LOCALE),y)
 DIALOG_DEPENDENCIES += libiconv
 endif
 
-ifneq ($(BR2_PACKAGE_NCURSES_WCHAR),y)
-DIALOG_CONF_OPTS = --with-ncurses
-else
-DIALOG_CONF_OPTS = --with-ncursesw --enable-widec
-endif
-
-DIALOG_CONF_OPTS += --with-curses-dir=$(STAGING_DIR)/usr \
+DIALOG_CONF_OPTS = --with-curses-dir=$(STAGING_DIR)/usr \
 	--disable-rpath-hack
 DIALOG_CONF_OPTS += NCURSES_CONFIG=$(STAGING_DIR)/usr/bin/$(NCURSES_CONFIG_SCRIPTS)
+
+ifneq ($(BR2_PACKAGE_NCURSES_WCHAR),y)
+DIALOG_CONF_OPTS += --with-ncurses
+else
+DIALOG_CONF_OPTS += --with-ncursesw --enable-widec
+endif
 
 $(eval $(autotools-package))
