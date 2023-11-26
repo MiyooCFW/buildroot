@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-# Commit of 2023/10/06
-LIBRETRO_MRBOOM_VERSION = 089b91d4dcf016d0595824d519707bed709178f2
+# Commit of 2023/11/15
+LIBRETRO_MRBOOM_VERSION = 87368124430174a501484bad8dbd4284859c0853
 LIBRETRO_MRBOOM_SITE = https://github.com/libretro/mrboom-libretro.git
 LIBRETRO_MRBOOM_LICENSE = MIT
 LIBRETRO_MRBOOM_LICENSE_FILES = LICENSE
@@ -30,9 +30,9 @@ define LIBRETRO_MRBOOM_BUILD_CMDS
 endef
 
 define LIBRETRO_MRBOOM_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p $(BINARIES_DIR)/retroarch/cores
 	$(INSTALL) -D $(@D)/mrboom_libretro.so \
-		${BINARIES_DIR}/retroarch/cores/mrboom_libretro.so
+		$(BINARIES_DIR)/retroarch/cores/mrboom_libretro.so
 endef
 
 $(eval $(generic-package))
