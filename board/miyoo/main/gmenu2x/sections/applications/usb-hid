@@ -1,0 +1,3 @@
+title=USB HID
+description=USB HID PC gamepad
+exec=/mnt/apps/usb-hid/usb-hid.sh
