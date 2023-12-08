@@ -503,7 +503,7 @@ P4_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p4/size")
 SD_SIZE_IN_MiB=$((SD_SIZE * 512 / 1024 / 1024))
 SD_SIZE_IN_GiB=$((SD_SIZE * 512 / 1024 / 1024 / 1024))
 BOOT_SIZE=$(((1016+1) * 1024 / 512)) #bootloader partition=1016K (see `genimage` script in buildroot)
-## boot_size calculated to 512 byte sector size blocks, adding +1K as a safety measure for roundups (at fatresize we use KibiBits)
+## boot_size calculated to 512 byte sector size blocks, adding +1K as a safety measure for roundups (at ntfsresize we use KibiBits)
 
 #Calculate unallocated left space to expand MAIN:
 SD_MAX_UNALL_SIZE="$((${SD_SIZE} - (${P1_SIZE} + ${P2_SIZE} + ${P3_SIZE} + ${P4_SIZE}) - $BOOT_SIZE))"
@@ -514,25 +514,14 @@ SD_MAX_UNALL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_UNALL_SIZE} * 512 / 1024 / 10
 SD_MAX_AVAIL_SIZE="$((${SD_SIZE} - (${P1_SIZE} + ${P2_SIZE} + ${P3_SIZE}) - $BOOT_SIZE))"
 SD_MAX_AVAIL_SIZE_IN_KiB=$((SD_MAX_AVAIL_SIZE * 512 / 1024))
 
-# Expand_MAIN_Partition-prompt for fatresize the p4 partition if requested
+# Expand_MAIN_Partition-prompt for ntfsresize the p4 partition if requested
 RESIZE_COMMENCED=false
 if (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RESIZE" \
    --colors --pause "\n\n       \ZuExpand MAIN partition?\Zn\n\n   Select an option & press START
-   \n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 15 60 10); then
+   \n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of NTFS partition will begin." 15 60 10); then
 	clear
 	RESIZE_ABORT=false
-	if test "$SD_SIZE_IN_GiB" -gt 128; then
-		if (dialog --clear --stdout --ok-label NO --cancel-label YES --title "   \Zb\Z1WARNING!\Zn" \
-		--colors --pause "\nYour SD card exceeds max. size for auto-resizing! 
-		\n\nWe could however expand it to 118GB. \n\n           \ZuDo you AGREE?\Zn
-		\n\n\ZbINFO: For microSD >128GB big we\n      recommend to use your PC!\Zn" 0 0 30 || test $? -eq 255); then
-			dialog --clear --colors --timeout 2 --msgbox " FAT resizing \ZuABORTED!\Zn" 5 27
-			clear
-			RESIZE_ABORT=true
-		else
-			SD_MAX_AVAIL_SIZE_IN_KiB=123731968
-		fi
-	fi
+
 	SD_MAX_AVAIL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_AVAIL_SIZE_IN_KiB} / 1024 / 1024" | bc) #only to inform user about end point for resize
 	SD_MAX_AVAIL_SIZE_IN_GB=$(echo "scale=1; ${SD_MAX_AVAIL_SIZE_IN_KiB} * 1024 / 1000 / 1000 / 1000" | bc)
 	P4_SIZE_IN_GB=$(echo "scale=1; ${P4_SIZE} * 512 / 1000 / 1000 / 1000" | bc)
@@ -550,17 +539,19 @@ if (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RE
 	echo "and more precisely it's ${SD_MAX_UNALL_SIZE_IN_MiB}MB big" | tee -a ${LOG}
 	if ! $RESIZE_ABORT; then
 		echo "Resizing the MAIN partition to ${SD_MAX_AVAIL_SIZE_IN_GiB}GB." | tee -a ${LOG}
-		echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
+		echo "This can take few seconds." | tee -a ${LOG}
 		umount /dev/mmcblk0p4 | tee -a ${LOG}
-		fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
-		#TODO: fix outputting logs from fatresize stdout
-		fatresize --size="${SD_MAX_AVAIL_SIZE_IN_KiB}"ki -v -p /dev/mmcblk0p4 -n4 | tee -a ${LOG}
-		fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
+		ntfsfix -d /dev/mmcblk0p4 | tee -a ${LOG}
+		parted -a optimal /dev/mmcblk0 --script rm 4  | tee -a ${LOG}
+		parted -a optimal /dev/mmcblk0 --script mkpart primary ntfs 546MB 100%  | tee -a ${LOG}
+		partx -u /dev/mmcblk0  | tee -a ${LOG}
+		echo Y | ntfsresize --size="${SD_MAX_AVAIL_SIZE_IN_KiB}"k -v /dev/mmcblk0p4 | tee -a ${LOG}
+		ntfsfix -d /dev/mmcblk0p4 | tee -a ${LOG}
 		echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
 		sync
-		mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 ${HOME} | tee -a ${LOG}
+		mount -t ntfs3 /dev/mmcblk0p4 ${HOME} | tee -a ${LOG}
 	else
-		echo "MAIN fat partition resizing was aborted!" | tee -a ${LOG}
+		echo "MAIN ntfs partition resizing was aborted!" | tee -a ${LOG}
 		sleep 2
 	fi
 	RESIZE_COMMENCED=true
@@ -599,8 +590,6 @@ if test -r "${BASEDIR}/configs/manifest"; then
 		fi
 	done
 fi
-echo "Renaming ${HOME}/retroarch directory to ${HOME}/.retroarch" | tee -a ${LOG}
-mv "${HOME}/retroarch" "${HOME}/.retroarch" | tee -a ${LOG}
 
 echo
 
@@ -610,7 +599,7 @@ touch ${HOME}/firstboot.completed
 echo
 
 # Reboot device if CONSOLE_VARIANT was overwritten from $CHOICE so that it could be applied in u-boot by readID 
-## or resizing FAT partition has completed / found firstboot custom script
+## or resizing NTFS partition has completed / found firstboot custom script
 if ($CONSOLE_OVERWRITE || $RESIZE_COMMENCED || test -r "${BASEDIR}/firstboot.custom.sh"); then
 	safe_reboot_func
 else

@@ -17,7 +17,7 @@ cp -r board/miyoo/main "${BINARIES_DIR}"
 test -d "${BINARIES_DIR}/gmenu2x" && cp -r "${BINARIES_DIR}/gmenu2x/" "${BINARIES_DIR}/main/"
 test -d "${BINARIES_DIR}/emus" && cp -r "${BINARIES_DIR}/emus/" "${BINARIES_DIR}/main/"
 if test -d "${BINARIES_DIR}/retroarch";then
-	cp -r "${BINARIES_DIR}/retroarch/" "${BINARIES_DIR}/main/"
+	rsync -avzh "${BINARIES_DIR}/retroarch/" "${BINARIES_DIR}/main/.retroarch/"
 	## Generate list of cores to be used
 	CORES_DIR="${BINARIES_DIR}/retroarch/cores"
 	for file in $CORES_DIR/*; do
@@ -46,5 +46,8 @@ fi
 
 # Write CFW version to splash image
 convert board/miyoo/miyoo-boot.png -pointsize 12 -fill white -annotate +10+230 "v${CFW_RELEASE} ${CFW_VERSION} (${LIBC}) ${STATUS}" -alpha off -type truecolor -strip -define bmp:format=bmp4 -define bmp:subtype=RGB565 "${BINARIES_DIR}"/boot/miyoo-boot.bmp
+
+# Generate MAIN NTFS partition
+board/miyoo/scripts/ntfs.sh
 
 support/scripts/genimage.sh ${1} -c board/miyoo/genimage-sdcard.cfg

@@ -76,14 +76,17 @@ elif test -r "${HOME}/firstboot.completed"; then
 	rm "${HOME}/firstboot.completed"
 fi
 
-if !(grep -q FAT_CHECK\=\0 "${HOME}/options.cfg"); then
-##Check if fat32 is flagged as "dirty", and if so unmount, repair, remount
+if !(grep -q NTFS_CHECK\=\0 "${HOME}/options.cfg"); then
+##Check if ntfs is flagged as "dirty", and if so unmount, repair, remount
 	if dmesg | grep "mmcblk0p4" > /dev/null;  then
 		echo -e "\e[31mUnclean shutdown detected.\e[0m"
-		echo -e "\e[32mChecking FAT32 partition...\e[0m"
-		umount /dev/mmcblk0p4
-		fsck.vfat -y /dev/mmcblk0p4 > /dev/null; 
-		mount /dev/mmcblk0p4 "${HOME}" -t vfat -o rw,sync,utf8
+		echo -e "\e[32mChecking NTFS partition...\e[0m"
+		ntfsfix -d /dev/mmcblk0p4 > /dev/null; 
+		mount /dev/mmcblk0p4 "${HOME}" -t ntfs3
+		if [ $? -ne 0 ]; then
+		    sync
+		    reboot
+		fi
 		echo -e "\e[32mCheck complete.\e[0m"
 	fi
 fi
