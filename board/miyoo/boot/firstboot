@@ -154,6 +154,7 @@ console_unknown_func(){
 ## Default CONSOLE_VARIANT for st7789s screens
 default_console_func(){
 	echo "CONSOLE_VARIANT=pocketgo" > ${MOUNTDIR}/console.cfg
+	cp ${MOUNTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${MOUNTDIR}/suniv-f1c100s-miyoo.dtb
 	# No need to overwrite uboot FORCE version for default so continue procedure
 	CONSOLE_OVERWRITE=false
 }
@@ -375,18 +376,22 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		case $CHOICE in
 			1)
 				echo "CONSOLE_VARIANT=q20" > ${MOUNTDIR}/console.cfg
+				cp ${MOUNTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${MOUNTDIR}/suniv-f1c100s-miyoo.dtb
 				;;
 			2)
 				echo "CONSOLE_VARIANT=q90" > ${MOUNTDIR}/console.cfg
+				cp ${MOUNTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${MOUNTDIR}/suniv-f1c100s-miyoo.dtb
 				;;
 			3)
 				echo "CONSOLE_VARIANT=v90" > ${MOUNTDIR}/console.cfg
+				cp ${MOUNTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${MOUNTDIR}/suniv-f1c100s-miyoo.dtb
 				;;
 			4)
 				default_console_func
 				;;
 			5)
 				echo "CONSOLE_VARIANT=pocketgo_TE" > ${MOUNTDIR}/console.cfg
+				cp ${MOUNTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${MOUNTDIR}/suniv-f1c100s-miyoo.dtb
 				;;
 			*)
 				dialog --timeout 4 --msgbox "Invalid choice. Exiting and selecting default device from autodetection." 0 0
@@ -518,21 +523,8 @@ SD_MAX_AVAIL_SIZE_IN_KiB=$((SD_MAX_AVAIL_SIZE * 512 / 1024))
 RESIZE_COMMENCED=false
 if (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RESIZE" \
    --colors --pause "\n\n       \ZuExpand MAIN partition?\Zn\n\n   Select an option & press START
-   \n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of FAT32 partition will begin." 15 60 10); then
+   \n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of BTRFS partition will begin." 15 60 10); then
 	clear
-	RESIZE_ABORT=false
-	if test "$SD_SIZE_IN_GiB" -gt 128; then
-		if (dialog --clear --stdout --ok-label NO --cancel-label YES --title "   \Zb\Z1WARNING!\Zn" \
-		--colors --pause "\nYour SD card exceeds max. size for auto-resizing! 
-		\n\nWe could however expand it to 118GB. \n\n           \ZuDo you AGREE?\Zn
-		\n\n\ZbINFO: For microSD >128GB big we\n      recommend to use your PC!\Zn" 0 0 30 || test $? -eq 255); then
-			dialog --clear --colors --timeout 2 --msgbox " FAT resizing \ZuABORTED!\Zn" 5 27
-			clear
-			RESIZE_ABORT=true
-		else
-			SD_MAX_AVAIL_SIZE_IN_KiB=123731968
-		fi
-	fi
 	SD_MAX_AVAIL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_AVAIL_SIZE_IN_KiB} / 1024 / 1024" | bc) #only to inform user about end point for resize
 	SD_MAX_AVAIL_SIZE_IN_GB=$(echo "scale=1; ${SD_MAX_AVAIL_SIZE_IN_KiB} * 1024 / 1000 / 1000 / 1000" | bc)
 	P4_SIZE_IN_GB=$(echo "scale=1; ${P4_SIZE} * 512 / 1000 / 1000 / 1000" | bc)
@@ -548,21 +540,14 @@ if (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RE
 	echo "The full size of your SD is ${SD_SIZE_IN_MiB}MB large" | tee -a ${LOG}
 	echo "Unallocated space available for resizing equals ${SD_MAX_UNALL_SIZE_IN_GiB}GB," | tee -a ${LOG}
 	echo "and more precisely it's ${SD_MAX_UNALL_SIZE_IN_MiB}MB big" | tee -a ${LOG}
-	if ! $RESIZE_ABORT; then
-		echo "Resizing the MAIN partition to ${SD_MAX_AVAIL_SIZE_IN_GiB}GB." | tee -a ${LOG}
-		echo "This can take A LONG TIME, so be patient." | tee -a ${LOG}
-		umount /dev/mmcblk0p4 | tee -a ${LOG}
-		fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
-		#TODO: fix outputting logs from fatresize stdout
-		fatresize --size="${SD_MAX_AVAIL_SIZE_IN_KiB}"ki -v -p /dev/mmcblk0p4 -n4 | tee -a ${LOG}
-		fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
-		echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
-		sync
-		mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p4 ${HOME} | tee -a ${LOG}
-	else
-		echo "MAIN fat partition resizing was aborted!" | tee -a ${LOG}
-		sleep 2
-	fi
+	echo "Resizing the MAIN partition to ${SD_MAX_AVAIL_SIZE_IN_GiB}GB." | tee -a ${LOG}
+	echo "This can take a few seconds." | tee -a ${LOG}
+	umount /dev/mmcblk0p4 | tee -a ${LOG}
+	parted -a optimal /dev/mmcblk0 --script rm 4  | tee -a ${LOG}
+	parted -a optimal /dev/mmcblk0 --script mkpart primary 669MB 100%  | tee -a ${LOG}
+	partx -u /dev/mmcblk0  | tee -a ${LOG}
+	mount /dev/mmcblk0p4 ${HOME} | tee -a ${LOG}
+	btrfs filesystem resize max ${HOME}
 	RESIZE_COMMENCED=true
 fi
 
@@ -577,32 +562,14 @@ mv "${MOUNTDIR}/firstboot" "${MOUNTDIR}/firstboot.done" | tee -a ${LOG}
 # copy over the config files
 echo "Copying default configuration files into place..." | tee -a ${LOG}
 if $BITTBOY_CONFIG; then
-	cp "${HOME}/gmenu2x/input_bittboy.conf" "${MOUNTDIR}/configs/input.conf"
+	cp "${HOME}/gmenu2x/input_bittboy.conf" "${HOME}/gmenu2x/input.conf"
 elif $MIYOO_CONFIG; then
-	cp "${HOME}/gmenu2x/input_miyoo.conf" "${MOUNTDIR}/configs/input.conf"
+	cp "${HOME}/gmenu2x/input_miyoo.conf" "${HOME}/gmenu2x/input.conf"
 fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
-if test -r "${BASEDIR}/configs/manifest"; then
-	cat "${BASEDIR}/configs/manifest" | while read -r LINE; do
-		if test "${LINE}" == "${LINE#!}" -a "${LINE}" != "" ; then
-			set -- ${LINE}
-			# 1               2
-			# source_filename target_filename/inside main/
-			if test -r "${BASEDIR}/configs/$1"; then
-				TO="$2"
-				if test "${TO}" == ""; then
-					TO="$1"
-				fi
-				echo "Copying $1 to ${HOME}/$TO..." | tee -a ${LOG}
-				cp -f "${BASEDIR}/configs/$1" "${HOME}/$TO" | tee -a ${LOG}
-			fi
-		fi
-	done
-fi
-echo "Renaming ${HOME}/retroarch directory to ${HOME}/.retroarch" | tee -a ${LOG}
-mv "${HOME}/retroarch" "${HOME}/.retroarch" | tee -a ${LOG}
 
-echo
+echo "fix permsissions"  | tee -a ${LOG}
+chmod -R +x /mnt/  | tee -a ${LOG}
 
 sync
 echo "firstboot script finished." | tee -a ${LOG}
@@ -610,7 +577,7 @@ touch ${HOME}/firstboot.completed
 echo
 
 # Reboot device if CONSOLE_VARIANT was overwritten from $CHOICE so that it could be applied in u-boot by readID 
-## or resizing FAT partition has completed / found firstboot custom script
+## or resizing BTRFS partition has completed / found firstboot custom script
 if ($CONSOLE_OVERWRITE || $RESIZE_COMMENCED || test -r "${BASEDIR}/firstboot.custom.sh"); then
 	safe_reboot_func
 else

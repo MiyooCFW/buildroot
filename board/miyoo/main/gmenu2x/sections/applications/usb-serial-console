@@ -1,0 +1,3 @@
+title=USB serial console
+description=USB Serial console
+exec=/mnt/apps/usb-serial-console/usb-serial.sh
