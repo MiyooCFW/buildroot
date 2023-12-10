@@ -568,28 +568,11 @@ mv "${MOUNTDIR}/firstboot" "${MOUNTDIR}/firstboot.done" | tee -a ${LOG}
 # copy over the config files
 echo "Copying default configuration files into place..." | tee -a ${LOG}
 if $BITTBOY_CONFIG; then
-	cp "${HOME}/gmenu2x/input_bittboy.conf" "${MOUNTDIR}/configs/input.conf"
+	cp "${HOME}/gmenu2x/input_bittboy.conf" "${HOME}/gmenu2x/input.conf"
 elif $MIYOO_CONFIG; then
-	cp "${HOME}/gmenu2x/input_miyoo.conf" "${MOUNTDIR}/configs/input.conf"
+	cp "${HOME}/gmenu2x/input_miyoo.conf" "${HOME}/gmenu2x/input.conf"
 fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
-if test -r "${BASEDIR}/configs/manifest"; then
-	cat "${BASEDIR}/configs/manifest" | while read -r LINE; do
-		if test "${LINE}" == "${LINE#!}" -a "${LINE}" != "" ; then
-			set -- ${LINE}
-			# 1               2
-			# source_filename target_filename/inside main/
-			if test -r "${BASEDIR}/configs/$1"; then
-				TO="$2"
-				if test "${TO}" == ""; then
-					TO="$1"
-				fi
-				echo "Copying $1 to ${HOME}/$TO..." | tee -a ${LOG}
-				cp -f "${BASEDIR}/configs/$1" "${HOME}/$TO" | tee -a ${LOG}
-			fi
-		fi
-	done
-fi
 
 echo
 
