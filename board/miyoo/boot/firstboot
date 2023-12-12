@@ -543,11 +543,12 @@ if (dialog --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RE
 	echo "Resizing the MAIN partition to ${SD_MAX_AVAIL_SIZE_IN_GiB}GB." | tee -a ${LOG}
 	echo "This can take a few seconds." | tee -a ${LOG}
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
+	P4_START_POINT=` parted /dev/mmcblk0 unit MB print | grep '4' | tail -n1 | awk '{print $2}'`
 	parted -a optimal /dev/mmcblk0 --script rm 4  | tee -a ${LOG}
-	parted -a optimal /dev/mmcblk0 --script mkpart primary 669MB 100%  | tee -a ${LOG}
+	parted -a optimal /dev/mmcblk0 --script mkpart primary $P4_START_POINT 100%  | tee -a ${LOG}
 	partx -u /dev/mmcblk0  | tee -a ${LOG}
 	mount /dev/mmcblk0p4 ${HOME} | tee -a ${LOG}
-	btrfs filesystem resize max ${HOME}
+	btrfs filesystem resize max ${HOME} | tee -a ${LOG}
 	RESIZE_COMMENCED=true
 fi
 
