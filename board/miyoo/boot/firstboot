@@ -497,6 +497,10 @@ if (dialog --clear --ok-label NO --cancel-label YES --stdout --title "   License
 	console_unknown_func
 	safe_poweroff_func
 fi
+
+# Format swap parition
+/sbin/mkswap /dev/mmcblk0p3
+
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
 #grep all partitions current size
@@ -568,9 +572,6 @@ elif $MIYOO_CONFIG; then
 	cp "${HOME}/gmenu2x/input_miyoo.conf" "${HOME}/gmenu2x/input.conf"
 fi
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
-
-echo "fix permsissions"  | tee -a ${LOG}
-chmod -R +x /mnt/  | tee -a ${LOG}
 
 sync
 echo "firstboot script finished." | tee -a ${LOG}
