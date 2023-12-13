@@ -1,3 +1,0 @@
-title=File System Check
-exec=/usr/bin/st
-params=-k -e /mnt/apps/fsck/fsck.sh
