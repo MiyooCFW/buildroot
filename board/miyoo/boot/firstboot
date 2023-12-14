@@ -500,6 +500,7 @@ fi
 
 # Format swap parition
 /sbin/mkswap /dev/mmcblk0p3
+/sbin/swapon /dev/mmcblk0p3
 
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
