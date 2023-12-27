@@ -47,6 +47,7 @@ fi
 
 # Write CFW version to splash image
 convert board/miyoo/miyoo-boot.png -pointsize 12 -fill white -annotate +10+230 "v${CFW_RELEASE} ${CFW_VERSION} (${LIBC}) ${STATUS}" -alpha off -type truecolor -strip -define bmp:format=bmp4 -define bmp:subtype=RGB565 "${BINARIES_DIR}"/boot/miyoo-boot.bmp
+convert board/miyoo/miyoo-boot.png -pointsize 12 -fill white -annotate +10+230 "v${CFW_RELEASE} ${CFW_VERSION} (${LIBC}) ${STATUS}" -type Palette -colors 224 -depth 8 -compress none -verbose BMP3:"${BINARIES_DIR}"/boot/miyoo-splash.bmp
 
 # Generate MAIN BTRFS partition
 image="${BINARIES_DIR}/main.img"
