@@ -1,0 +1,7 @@
+config BR2_PACKAGE_PYTHON_PYGAME_MENU
+	bool "python-pygame-menu"
+	select BR2_PACKAGE_PYTHON_TYPING_EXTENSIONS # runtime
+	depends on BR2_PACKAGE_PYTHON_PYGAME
+	help
+	  A menu for pygame to generate GUI/MENU. Simple&easy to use
+	  https://pypi.org/project/pygame-menu/
