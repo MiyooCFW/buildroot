@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-CFW_RELEASE="2.0.0"
+CFW_RELEASE="2.0.1"
 STATUS="BETA"
 BR2_VENDOR=${2}
 BR2_VERSION_FULL=${3}
