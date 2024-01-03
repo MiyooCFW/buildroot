@@ -60,7 +60,7 @@ def write_pressed_keys(e):
         return
 
     keys =''.join(chr(key) for key in all_keys)            
-    write_report(chr(special_keys)+NULL_CHAR+keys+NULL_CHAR*5)
+    write_report(chr(special_keys)+NULL_CHAR+keys+NULL_CHAR*(6 - len(all_keys)))
     
     
 print("Press RESET button to quit")
