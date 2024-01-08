@@ -1,0 +1,4909 @@
+diff --git a/Makefile b/Makefile
+index 4786a922..c5029c00 100644
+--- a/Makefile
++++ b/Makefile
+@@ -231,20 +231,20 @@ CFLAGS += -DTHREAD_RENDERING
+ OBJS += plugins/gpulib/gpulib_thread_if.o
+ endif
+ endif
+-ifeq "$(BUILTIN_GPU)" "unai"
++ifeq "$(BUILTIN_GPU)" "unai_old"
+ CFLAGS += -DGPU_UNAI
+ CFLAGS += -DUSE_GPULIB=1
+ #CFLAGS += -DINLINE="static __inline__"
+ #CFLAGS += -Dasm="__asm__ __volatile__"
+-OBJS += plugins/gpu_unai/gpulib_if.o
++OBJS += plugins/gpu_unai_old/gpulib_if.o
+ ifeq "$(ARCH)" "arm"
+-OBJS += plugins/gpu_unai/gpu_arm.o
++OBJS += plugins/gpu_unai_old/gpu_arm.o
+ endif
+ ifeq "$(THREAD_RENDERING)" "1"
+ CFLAGS += -DTHREAD_RENDERING
+ OBJS += plugins/gpulib/gpulib_thread_if.o
+ endif
+-plugins/gpu_unai/gpulib_if.o: CFLAGS += -DREARMED -O3 
++plugins/gpu_unai_old/gpulib_if.o: CFLAGS += -DREARMED -O3
+ CC_LINK = $(CXX)
+ endif
+ 
+diff --git a/Makefile.libretro b/Makefile.libretro
+index 1169d892..99fb3870 100644
+--- a/Makefile.libretro
++++ b/Makefile.libretro
+@@ -532,11 +532,11 @@ else ifneq (,$(findstring armv,$(platform)))
+ 
+ else ifeq ($(platform), miyoo)
+ 	TARGET := $(TARGET_NAME)_libretro.so
+-	fpic := -fPIC
+-	CFLAGS += -mcpu=arm926ej-s -fsingle-precision-constant
++	fpic := -fno-PIC
++	CFLAGS += -mcpu=arm926ej-s -fsingle-precision-constant -Ofast -fdata-sections -ffunction-sections -fsingle-precision-constant -flto
+ 	CFLAGS += -DGPU_UNAI_USE_INT_DIV_MULTINV -D_MIYOO
+ 	ARCH = arm
+-	BUILTIN_GPU = unai
++	BUILTIN_GPU = unai_old
+ 	DYNAREC = ari64
+ 	HAVE_NEON = 0
+ 
+diff --git a/plugins/gpu_unai_old/Makefile b/plugins/gpu_unai_old/Makefile
+new file mode 100644
+index 00000000..1f4b8bdb
+--- /dev/null
++++ b/plugins/gpu_unai_old/Makefile
+@@ -0,0 +1,16 @@
++CFLAGS += -ggdb -Wall -O3 -ffast-math
++CFLAGS += -DREARMED
++CFLAGS += -I../../include
++
++include ../../config.mak
++
++SRC_STANDALONE += gpu.cpp
++SRC_GPULIB += gpulib_if.cpp
++
++ifeq "$(ARCH)" "arm"
++SRC += gpu_arm.S
++endif
++
++#BIN_STANDALONE = gpuPCSX4ALL.so
++BIN_GPULIB = gpu_unai_old.so
++include ../gpulib/gpulib.mak
+diff --git a/plugins/gpu_unai_old/debug.h b/plugins/gpu_unai_old/debug.h
+new file mode 100644
+index 00000000..e69de29b
+diff --git a/plugins/gpu_unai_old/gpu.cpp b/plugins/gpu_unai_old/gpu.cpp
+new file mode 100644
+index 00000000..1552bed9
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu.cpp
+@@ -0,0 +1,915 @@
++/***************************************************************************
++*   Copyright (C) 2010 PCSX4ALL Team                                      *
++*   Copyright (C) 2010 Unai                                               *
++*                                                                         *
++*   This program is free software; you can redistribute it and/or modify  *
++*   it under the terms of the GNU General Public License as published by  *
++*   the Free Software Foundation; either version 2 of the License, or     *
++*   (at your option) any later version.                                   *
++*                                                                         *
++*   This program is distributed in the hope that it will be useful,       *
++*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++*   GNU General Public License for more details.                          *
++*                                                                         *
++*   You should have received a copy of the GNU General Public License     *
++*   along with this program; if not, write to the                         *
++*   Free Software Foundation, Inc.,                                       *
++*   51 Franklin Street, Fifth Floor, Boston, MA 02111-1307 USA.           *
++***************************************************************************/
++
++#include "port.h"
++#include "gpu.h"
++#include "profiler.h"
++#include "debug.h"
++
++int skipCount = 2; /* frame skip (0,1,2,3...) */
++int skCount = 0; /* internal frame skip */
++int linesInterlace = 0;  /* internal lines interlace */
++int linesInterlace_user = 0; /* Lines interlace */
++
++bool isSkip = false; /* skip frame (info coming from GPU) */
++bool wasSkip = false;
++bool skipFrame = false; /* skip frame (according to frame skip) */
++bool alt_fps = false; /* Alternative FPS algorithm */
++bool show_fps = false; /* Show FPS statistics */
++
++bool isPAL = false; /* PAL video timing */
++bool progressInterlace_flag = false; /* Progressive interlace flag */
++bool progressInterlace = false; /* Progressive interlace option*/
++bool frameLimit = false; /* frames to wait */
++
++bool light = true; /* lighting */
++bool blend = true; /* blending */
++bool FrameToRead = false; /* load image in progress */
++bool FrameToWrite = false; /* store image in progress */
++bool fb_dirty = false;
++
++bool enableAbbeyHack = false; /* Abe's Odyssey hack */
++
++u8 BLEND_MODE;
++u8 TEXT_MODE;
++u8 Masking;
++
++u16 PixelMSB;
++u16 PixelData;
++
++///////////////////////////////////////////////////////////////////////////////
++//  GPU Global data
++///////////////////////////////////////////////////////////////////////////////
++
++///////////////////////////////////////////////////////////////////////////////
++//  Dma Transfers info
++s32		px,py;
++s32		x_end,y_end;
++u16*  pvram;
++
++u32 GP0;
++s32 PacketCount;
++s32 PacketIndex;
++
++///////////////////////////////////////////////////////////////////////////////
++//  Display status
++u32 DisplayArea   [6];
++
++///////////////////////////////////////////////////////////////////////////////
++//  Rasterizer status
++u32 TextureWindow [4];
++u32 DrawingArea   [4];
++u32 DrawingOffset [2];
++
++///////////////////////////////////////////////////////////////////////////////
++//  Rasterizer status
++
++u16* TBA;
++u16* CBA;
++
++///////////////////////////////////////////////////////////////////////////////
++//  Inner Loops
++s32   u4, du4;
++s32   v4, dv4;
++s32   r4, dr4;
++s32   g4, dg4;
++s32   b4, db4;
++u32   lInc;
++u32   tInc, tMsk;
++
++GPUPacket PacketBuffer;
++// FRAME_BUFFER_SIZE is defined in bytes; 512K is guard memory for out of range reads
++u16   GPU_FrameBuffer[(FRAME_BUFFER_SIZE+512*1024)/2] __attribute__((aligned(2048)));
++u32   GPU_GP1;
++
++///////////////////////////////////////////////////////////////////////////////
++//  Inner loop driver instanciation file
++#include "gpu_inner.h"
++
++///////////////////////////////////////////////////////////////////////////////
++//  GPU Raster Macros
++#define	GPU_RGB16(rgb)        ((((rgb)&0xF80000)>>9)|(((rgb)&0xF800)>>6)|(((rgb)&0xF8)>>3))
++
++#define GPU_EXPANDSIGN(x)  (((s32)(x)<<21)>>21)
++
++#define CHKMAX_X 1024
++#define CHKMAX_Y 512
++
++#define	GPU_SWAP(a,b,t)	{(t)=(a);(a)=(b);(b)=(t);}
++
++///////////////////////////////////////////////////////////////////////////////
++// GPU internal image drawing functions
++#include "gpu_raster_image.h"
++
++///////////////////////////////////////////////////////////////////////////////
++// GPU internal line drawing functions
++#include "gpu_raster_line.h"
++
++///////////////////////////////////////////////////////////////////////////////
++// GPU internal polygon drawing functions
++#include "gpu_raster_polygon.h"
++
++///////////////////////////////////////////////////////////////////////////////
++// GPU internal sprite drawing functions
++#include "gpu_raster_sprite.h"
++
++///////////////////////////////////////////////////////////////////////////////
++// GPU command buffer execution/store
++#include "gpu_command.h"
++
++///////////////////////////////////////////////////////////////////////////////
++INLINE void gpuReset(void)
++{
++	GPU_GP1 = 0x14802000;
++	TextureWindow[0] = 0;
++	TextureWindow[1] = 0;
++	TextureWindow[2] = 255;
++	TextureWindow[3] = 255;
++	DrawingArea[2] = 256;
++	DrawingArea[3] = 240;
++	DisplayArea[2] = 256;
++	DisplayArea[3] = 240;
++	DisplayArea[5] = 240;
++}
++
++///////////////////////////////////////////////////////////////////////////////
++bool  GPU_init(void)
++{
++	gpuReset();
++	
++	// s_invTable
++	for(int i=1;i<=(1<<TABLE_BITS);++i)
++	{
++		double v = 1.0 / double(i);
++		#ifdef GPU_TABLE_10_BITS
++		v *= double(0xffffffff>>1);
++		#else
++		v *= double(0x80000000);
++		#endif
++		s_invTable[i-1]=s32(v);
++	}
++	return (0);
++}
++
++///////////////////////////////////////////////////////////////////////////////
++void  GPU_shutdown(void)
++{
++}
++
++///////////////////////////////////////////////////////////////////////////////
++long  GPU_freeze(unsigned int bWrite, GPUFreeze_t* p2)
++{
++	if (!p2) return (0);
++	if (p2->Version != 1) return (0);
++
++	if (bWrite)
++	{
++		p2->GPU_gp1 = GPU_GP1;
++		memset(p2->Control, 0, sizeof(p2->Control));
++		// save resolution and registers for P.E.Op.S. compatibility
++		p2->Control[3] = (3 << 24) | ((GPU_GP1 >> 23) & 1);
++		p2->Control[4] = (4 << 24) | ((GPU_GP1 >> 29) & 3);
++		p2->Control[5] = (5 << 24) | (DisplayArea[0] | (DisplayArea[1] << 10));
++		p2->Control[6] = (6 << 24) | (2560 << 12);
++		p2->Control[7] = (7 << 24) | (DisplayArea[4] | (DisplayArea[5] << 10));
++		p2->Control[8] = (8 << 24) | ((GPU_GP1 >> 17) & 0x3f) | ((GPU_GP1 >> 10) & 0x40);
++		memcpy(p2->FrameBuffer, (u16*)GPU_FrameBuffer, FRAME_BUFFER_SIZE);
++		return (1);
++	}
++	else
++	{
++		GPU_GP1 = p2->GPU_gp1;
++		memcpy((u16*)GPU_FrameBuffer, p2->FrameBuffer, FRAME_BUFFER_SIZE);
++		GPU_writeStatus((5 << 24) | p2->Control[5]);
++		GPU_writeStatus((7 << 24) | p2->Control[7]);
++		GPU_writeStatus((8 << 24) | p2->Control[8]);
++		gpuSetTexture(GPU_GP1);
++		return (1);
++	}
++	return (0);
++}
++
++///////////////////////////////////////////////////////////////////////////////
++//  GPU DMA comunication
++
++///////////////////////////////////////////////////////////////////////////////
++u8 PacketSize[256] =
++{
++	0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	//		0-15
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	//		16-31
++	3, 3, 3, 3, 6, 6, 6, 6, 4, 4, 4, 4, 8, 8, 8, 8,	//		32-47
++	5, 5, 5, 5, 8, 8, 8, 8, 7, 7, 7, 7, 11, 11, 11, 11,	//	48-63
++	2, 2, 2, 2, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3,	//		64-79
++	3, 3, 3, 3, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4,	//		80-95
++	2, 2, 2, 2, 3, 3, 3, 3, 1, 1, 1, 1, 2, 2, 2, 2,	//		96-111
++	1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2,	//		112-127
++	3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	//		128-
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	//		144
++	2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	//		160
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	//
++	2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	//
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	//
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	//
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0	//
++};
++
++///////////////////////////////////////////////////////////////////////////////
++INLINE void gpuSendPacket()
++{
++#ifdef DEBUG_ANALYSIS
++	dbg_anacnt_GPU_sendPacket++;
++#endif
++	gpuSendPacketFunction(PacketBuffer.U4[0]>>24);
++}
++
++///////////////////////////////////////////////////////////////////////////////
++INLINE void gpuCheckPacket(u32 uData)
++{
++	if (PacketCount)
++	{
++		PacketBuffer.U4[PacketIndex++] = uData;
++		--PacketCount;
++	}
++	else
++	{
++		PacketBuffer.U4[0] = uData;
++		PacketCount = PacketSize[uData >> 24];
++		PacketIndex = 1;
++	}
++	if (!PacketCount) gpuSendPacket();
++}
++
++///////////////////////////////////////////////////////////////////////////////
++void  GPU_writeDataMem(u32* dmaAddress, s32 dmaCount)
++{
++#ifdef DEBUG_ANALYSIS
++	dbg_anacnt_GPU_writeDataMem++;
++#endif
++	pcsx4all_prof_pause(PCSX4ALL_PROF_CPU);
++	pcsx4all_prof_start_with_pause(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_HW_WRITE);
++	u32 data;
++	const u16 *VIDEO_END=(GPU_FrameBuffer+(FRAME_BUFFER_SIZE/2)-1);
++	GPU_GP1 &= ~0x14000000;
++
++	while (dmaCount) 
++	{
++		if (FrameToWrite) 
++		{
++			while (dmaCount)
++			{
++				dmaCount--;
++				data = *dmaAddress++;
++				if ((&pvram[px])>(VIDEO_END)) pvram-=512*1024;
++				pvram[px] = data;
++				if (++px>=x_end) 
++				{
++					px = 0;
++					pvram += 1024;
++					if (++py>=y_end) 
++					{
++						FrameToWrite = false;
++						GPU_GP1 &= ~0x08000000;
++						break;
++					}
++				}
++				if ((&pvram[px])>(VIDEO_END)) pvram-=512*1024;
++				pvram[px] = data>>16;
++				if (++px>=x_end) 
++				{
++					px = 0;
++					pvram += 1024;
++					if (++py>=y_end) 
++					{
++						FrameToWrite = false;
++						GPU_GP1 &= ~0x08000000;
++						break;
++					}
++				}
++			}
++		}
++		else
++		{
++			data = *dmaAddress++;
++			dmaCount--;
++			gpuCheckPacket(data);
++		}
++	}
++
++	GPU_GP1 = (GPU_GP1 | 0x14000000) & ~0x60000000;
++	fb_dirty = true;
++	pcsx4all_prof_end_with_resume(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_HW_WRITE);
++	pcsx4all_prof_resume(PCSX4ALL_PROF_CPU);
++}
++
++u32 *lUsedAddr[3];
++INLINE int CheckForEndlessLoop(u32 *laddr)
++{
++	if(laddr==lUsedAddr[1]) return 1;
++	if(laddr==lUsedAddr[2]) return 1;
++
++	if(laddr<lUsedAddr[0]) lUsedAddr[1]=laddr;
++	else                   lUsedAddr[2]=laddr;
++	lUsedAddr[0]=laddr;
++	return 0;
++}
++
++///////////////////////////////////////////////////////////////////////////////
++long GPU_dmaChain(u32* baseAddr, u32 dmaVAddr)
++{
++#ifdef DEBUG_ANALYSIS
++	dbg_anacnt_GPU_dmaChain++;
++#endif
++	pcsx4all_prof_start_with_pause(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_HW_WRITE);
++	u32 data, *address, count, offset;
++	unsigned int DMACommandCounter = 0;
++	long dma_words = 0;
++
++	GPU_GP1 &= ~0x14000000;
++	lUsedAddr[0]=lUsedAddr[1]=lUsedAddr[2]=(u32*)0x1fffff;
++	dmaVAddr &= 0x001FFFFF;
++	while (dmaVAddr != 0x1FFFFF)
++	{
++		address = (baseAddr + (dmaVAddr >> 2));
++		if(DMACommandCounter++ > 2000000) break;
++		if(CheckForEndlessLoop(address)) break;
++		data = *address++;
++		count = (data >> 24);
++		offset = data & 0x001FFFFF;
++		if (dmaVAddr != offset) dmaVAddr = offset;
++		else dmaVAddr = 0x1FFFFF;
++
++		if(count>0) GPU_writeDataMem(address,count);
++		dma_words += 1 + count;
++	}
++	GPU_GP1 = (GPU_GP1 | 0x14000000) & ~0x60000000;
++	pcsx4all_prof_end_with_resume(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_HW_WRITE);
++
++	return dma_words;
++}
++
++///////////////////////////////////////////////////////////////////////////////
++void  GPU_writeData(u32 data)
++{
++	const u16 *VIDEO_END=(GPU_FrameBuffer+(FRAME_BUFFER_SIZE/2)-1);
++#ifdef DEBUG_ANALYSIS
++	dbg_anacnt_GPU_writeData++;
++#endif
++	pcsx4all_prof_pause(PCSX4ALL_PROF_CPU);
++	pcsx4all_prof_start_with_pause(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_HW_WRITE);
++	GPU_GP1 &= ~0x14000000;
++
++	if (FrameToWrite)
++	{
++		if ((&pvram[px])>(VIDEO_END)) pvram-=512*1024;
++		pvram[px]=(u16)data;
++		if (++px>=x_end)
++		{
++			px = 0;
++			pvram += 1024;
++			if (++py>=y_end) 
++			{
++				FrameToWrite = false;
++				GPU_GP1 &= ~0x08000000;
++			}
++		}
++		if (FrameToWrite)
++		{
++			if ((&pvram[px])>(VIDEO_END)) pvram-=512*1024;
++			pvram[px]=data>>16;
++			if (++px>=x_end)
++			{
++				px = 0;
++				pvram += 1024;
++				if (++py>=y_end) 
++				{
++					FrameToWrite = false;
++					GPU_GP1 &= ~0x08000000;
++				}
++			}
++		}
++	}
++	else
++	{
++		gpuCheckPacket(data);
++	}
++	GPU_GP1 |= 0x14000000;
++	fb_dirty = true;
++	pcsx4all_prof_end_with_resume(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_HW_WRITE);
++	pcsx4all_prof_resume(PCSX4ALL_PROF_CPU);
++
++}
++
++
++///////////////////////////////////////////////////////////////////////////////
++void  GPU_readDataMem(u32* dmaAddress, s32 dmaCount)
++{
++	const u16 *VIDEO_END=(GPU_FrameBuffer+(FRAME_BUFFER_SIZE/2)-1);
++#ifdef DEBUG_ANALYSIS
++	dbg_anacnt_GPU_readDataMem++;
++#endif
++	if(!FrameToRead) return;
++
++	pcsx4all_prof_start_with_pause(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_HW_WRITE);
++	GPU_GP1 &= ~0x14000000;
++	do 
++	{
++		if ((&pvram[px])>(VIDEO_END)) pvram-=512*1024;
++		// lower 16 bit
++		u32 data = pvram[px];
++
++		if (++px>=x_end) 
++		{
++			px = 0;
++			pvram += 1024;
++		}
++
++		if ((&pvram[px])>(VIDEO_END)) pvram-=512*1024;
++		// higher 16 bit (always, even if it's an odd width)
++		data |= (u32)(pvram[px])<<16;
++		
++		*dmaAddress++ = data;
++
++		if (++px>=x_end) 
++		{
++			px = 0;
++			pvram += 1024;
++			if (++py>=y_end) 
++			{
++				FrameToRead = false;
++				GPU_GP1 &= ~0x08000000;
++				break;
++			}
++		}
++	} while (--dmaCount);
++
++	GPU_GP1 = (GPU_GP1 | 0x14000000) & ~0x60000000;
++	pcsx4all_prof_end_with_resume(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_HW_WRITE);
++}
++
++
++
++///////////////////////////////////////////////////////////////////////////////
++u32  GPU_readData(void)
++{
++	const u16 *VIDEO_END=(GPU_FrameBuffer+(FRAME_BUFFER_SIZE/2)-1);
++#ifdef DEBUG_ANALYSIS
++	dbg_anacnt_GPU_readData++;
++#endif
++	pcsx4all_prof_pause(PCSX4ALL_PROF_CPU);
++	pcsx4all_prof_start_with_pause(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_HW_READ);
++	GPU_GP1 &= ~0x14000000;
++	if (FrameToRead)
++	{
++		if ((&pvram[px])>(VIDEO_END)) pvram-=512*1024;
++		GP0 = pvram[px];
++		if (++px>=x_end)
++		{
++			px = 0;
++			pvram += 1024;
++			if (++py>=y_end) 
++			{
++				FrameToRead = false;
++				GPU_GP1 &= ~0x08000000;
++			}
++		}
++		if ((&pvram[px])>(VIDEO_END)) pvram-=512*1024;
++		GP0 |= pvram[px]<<16;
++		if (++px>=x_end)
++		{
++			px = 0;
++			pvram +=1024;
++			if (++py>=y_end) 
++			{
++				FrameToRead = false;
++				GPU_GP1 &= ~0x08000000;
++			}
++		}
++
++	}
++	GPU_GP1 |= 0x14000000;
++
++	pcsx4all_prof_end_with_resume(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_HW_READ);
++	pcsx4all_prof_resume(PCSX4ALL_PROF_CPU);
++	return (GP0);
++}
++
++///////////////////////////////////////////////////////////////////////////////
++u32     GPU_readStatus(void)
++{
++#ifdef DEBUG_ANALYSIS
++	dbg_anacnt_GPU_readStatus++;
++#endif
++	return GPU_GP1;
++}
++
++///////////////////////////////////////////////////////////////////////////////
++void  GPU_writeStatus(u32 data)
++{
++#ifdef DEBUG_ANALYSIS
++	dbg_anacnt_GPU_writeStatus++;
++#endif
++	pcsx4all_prof_pause(PCSX4ALL_PROF_CPU);
++	pcsx4all_prof_start_with_pause(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_HW_WRITE);
++	switch (data >> 24) {
++	case 0x00:
++		gpuReset();
++		break;
++	case 0x01:
++		GPU_GP1 &= ~0x08000000;
++		PacketCount = 0; FrameToRead = FrameToWrite = false;
++		break;
++	case 0x02:
++		GPU_GP1 &= ~0x08000000;
++		PacketCount = 0; FrameToRead = FrameToWrite = false;
++		break;
++	case 0x03:
++		GPU_GP1 = (GPU_GP1 & ~0x00800000) | ((data & 1) << 23);
++		break;
++	case 0x04:
++		if (data == 0x04000000)
++		PacketCount = 0;
++		GPU_GP1 = (GPU_GP1 & ~0x60000000) | ((data & 3) << 29);
++		break;
++	case 0x05:
++		DisplayArea[0] = (data & 0x000003FF); //(short)(data & 0x3ff);
++		DisplayArea[1] = ((data & 0x0007FC00)>>10); //(data & 0x000FFC00) >> 10; //(short)((data>>10)&0x1ff);
++		fb_dirty = true;
++		wasSkip = isSkip;
++		if (isSkip)
++			isSkip = false;
++		else
++			isSkip = skipFrame;
++		break;
++	case 0x07:
++		DisplayArea[4] = data & 0x000003FF; //(short)(data & 0x3ff);
++		DisplayArea[5] = (data & 0x000FFC00) >> 10; //(short)((data>>10) & 0x3ff);
++		fb_dirty = true;
++		break;
++	case 0x08:
++		{
++			GPU_GP1 = (GPU_GP1 & ~0x007F0000) | ((data & 0x3F) << 17) | ((data & 0x40) << 10);
++			static u32 HorizontalResolution[8] = { 256, 368, 320, 384, 512, 512, 640, 640 };
++			DisplayArea[2] = HorizontalResolution[(GPU_GP1 >> 16) & 7];
++			static u32 VerticalResolution[4] = { 240, 480, 256, 480 };
++			DisplayArea[3] = VerticalResolution[(GPU_GP1 >> 19) & 3];
++			isPAL = (data & 0x08) ? true : false; // if 1 - PAL mode, else NTSC
++		}
++		fb_dirty = true;
++		break;
++	case 0x10:
++		switch (data & 0xffff) {
++		case 0:
++		case 1:
++		case 3:
++			GP0 = (DrawingArea[1] << 10) | DrawingArea[0];
++			break;
++		case 4:
++			GP0 = ((DrawingArea[3]-1) << 10) | (DrawingArea[2]-1);
++			break;
++		case 6:
++		case 5:
++			GP0 = (DrawingOffset[1] << 11) | DrawingOffset[0];
++			break;
++		case 7:
++			GP0 = 2;
++			break;
++		default:
++			GP0 = 0;
++		}
++		break;
++	}
++	pcsx4all_prof_end_with_resume(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_HW_WRITE);
++	pcsx4all_prof_resume(PCSX4ALL_PROF_CPU);
++}
++
++#ifndef REARMED
++
++// Blitting functions
++#include "gpu_blit.h"
++
++INLINE void gpuVideoOutput(void)
++{
++	static s16 old_res_horz, old_res_vert, old_rgb24;
++	s16 h0, x0, y0, w0, h1;
++
++	x0 = DisplayArea[0];
++	y0 = DisplayArea[1];
++
++	w0 = DisplayArea[2];
++	h0 = DisplayArea[3];  // video mode
++
++	h1 = DisplayArea[5] - DisplayArea[4]; // display needed
++	if (h0 == 480) h1 = Min2(h1*2,480);
++
++	u16* dest_screen16 = SCREEN;
++	u16* src_screen16  = &((u16*)GPU_FrameBuffer)[FRAME_OFFSET(x0,y0)];
++	u32 isRGB24 = (GPU_GP1 & 0x00200000 ? 32 : 0);
++
++	/* Clear the screen if resolution changed to prevent interlacing and clipping to clash */
++	if( (w0 != old_res_horz || h1 != old_res_vert || (s16)isRGB24 != old_rgb24) )
++	{
++		// Update old resolution
++		old_res_horz = w0;
++		old_res_vert = h1;
++		old_rgb24 = (s16)isRGB24;
++		// Finally, clear the screen for this special case
++		video_clear();
++	}
++
++	//  Height centering
++	int sizeShift = 1;
++	if(h0==256) h0 = 240; else if(h0==480) sizeShift = 2;
++	if(h1>h0) { src_screen16 += ((h1-h0)>>sizeShift)*1024; h1 = h0; }
++	else if(h1<h0) dest_screen16 += ((h0-h1)>>sizeShift)*VIDEO_WIDTH;
++
++	/* Main blitter */
++	int incY = (h0==480) ? 2 : 1;
++	h0=(h0==480 ? 2048 : 1024);
++
++	{
++		const int li=linesInterlace;
++		bool pi=progressInterlace;
++		bool pif=progressInterlace_flag;
++		switch ( w0 )
++		{
++			case 256:
++				for(int y1=y0+h1; y0<y1; y0+=incY)
++				{
++					if(( 0 == (y0&li) ) && ((!pi) || (pif=!pif))) GPU_BlitWWDWW(	src_screen16,	dest_screen16, isRGB24);
++					dest_screen16 += VIDEO_WIDTH;
++					src_screen16  += h0;
++				}
++				break;
++			case 368:
++				for(int y1=y0+h1; y0<y1; y0+=incY)
++				{
++					if(( 0 == (y0&li) ) && ((!pi) || (pif=!pif))) GPU_BlitWWWWWWWWS(	src_screen16,	dest_screen16, isRGB24, 4);
++					dest_screen16 += VIDEO_WIDTH;
++					src_screen16  += h0;
++				}
++				break;
++			case 320:
++				for(int y1=y0+h1; y0<y1; y0+=incY)
++				{
++					if(( 0 == (y0&li) ) && ((!pi) || (pif=!pif))) GPU_BlitWW(	src_screen16,	dest_screen16, isRGB24);
++					dest_screen16 += VIDEO_WIDTH;
++					src_screen16  += h0;
++				}
++				break;
++			case 384:
++				for(int y1=y0+h1; y0<y1; y0+=incY)
++				{
++					if(( 0 == (y0&li) ) && ((!pi) || (pif=!pif))) GPU_BlitWWWWWS(	src_screen16,	dest_screen16, isRGB24);
++					dest_screen16 += VIDEO_WIDTH;
++					src_screen16  += h0;
++				}
++				break;
++			case 512:
++				for(int y1=y0+h1; y0<y1; y0+=incY)
++				{
++					if(( 0 == (y0&li) ) && ((!pi) || (pif=!pif))) GPU_BlitWWSWWSWS(	src_screen16, dest_screen16, isRGB24);
++					dest_screen16 += VIDEO_WIDTH;
++					src_screen16  += h0;
++				}
++				break;
++			case 640:
++				for(int y1=y0+h1; y0<y1; y0+=incY)
++				{
++					if(( 0 == (y0&li) ) && ((!pi) || (pif=!pif))) GPU_BlitWS(	src_screen16, dest_screen16, isRGB24);
++					dest_screen16 += VIDEO_WIDTH;
++					src_screen16  += h0;
++				}
++				break;
++		}
++		progressInterlace_flag=!progressInterlace_flag;
++	}
++	video_flip();
++}
++
++///////////////////////////////////////////////////////////////////////////////
++void  GPU_updateLace(void)
++{
++#ifdef  ENABLE_GPU_LOG_SUPPORT
++	fprintf(stdout,"GPU_updateLace()\n");
++#endif
++#ifdef DEBUG_ANALYSIS
++	dbg_anacnt_GPU_updateLace++;
++#endif
++	pcsx4all_prof_start_with_pause(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_COUNTERS);
++#ifdef PROFILER_PCSX4ALL
++	pcsx4all_prof_frames++;
++#endif
++#ifdef DEBUG_FRAME
++	if(isdbg_frame())
++	{
++		static int passed=0;
++		if (!passed) dbg_enable();
++		else pcsx4all_exit();
++		passed++;
++	}
++#endif
++
++	// Frame skip table
++	static const unsigned char skipTable[12][12] =
++	{
++		{ 0,0,0,0,0,0,0,0,0,0,0,0 },
++		{ 0,0,0,0,0,0,0,0,0,0,0,1 },
++		{ 0,0,0,0,0,1,0,0,0,0,0,1 },
++		{ 0,0,0,1,0,0,0,1,0,0,0,1 },
++		{ 0,0,1,0,0,1,0,0,1,0,0,1 },
++		{ 0,1,0,0,1,0,1,0,0,1,0,1 },
++		{ 0,1,0,1,0,1,0,1,0,1,0,1 },
++		{ 0,1,0,1,1,0,1,0,1,1,0,1 },
++		{ 0,1,1,0,1,1,0,1,1,0,1,1 },
++		{ 0,1,1,1,0,1,1,1,0,1,1,1 },
++		{ 0,1,1,1,1,1,0,1,1,1,1,1 },
++		{ 0,1,1,1,1,1,1,1,1,1,1,1 }
++	};
++	
++	// Interlace bit toggle
++	GPU_GP1 ^= 0x80000000;
++
++	// Update display
++	if ((!skipFrame) && (!isSkip) && (fb_dirty) && (!(((GPU_GP1&0x08000000))||((GPU_GP1&0x00800000)))))
++	{
++		gpuVideoOutput(); // Display updated
++
++		if (DisplayArea[3] == 480)
++		{
++			if (linesInterlace_user) linesInterlace = 3; // 1/4 of lines
++			else linesInterlace = 1; // if 480 we only need half of lines
++		}
++		else if (linesInterlace != linesInterlace_user)
++		{
++			linesInterlace = linesInterlace_user; // resolution changed from 480 to lower one
++			video_clear();
++		}
++	}
++
++	// Limit FPS
++	if (frameLimit)
++	{
++		static unsigned next=get_ticks();
++		if (!skipFrame)
++		{
++			unsigned now=get_ticks();
++			if (now<next) wait_ticks(next-now);
++		}
++		next+=(isPAL?(1000000/50):((unsigned)(1000000.0/59.94)));
++	}
++
++	// Show FPS statistics
++	if (show_fps)
++	{
++		static u32 real_fps=0;
++		static u32 prev=get_ticks();
++		static char msg[32]="FPS=000/00 SPD=000%";
++		u32 now=get_ticks();
++		real_fps++;
++		if ((now-prev)>=1000000)
++		{
++			u32 expected_fps=(isPAL?50:60);
++			sprintf(msg,"FPS=%3d/%2d SPD=%3d%%",((real_fps*(12-skipCount))/12),((expected_fps*(12-skipCount))/12),((real_fps*100)/expected_fps));
++			prev=now;
++			real_fps=0;
++		}
++		port_printf(5,5,msg);
++	}
++
++	// Update frame-skip
++	if (!alt_fps)
++	{
++		// Video frame-skip
++		skipFrame=skipTable[skipCount][skCount];
++		skCount--; if (skCount<0) skCount=11;
++		isSkip=skipFrame;
++	}
++	else
++	{
++		// Game frame-skip
++		if (!isSkip)
++		{
++			skipFrame=skipTable[skipCount][skCount];
++			skCount--; if (skCount<0) skCount=11;
++			isSkip=true;
++		}
++	}
++	fb_dirty=false;
++
++	pcsx4all_prof_end_with_resume(PCSX4ALL_PROF_GPU,PCSX4ALL_PROF_COUNTERS);
++}
++
++#else
++
++#include "../../frontend/plugin_lib.h"
++
++extern "C" {
++
++static const struct rearmed_cbs *cbs;
++static s16 old_res_horz, old_res_vert, old_rgb24;
++
++static void blit(void)
++{
++	u16 *base = (u16 *)GPU_FrameBuffer;
++	s16 isRGB24 = (GPU_GP1 & 0x00200000) ? 1 : 0;
++	s16 h0, x0, y0, w0, h1;
++
++	x0 = DisplayArea[0] & ~1; // alignment needed by blitter
++	y0 = DisplayArea[1];
++	base += FRAME_OFFSET(x0, y0);
++
++	w0 = DisplayArea[2];
++	h0 = DisplayArea[3];  // video mode
++
++	h1 = DisplayArea[5] - DisplayArea[4]; // display needed
++	if (h0 == 480) h1 = Min2(h1*2,480);
++
++	if (h1 <= 0)
++		return;
++
++	if (w0 != old_res_horz || h1 != old_res_vert || isRGB24 != old_rgb24)
++	{
++		old_res_horz = w0;
++		old_res_vert = h1;
++		old_rgb24 = (s16)isRGB24;
++		cbs->pl_vout_set_mode(w0, h1, w0, h1, isRGB24 ? 24 : 16);
++	}
++
++	cbs->pl_vout_flip(base, 1024, isRGB24, w0, h1);
++}
++
++void GPU_updateLace(void)
++{
++	// Interlace bit toggle
++	GPU_GP1 ^= 0x80000000;
++
++	if (!fb_dirty || (GPU_GP1&0x08800000))
++		return;
++
++	if (!wasSkip) {
++		blit();
++		fb_dirty = false;
++		skCount = 0;
++	}
++	else {
++		skCount++;
++		if (skCount >= 8)
++			wasSkip = isSkip = 0;
++	}
++
++	skipFrame = cbs->fskip_advice || cbs->frameskip == 1;
++}
++
++long GPUopen(unsigned long *, char *, char *)
++{
++	cbs->pl_vout_open();
++	return 0;
++}
++
++long GPUclose(void)
++{
++	cbs->pl_vout_close();
++	return 0;
++}
++
++long GPUfreeze(unsigned int ulGetFreezeData, GPUFreeze_t* p2)
++{
++	if (ulGetFreezeData > 1)
++		return 0;
++
++	return GPU_freeze(ulGetFreezeData, p2);
++}
++
++void GPUrearmedCallbacks(const struct rearmed_cbs *cbs_)
++{
++	enableAbbeyHack = cbs_->gpu_unai.abe_hack;
++	light = !cbs_->gpu_unai.no_light;
++	blend = !cbs_->gpu_unai.no_blend;
++	if (cbs_->pl_vout_set_raw_vram)
++		cbs_->pl_vout_set_raw_vram((void *)GPU_FrameBuffer);
++
++	cbs = cbs_;
++	if (cbs->pl_set_gpu_caps)
++		cbs->pl_set_gpu_caps(0);
++}
++
++} /* extern "C" */
++
++#endif
+diff --git a/plugins/gpu_unai_old/gpu.h b/plugins/gpu_unai_old/gpu.h
+new file mode 100644
+index 00000000..18116303
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu.h
+@@ -0,0 +1,87 @@
++/***************************************************************************
++*   Copyright (C) 2010 PCSX4ALL Team                                      *
++*   Copyright (C) 2010 Unai                                               *
++*                                                                         *
++*   This program is free software; you can redistribute it and/or modify  *
++*   it under the terms of the GNU General Public License as published by  *
++*   the Free Software Foundation; either version 2 of the License, or     *
++*   (at your option) any later version.                                   *
++*                                                                         *
++*   This program is distributed in the hope that it will be useful,       *
++*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++*   GNU General Public License for more details.                          *
++*                                                                         *
++*   You should have received a copy of the GNU General Public License     *
++*   along with this program; if not, write to the                         *
++*   Free Software Foundation, Inc.,                                       *
++*   51 Franklin Street, Fifth Floor, Boston, MA 02111-1307 USA.           *
++***************************************************************************/
++
++#ifndef NEW_GPU_H
++#define NEW_GPU_H
++
++///////////////////////////////////////////////////////////////////////////////
++//  GPU global definitions
++#define	FRAME_BUFFER_SIZE	(1024*512*2)
++#define	FRAME_WIDTH			  1024
++#define	FRAME_HEIGHT		  512
++#define	FRAME_OFFSET(x,y)	(((y)<<10)+(x))
++
++#define VIDEO_WIDTH 320
++
++typedef char				s8;
++typedef signed short		s16;
++typedef signed int			s32;
++typedef signed long long	s64;
++
++typedef unsigned char		u8;
++typedef unsigned short		u16;
++typedef unsigned int		u32;
++typedef unsigned long long	u64;
++
++#include "gpu_fixedpoint.h"
++
++///////////////////////////////////////////////////////////////////////////////
++//  Tweaks and Hacks
++extern  int  skipCount;
++extern  bool enableAbbeyHack;
++extern  bool show_fps;
++extern  bool alt_fps;
++
++///////////////////////////////////////////////////////////////////////////////
++//  interlaced rendering
++extern  int linesInterlace_user;
++extern  bool progressInterlace;
++
++extern  bool light;
++extern  bool blend;
++
++typedef struct {
++	u32 Version;
++	u32 GPU_gp1;
++	u32 Control[256];
++	unsigned char FrameBuffer[1024*512*2];
++} GPUFreeze_t;
++
++struct  GPUPacket
++{
++	union
++	{
++		u32 U4[16];
++		s32 S4[16];
++		u16 U2[32];
++		s16 S2[32];
++		u8  U1[64];
++		s8  S1[64];
++	};
++};
++
++///////////////////////////////////////////////////////////////////////////////
++//  Compile Options
++
++//#define ENABLE_GPU_NULL_SUPPORT   // Enables NullGPU support
++//#define ENABLE_GPU_LOG_SUPPORT    // Enables gpu logger, very slow only for windows debugging
++
++///////////////////////////////////////////////////////////////////////////////
++#endif  // NEW_GPU_H
+diff --git a/plugins/gpu_unai_old/gpu_arm.S b/plugins/gpu_unai_old/gpu_arm.S
+new file mode 100644
+index 00000000..8fa44a7a
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu_arm.S
+@@ -0,0 +1,55 @@
++/*
++ * (C) Gražvydas "notaz" Ignotas, 2011
++ *
++ * This work is licensed under the terms of  GNU GPL, version 2 or later.
++ * See the COPYING file in the top-level directory.
++ */
++
++
++.text
++.align 2
++
++@ in: r0=dst, r2=pal, r12=0x1e
++@ trashes r6-r8,lr,flags
++.macro do_4_pixels rs ibase obase
++.if \ibase - 1 < 0
++    and     r6, r12, \rs, lsl #1
++.else
++    and     r6, r12, \rs, lsr #\ibase-1
++.endif
++    and     r7, r12, \rs, lsr #\ibase+3
++    and     r8, r12, \rs, lsr #\ibase+7
++    and     lr, r12, \rs, lsr #\ibase+11
++    ldrh    r6, [r2, r6]
++    ldrh    r7, [r2, r7]
++    ldrh    r8, [r2, r8]
++    ldrh    lr, [r2, lr]
++    tst     r6, r6
++    strneh  r6, [r0, #\obase+0]
++    tst     r7, r7
++    strneh  r7, [r0, #\obase+2]
++    tst     r8, r8
++    strneh  r8, [r0, #\obase+4]
++    tst     lr, lr
++    strneh  lr, [r0, #\obase+6]
++.endm
++
++.global draw_spr16_full @ (u16 *d, void *s, u16 *pal, int lines)
++draw_spr16_full:
++    stmfd   sp!, {r4-r8,lr}
++    mov     r12, #0x1e             @ empty pixel
++
++0:
++    ldmia   r1, {r4,r5}
++    do_4_pixels r4, 0,  0
++    do_4_pixels r4, 16, 8
++    do_4_pixels r5, 0,  16
++    do_4_pixels r5, 16, 24
++    subs    r3, r3, #1
++    add     r0, r0, #2048
++    add     r1, r1, #2048
++    bgt     0b
++
++    ldmfd   sp!, {r4-r8,pc}
++
++@ vim:filetype=armasm
+diff --git a/plugins/gpu_unai_old/gpu_arm.h b/plugins/gpu_unai_old/gpu_arm.h
+new file mode 100644
+index 00000000..a0b22487
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu_arm.h
+@@ -0,0 +1,9 @@
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++void draw_spr16_full(u16 *d, void *s, u16 *pal, int lines);
++
++#ifdef __cplusplus
++}
++#endif
+diff --git a/plugins/gpu_unai_old/gpu_blit.h b/plugins/gpu_unai_old/gpu_blit.h
+new file mode 100644
+index 00000000..35cd056e
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu_blit.h
+@@ -0,0 +1,405 @@
++/***************************************************************************
++*   Copyright (C) 2010 PCSX4ALL Team                                      *
++*   Copyright (C) 2010 Unai                                               *
++*                                                                         *
++*   This program is free software; you can redistribute it and/or modify  *
++*   it under the terms of the GNU General Public License as published by  *
++*   the Free Software Foundation; either version 2 of the License, or     *
++*   (at your option) any later version.                                   *
++*                                                                         *
++*   This program is distributed in the hope that it will be useful,       *
++*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++*   GNU General Public License for more details.                          *
++*                                                                         *
++*   You should have received a copy of the GNU General Public License     *
++*   along with this program; if not, write to the                         *
++*   Free Software Foundation, Inc.,                                       *
++*   51 Franklin Street, Fifth Floor, Boston, MA 02111-1307 USA.           *
++***************************************************************************/
++
++#ifndef _INNER_BLIT_H_
++#define _INNER_BLIT_H_
++
++#ifndef USE_BGR15
++#define RGB24(R,G,B)	(((((R)&0xF8)<<8)|(((G)&0xFC)<<3)|(((B)&0xF8)>>3)))
++#define RGB16X2(C)      (((C)&(0x1f001f<<10))>>10) | (((C)&(0x1f001f<<5))<<1) | (((C)&(0x1f001f<<0))<<11)
++#define RGB16(C)		(((C)&(0x1f<<10))>>10) | (((C)&(0x1f<<5))<<1) | (((C)&(0x1f<<0))<<11)
++#else
++#define RGB24(R,G,B)  	((((R)&0xF8)>>3)|(((G)&0xF8)<<2)|(((B)&0xF8)<<7))
++#endif
++
++///////////////////////////////////////////////////////////////////////////////
++//  GPU Blitting code with rescale and interlace support.
++
++INLINE void GPU_BlitWW(const void* src, u16* dst16, u32 isRGB24)
++{
++	u32 uCount;
++	if(isRGB24 == 0)
++	{
++		#ifndef USE_BGR15
++			uCount = 20;
++			const u32* src32 = (const u32*) src; 
++			u32* dst32 = (u32*)(void*) dst16;
++			do{
++				dst32[0] = RGB16X2(src32[0]);
++				dst32[1] = RGB16X2(src32[1]);
++				dst32[2] = RGB16X2(src32[2]);
++				dst32[3] = RGB16X2(src32[3]);
++				dst32[4] = RGB16X2(src32[4]);
++				dst32[5] = RGB16X2(src32[5]);
++				dst32[6] = RGB16X2(src32[6]);
++				dst32[7] = RGB16X2(src32[7]);
++				dst32 += 8;
++				src32 += 8;
++			}while(--uCount);
++		#else
++			memcpy(dst16,src,640);
++		#endif
++	}
++	else
++	{
++		uCount = 20;
++		const u8* src8 = (const u8*)src;
++		do{
++			dst16[ 0] = RGB24(src8[ 0], src8[ 1], src8[ 2] );
++			dst16[ 1] = RGB24(src8[ 3], src8[ 4], src8[ 5] );
++			dst16[ 2] = RGB24(src8[ 6], src8[ 7], src8[ 8] );
++			dst16[ 3] = RGB24(src8[ 9], src8[10], src8[11] );
++			dst16[ 4] = RGB24(src8[12], src8[13], src8[14] );
++			dst16[ 5] = RGB24(src8[15], src8[16], src8[17] );
++			dst16[ 6] = RGB24(src8[18], src8[19], src8[20] );
++			dst16[ 7] = RGB24(src8[21], src8[22], src8[23] );
++
++			dst16[ 8] = RGB24(src8[24], src8[25], src8[26] );
++			dst16[ 9] = RGB24(src8[27], src8[28], src8[29] );
++			dst16[10] = RGB24(src8[30], src8[31], src8[32] );
++			dst16[11] = RGB24(src8[33], src8[34], src8[35] );
++			dst16[12] = RGB24(src8[36], src8[37], src8[38] );
++			dst16[13] = RGB24(src8[39], src8[40], src8[41] );
++			dst16[14] = RGB24(src8[42], src8[43], src8[44] );
++			dst16[15] = RGB24(src8[45], src8[46], src8[47] );
++			dst16 += 16;
++			src8  += 48;
++		}while(--uCount);
++	}
++}
++
++INLINE void GPU_BlitWWSWWSWS(const void* src, u16* dst16, u32 isRGB24)
++{
++	u32 uCount;
++	if(isRGB24 == 0)
++	{
++		#ifndef USE_BGR15
++			uCount = 32;
++			const u16* src16 = (const u16*) src; 
++			do{
++				dst16[ 0] = RGB16(src16[0]);
++				dst16[ 1] = RGB16(src16[1]);
++				dst16[ 2] = RGB16(src16[3]);
++				dst16[ 3] = RGB16(src16[4]);
++				dst16[ 4] = RGB16(src16[6]);
++				dst16[ 5] = RGB16(src16[8]);
++				dst16[ 6] = RGB16(src16[9]);
++				dst16[ 7] = RGB16(src16[11]);
++				dst16[ 8] = RGB16(src16[12]);
++				dst16[ 9] = RGB16(src16[14]);
++				dst16 += 10;
++				src16 += 16;
++			}while(--uCount);
++		#else
++			uCount = 64;
++			const u16* src16 = (const u16*) src; 
++			do{
++				*dst16++ = *src16++;
++				*dst16++ = *src16;
++				src16+=2;
++				*dst16++ = *src16++;
++				*dst16++ = *src16;
++				src16+=2;
++				*dst16++ = *src16;
++				src16+=2;
++			}while(--uCount);
++		#endif
++	}
++	else
++	{
++		uCount = 32;
++		const u8* src8 = (const u8*)src;
++		do{
++			dst16[ 0] = RGB24(src8[ 0], src8[ 1], src8[ 2] );
++			dst16[ 1] = RGB24(src8[ 3], src8[ 4], src8[ 5] );
++			dst16[ 2] = RGB24(src8[ 9], src8[10], src8[11] );
++			dst16[ 3] = RGB24(src8[12], src8[13], src8[14] );
++			dst16[ 4] = RGB24(src8[18], src8[19], src8[20] );
++
++			dst16[ 5] = RGB24(src8[24], src8[25], src8[26] );
++			dst16[ 6] = RGB24(src8[27], src8[28], src8[29] );
++			dst16[ 7] = RGB24(src8[33], src8[34], src8[35] );
++			dst16[ 8] = RGB24(src8[36], src8[37], src8[38] );
++			dst16[ 9] = RGB24(src8[42], src8[43], src8[44] );
++
++			dst16 += 10;
++			src8  += 48;
++		}while(--uCount);
++	}
++}
++
++INLINE void GPU_BlitWWWWWS(const void* src, u16* dst16, u32 isRGB24)
++{
++	u32 uCount;
++	if(isRGB24 == 0)
++	{
++		#ifndef USE_BGR15
++			uCount = 32;
++			const u16* src16 = (const u16*) src; 
++			do{
++				dst16[ 0] = RGB16(src16[0]);
++				dst16[ 1] = RGB16(src16[1]);
++				dst16[ 2] = RGB16(src16[2]);
++				dst16[ 3] = RGB16(src16[3]);
++				dst16[ 4] = RGB16(src16[4]);
++				dst16[ 5] = RGB16(src16[6]);
++				dst16[ 6] = RGB16(src16[7]);
++				dst16[ 7] = RGB16(src16[8]);
++				dst16[ 8] = RGB16(src16[9]);
++				dst16[ 9] = RGB16(src16[10]);
++				dst16 += 10;
++				src16 += 12;
++			}while(--uCount);
++		#else
++			uCount = 64;
++			const u16* src16 = (const u16*) src; 
++			do{
++				*dst16++ = *src16++;
++				*dst16++ = *src16++;
++				*dst16++ = *src16++;
++				*dst16++ = *src16++;
++				*dst16++ = *src16;
++				src16+=2;
++			}while(--uCount);
++		#endif
++	}
++	else
++	{
++		uCount = 32;
++		const u8* src8 = (const u8*)src;
++		do{
++			dst16[0] = RGB24(src8[ 0], src8[ 1], src8[ 2] );
++			dst16[1] = RGB24(src8[ 3], src8[ 4], src8[ 5] );
++			dst16[2] = RGB24(src8[ 6], src8[ 7], src8[ 8] );
++			dst16[3] = RGB24(src8[ 9], src8[10], src8[11] );
++			dst16[4] = RGB24(src8[12], src8[13], src8[14] );
++			dst16[5] = RGB24(src8[18], src8[19], src8[20] );
++			dst16[6] = RGB24(src8[21], src8[22], src8[23] );
++			dst16[7] = RGB24(src8[24], src8[25], src8[26] );
++			dst16[8] = RGB24(src8[27], src8[28], src8[29] );
++			dst16[9] = RGB24(src8[30], src8[31], src8[32] );
++			dst16 += 10;
++			src8  += 36;
++		}while(--uCount);
++	}
++}
++
++INLINE void GPU_BlitWWWWWWWWS(const void* src, u16* dst16, u32 isRGB24, u32 uClip_src)
++{
++	u32 uCount;
++	if(isRGB24 == 0)
++	{
++		#ifndef USE_BGR15
++			uCount = 20;
++			const u16* src16 = ((const u16*) src) + uClip_src; 
++			do{
++				dst16[ 0] = RGB16(src16[0]);
++				dst16[ 1] = RGB16(src16[1]);
++				dst16[ 2] = RGB16(src16[2]);
++				dst16[ 3] = RGB16(src16[3]);
++				dst16[ 4] = RGB16(src16[4]);
++				dst16[ 5] = RGB16(src16[5]);
++				dst16[ 6] = RGB16(src16[6]);
++				dst16[ 7] = RGB16(src16[7]);
++
++				dst16[ 8] = RGB16(src16[9]);
++				dst16[ 9] = RGB16(src16[10]);
++				dst16[10] = RGB16(src16[11]);
++				dst16[11] = RGB16(src16[12]);
++				dst16[12] = RGB16(src16[13]);
++				dst16[13] = RGB16(src16[14]);
++				dst16[14] = RGB16(src16[15]);
++				dst16[15] = RGB16(src16[16]);
++				dst16 += 16;
++				src16 += 18;
++			}while(--uCount);
++		#else
++			uCount = 40;
++			const u16* src16 = ((const u16*) src) + uClip_src; 
++			do{
++				*dst16++ = *src16++;
++				*dst16++ = *src16++;
++				*dst16++ = *src16++;
++				*dst16++ = *src16++;
++				*dst16++ = *src16++;
++				*dst16++ = *src16++;
++				*dst16++ = *src16++;
++				*dst16++ = *src16;
++				src16+=2;
++			}while(--uCount);
++		#endif
++	}
++	else
++	{
++		uCount = 20;
++		const u8* src8 = (const u8*)src + (uClip_src<<1) + uClip_src;
++		do{
++			dst16[ 0] = RGB24(src8[ 0], src8[ 1], src8[ 2] );
++			dst16[ 1] = RGB24(src8[ 3], src8[ 4], src8[ 5] );
++			dst16[ 2] = RGB24(src8[ 6], src8[ 7], src8[ 8] );
++			dst16[ 3] = RGB24(src8[ 9], src8[10], src8[11] );
++			dst16[ 4] = RGB24(src8[12], src8[13], src8[14] );
++			dst16[ 5] = RGB24(src8[15], src8[16], src8[17] );
++			dst16[ 6] = RGB24(src8[18], src8[19], src8[20] );
++			dst16[ 7] = RGB24(src8[21], src8[22], src8[23] );
++
++			dst16[ 8] = RGB24(src8[27], src8[28], src8[29] );
++			dst16[ 9] = RGB24(src8[30], src8[31], src8[32] );
++			dst16[10] = RGB24(src8[33], src8[34], src8[35] );
++			dst16[11] = RGB24(src8[36], src8[37], src8[38] );
++			dst16[12] = RGB24(src8[39], src8[40], src8[41] );
++			dst16[13] = RGB24(src8[42], src8[43], src8[44] );
++			dst16[14] = RGB24(src8[45], src8[46], src8[47] );
++			dst16[15] = RGB24(src8[48], src8[49], src8[50] );
++			dst16 += 16;
++			src8  += 54;
++		}while(--uCount);
++	}
++}
++
++INLINE void GPU_BlitWWDWW(const void* src, u16* dst16, u32 isRGB24)
++{
++	u32 uCount;
++	if(isRGB24 == 0)
++	{
++		#ifndef USE_BGR15
++			uCount = 32;
++			const u16* src16 = (const u16*) src; 
++			do{
++				dst16[ 0] = RGB16(src16[0]);
++				dst16[ 1] = RGB16(src16[1]);
++				dst16[ 2] = dst16[1];
++				dst16[ 3] = RGB16(src16[2]);
++				dst16[ 4] = RGB16(src16[3]);
++				dst16[ 5] = RGB16(src16[4]);
++				dst16[ 6] = RGB16(src16[5]);
++				dst16[ 7] = dst16[6];
++				dst16[ 8] = RGB16(src16[6]);
++				dst16[ 9] = RGB16(src16[7]);
++				dst16 += 10;
++				src16 +=  8;
++			}while(--uCount);
++		#else
++			uCount = 64;
++			const u16* src16 = (const u16*) src; 
++			do{
++				*dst16++ = *src16++;
++				*dst16++ = *src16;
++				*dst16++ = *src16++;
++				*dst16++ = *src16++;
++				*dst16++ = *src16++;
++			}while(--uCount);
++		#endif
++	}
++	else
++	{
++		uCount = 32;
++		const u8* src8 = (const u8*)src;
++		do{
++			dst16[ 0] = RGB24(src8[0], src8[ 1], src8[ 2] );
++			dst16[ 1] = RGB24(src8[3], src8[ 4], src8[ 5] );
++			dst16[ 2] = dst16[1];
++			dst16[ 3] = RGB24(src8[6], src8[ 7], src8[ 8] );
++			dst16[ 4] = RGB24(src8[9], src8[10], src8[11] );
++
++			dst16[ 5] = RGB24(src8[12], src8[13], src8[14] );
++			dst16[ 6] = RGB24(src8[15], src8[16], src8[17] );
++			dst16[ 7] = dst16[6];
++			dst16[ 8] = RGB24(src8[18], src8[19], src8[20] );
++			dst16[ 9] = RGB24(src8[21], src8[22], src8[23] );
++			dst16 += 10;
++			src8  += 24;
++		}while(--uCount);
++	}
++}
++
++
++INLINE void GPU_BlitWS(const void* src, u16* dst16, u32 isRGB24)
++{
++	u32 uCount;
++	if(isRGB24 == 0)
++	{
++		#ifndef USE_BGR15
++			uCount = 20;
++			const u16* src16 = (const u16*) src; 
++			do{
++				dst16[ 0] = RGB16(src16[0]);
++				dst16[ 1] = RGB16(src16[2]);
++				dst16[ 2] = RGB16(src16[4]);
++				dst16[ 3] = RGB16(src16[6]);
++
++				dst16[ 4] = RGB16(src16[8]);
++				dst16[ 5] = RGB16(src16[10]);
++				dst16[ 6] = RGB16(src16[12]);
++				dst16[ 7] = RGB16(src16[14]);
++
++				dst16[ 8] = RGB16(src16[16]);
++				dst16[ 9] = RGB16(src16[18]);
++				dst16[10] = RGB16(src16[20]);
++				dst16[11] = RGB16(src16[22]);
++
++				dst16[12] = RGB16(src16[24]);
++				dst16[13] = RGB16(src16[26]);
++				dst16[14] = RGB16(src16[28]);
++				dst16[15] = RGB16(src16[30]);
++
++				dst16 += 16;
++				src16 += 32;
++			}while(--uCount);
++		#else
++			uCount = 320;
++			const u16* src16 = (const u16*) src; 
++			do{
++				*dst16++ = *src16; src16+=2;
++			}while(--uCount);
++		#endif
++	}
++	else
++	{
++		uCount = 20;
++		const u8* src8 = (const u8*) src; 
++		do{
++			dst16[ 0] = RGB24(src8[ 0], src8[ 1], src8[ 2] );
++			dst16[ 1] = RGB24(src8[ 6], src8[ 7], src8[ 8] );
++			dst16[ 2] = RGB24(src8[12], src8[13], src8[14] );
++			dst16[ 3] = RGB24(src8[18], src8[19], src8[20] );
++
++			dst16[ 4] = RGB24(src8[24], src8[25], src8[26] );
++			dst16[ 5] = RGB24(src8[30], src8[31], src8[32] );
++			dst16[ 6] = RGB24(src8[36], src8[37], src8[38] );
++			dst16[ 7] = RGB24(src8[42], src8[43], src8[44] );
++
++			dst16[ 8] = RGB24(src8[48], src8[49], src8[50] );
++			dst16[ 9] = RGB24(src8[54], src8[55], src8[56] );
++			dst16[10] = RGB24(src8[60], src8[61], src8[62] );
++			dst16[11] = RGB24(src8[66], src8[67], src8[68] );
++
++			dst16[12] = RGB24(src8[72], src8[73], src8[74] );
++			dst16[13] = RGB24(src8[78], src8[79], src8[80] );
++			dst16[14] = RGB24(src8[84], src8[85], src8[86] );
++			dst16[15] = RGB24(src8[90], src8[91], src8[92] );
++
++			dst16 += 16;
++			src8  += 96;
++		}while(--uCount);
++	}
++}
++
++#endif //_INNER_BLIT_H_
+diff --git a/plugins/gpu_unai_old/gpu_command.h b/plugins/gpu_unai_old/gpu_command.h
+new file mode 100644
+index 00000000..d6e7a742
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu_command.h
+@@ -0,0 +1,457 @@
++/***************************************************************************
++*   Copyright (C) 2010 PCSX4ALL Team                                      *
++*   Copyright (C) 2010 Unai                                               *
++*                                                                         *
++*   This program is free software; you can redistribute it and/or modify  *
++*   it under the terms of the GNU General Public License as published by  *
++*   the Free Software Foundation; either version 2 of the License, or     *
++*   (at your option) any later version.                                   *
++*                                                                         *
++*   This program is distributed in the hope that it will be useful,       *
++*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++*   GNU General Public License for more details.                          *
++*                                                                         *
++*   You should have received a copy of the GNU General Public License     *
++*   along with this program; if not, write to the                         *
++*   Free Software Foundation, Inc.,                                       *
++*   51 Franklin Street, Fifth Floor, Boston, MA 02111-1307 USA.           *
++***************************************************************************/
++
++///////////////////////////////////////////////////////////////////////////////
++INLINE void gpuSetTexture(u16 tpage)
++{
++	u32 tp;
++	u32 tx, ty;
++	GPU_GP1 = (GPU_GP1 & ~0x1FF) | (tpage & 0x1FF);
++
++	TextureWindow[0]&= ~TextureWindow[2];
++	TextureWindow[1]&= ~TextureWindow[3];
++
++	tp = (tpage >> 7) & 3;
++	tx = (tpage & 0x0F) << 6;
++	ty = (tpage & 0x10) << 4;
++	if (tp == 3) tp = 2;
++
++	tx += (TextureWindow[0] >> (2 - tp));
++	ty += TextureWindow[1];
++	
++	BLEND_MODE  = (((tpage>>5)&0x3)     ) << 3;
++	TEXT_MODE   = (((tpage>>7)&0x3) + 1 ) << 5; // +1 el cero no lo usamos
++
++	TBA = &((u16*)GPU_FrameBuffer)[FRAME_OFFSET(tx, ty)];
++
++}
++
++///////////////////////////////////////////////////////////////////////////////
++INLINE void gpuSetCLUT(u16 clut)
++{
++	CBA = &((u16*)GPU_FrameBuffer)[(clut & 0x7FFF) << 4];
++}
++
++#ifdef  ENABLE_GPU_NULL_SUPPORT
++#define NULL_GPU() break
++#else
++#define NULL_GPU()
++#endif
++
++#ifdef  ENABLE_GPU_LOG_SUPPORT
++#define DO_LOG(expr) printf expr
++#else
++#define DO_LOG(expr) {}
++#endif
++
++#define Blending (((PRIM&0x2)&&(blend))?(PRIM&0x2):0)
++#define Blending_Mode (((PRIM&0x2)&&(blend))?BLEND_MODE:0)
++#define Lighting (((~PRIM)&0x1)&&(light))
++
++void gpuSendPacketFunction(const int PRIM)
++{
++	//printf("0x%x\n",PRIM);
++
++	switch (PRIM)
++	{
++		case 0x02:
++			NULL_GPU();
++			gpuClearImage();    //  prim handles updateLace && skip
++			DO_LOG(("gpuClearImage(0x%x)\n",PRIM));
++			break;
++		case 0x20:
++		case 0x21:
++		case 0x22:
++		case 0x23:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				gpuDrawF3(gpuPolySpanDrivers [Blending_Mode | Masking | Blending | PixelMSB]);
++				DO_LOG(("gpuDrawF3(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x24:
++		case 0x25:
++		case 0x26:
++		case 0x27:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++				gpuSetTexture (PacketBuffer.U4[4] >> 16);
++				if ((PacketBuffer.U1[0]>0x5F) && (PacketBuffer.U1[1]>0x5F) && (PacketBuffer.U1[2]>0x5F))
++					gpuDrawFT3(gpuPolySpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | PixelMSB]);
++				else
++					gpuDrawFT3(gpuPolySpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | Lighting | PixelMSB]);
++				DO_LOG(("gpuDrawFT3(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x28:
++		case 0x29:
++		case 0x2A:
++		case 0x2B:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				const PP gpuPolySpanDriver  = gpuPolySpanDrivers [Blending_Mode | Masking | Blending | PixelMSB];
++				//--PacketBuffer.S2[6];
++				gpuDrawF3(gpuPolySpanDriver);
++				PacketBuffer.U4[1] = PacketBuffer.U4[4];
++				//--PacketBuffer.S2[2];
++				gpuDrawF3(gpuPolySpanDriver);
++				DO_LOG(("gpuDrawF4(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x2C:
++		case 0x2D:
++		case 0x2E:
++		case 0x2F:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++				gpuSetTexture (PacketBuffer.U4[4] >> 16);
++				PP gpuPolySpanDriver;
++				if ((PacketBuffer.U1[0]>0x5F) && (PacketBuffer.U1[1]>0x5F) && (PacketBuffer.U1[2]>0x5F))
++					gpuPolySpanDriver = gpuPolySpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | PixelMSB];
++				else
++					gpuPolySpanDriver = gpuPolySpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | Lighting | PixelMSB];
++				//--PacketBuffer.S2[6];
++				gpuDrawFT3(gpuPolySpanDriver);
++				PacketBuffer.U4[1] = PacketBuffer.U4[7];
++				PacketBuffer.U4[2] = PacketBuffer.U4[8];
++				//--PacketBuffer.S2[2];
++				gpuDrawFT3(gpuPolySpanDriver);
++				DO_LOG(("gpuDrawFT4(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x30:
++		case 0x31:
++		case 0x32:
++		case 0x33:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				gpuDrawG3(gpuPolySpanDrivers [Blending_Mode | Masking | Blending | 129 | PixelMSB]);
++				DO_LOG(("gpuDrawG3(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x34:
++		case 0x35:
++		case 0x36:
++		case 0x37:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++				gpuSetTexture (PacketBuffer.U4[5] >> 16);
++				gpuDrawGT3(gpuPolySpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | ((Lighting)?129:0) | PixelMSB]);
++				DO_LOG(("gpuDrawGT3(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x38:
++		case 0x39:
++		case 0x3A:
++		case 0x3B:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				const PP gpuPolySpanDriver  = gpuPolySpanDrivers [Blending_Mode | Masking | Blending | 129 | PixelMSB];
++				//--PacketBuffer.S2[6];
++				gpuDrawG3(gpuPolySpanDriver);
++				PacketBuffer.U4[0] = PacketBuffer.U4[6];
++				PacketBuffer.U4[1] = PacketBuffer.U4[7];
++				//--PacketBuffer.S2[2];
++				gpuDrawG3(gpuPolySpanDriver);
++				DO_LOG(("gpuDrawG4(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x3C:
++		case 0x3D:
++		case 0x3E:
++		case 0x3F:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++				gpuSetTexture (PacketBuffer.U4[5] >> 16);
++				const PP gpuPolySpanDriver  = gpuPolySpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | ((Lighting)?129:0) | PixelMSB];
++				//--PacketBuffer.S2[6];
++				gpuDrawGT3(gpuPolySpanDriver);
++				PacketBuffer.U4[0] = PacketBuffer.U4[9];
++				PacketBuffer.U4[1] = PacketBuffer.U4[10];
++				PacketBuffer.U4[2] = PacketBuffer.U4[11];
++				//--PacketBuffer.S2[2];
++				gpuDrawGT3(gpuPolySpanDriver);
++				DO_LOG(("gpuDrawGT4(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x40:
++		case 0x41:
++		case 0x42:
++		case 0x43:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				gpuDrawLF(gpuPixelDrivers [ (Blending_Mode | Masking | Blending | (PixelMSB>>3)) >> 1]);
++				DO_LOG(("gpuDrawLF(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x48:
++		case 0x49:
++		case 0x4A:
++		case 0x4B:
++		case 0x4C:
++		case 0x4D:
++		case 0x4E:
++		case 0x4F:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				gpuDrawLF(gpuPixelDrivers [ (Blending_Mode | Masking | Blending | (PixelMSB>>3)) >> 1]);
++				DO_LOG(("gpuDrawLF(0x%x)\n",PRIM));
++			}
++			if ((PacketBuffer.U4[3] & 0xF000F000) != 0x50005000)
++			{
++				PacketBuffer.U4[1] = PacketBuffer.U4[2];
++				PacketBuffer.U4[2] = PacketBuffer.U4[3];
++				PacketCount = 1;
++				PacketIndex = 3;
++			}
++			break;
++		case 0x50:
++		case 0x51:
++		case 0x52:
++		case 0x53:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				gpuDrawLG(gpuPixelDrivers [ (Blending_Mode | Masking | Blending | (PixelMSB>>3)) >> 1]);
++				DO_LOG(("gpuDrawLG(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x58:
++		case 0x59:
++		case 0x5A:
++		case 0x5B:
++		case 0x5C:
++		case 0x5D:
++		case 0x5E:
++		case 0x5F:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				gpuDrawLG(gpuPixelDrivers [ (Blending_Mode | Masking | Blending | (PixelMSB>>3)) >> 1]);
++				DO_LOG(("gpuDrawLG(0x%x)\n",PRIM));
++			}
++			if ((PacketBuffer.U4[4] & 0xF000F000) != 0x50005000)
++			{
++				PacketBuffer.U1[3 + (2 * 4)] = PacketBuffer.U1[3 + (0 * 4)];
++				PacketBuffer.U4[0] = PacketBuffer.U4[2];
++				PacketBuffer.U4[1] = PacketBuffer.U4[3];
++				PacketBuffer.U4[2] = PacketBuffer.U4[4];
++				PacketCount = 2;
++				PacketIndex = 3;
++			}
++			break;
++		case 0x60:
++		case 0x61:
++		case 0x62:
++		case 0x63:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				gpuDrawT(gpuTileSpanDrivers [Blending_Mode | Masking | Blending | (PixelMSB>>3)]);
++				DO_LOG(("gpuDrawT(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x64:
++		case 0x65:
++		case 0x66:
++		case 0x67:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++				gpuSetTexture (GPU_GP1);
++				if ((PacketBuffer.U1[0]>0x5F) && (PacketBuffer.U1[1]>0x5F) && (PacketBuffer.U1[2]>0x5F))
++					gpuDrawS(gpuSpriteSpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | (enableAbbeyHack<<7)  | PixelMSB]);
++				else
++					gpuDrawS(gpuSpriteSpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | Lighting | (enableAbbeyHack<<7)  | PixelMSB]);
++				DO_LOG(("gpuDrawS(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x68:
++		case 0x69:
++		case 0x6A:
++		case 0x6B:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				PacketBuffer.U4[2] = 0x00010001;
++				gpuDrawT(gpuTileSpanDrivers [Blending_Mode | Masking | Blending | (PixelMSB>>3)]);
++				DO_LOG(("gpuDrawT(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x70:
++		case 0x71:
++		case 0x72:
++		case 0x73:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				PacketBuffer.U4[2] = 0x00080008;
++				gpuDrawT(gpuTileSpanDrivers [Blending_Mode | Masking | Blending | (PixelMSB>>3)]);
++				DO_LOG(("gpuDrawT(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x74:
++		case 0x75:
++		case 0x76:
++		case 0x77:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				PacketBuffer.U4[3] = 0x00080008;
++				gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++				gpuSetTexture (GPU_GP1);
++				if ((PacketBuffer.U1[0]>0x5F) && (PacketBuffer.U1[1]>0x5F) && (PacketBuffer.U1[2]>0x5F))
++					gpuDrawS(gpuSpriteSpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | (enableAbbeyHack<<7)  | PixelMSB]);
++				else
++					gpuDrawS(gpuSpriteSpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | Lighting | (enableAbbeyHack<<7)  | PixelMSB]);
++				DO_LOG(("gpuDrawS(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x78:
++		case 0x79:
++		case 0x7A:
++		case 0x7B:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				PacketBuffer.U4[2] = 0x00100010;
++				gpuDrawT(gpuTileSpanDrivers [Blending_Mode | Masking | Blending | (PixelMSB>>3)]);
++				DO_LOG(("gpuDrawT(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x7C:
++		case 0x7D:
++#ifdef __arm__
++			if ((GPU_GP1 & 0x180) == 0 && (Masking | PixelMSB) == 0)
++			{
++				gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++				gpuSetTexture (GPU_GP1);
++				gpuDrawS16();
++				break;
++			}
++			// fallthrough
++#endif
++		case 0x7E:
++		case 0x7F:
++			if (!isSkip)
++			{
++				NULL_GPU();
++				PacketBuffer.U4[3] = 0x00100010;
++				gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++				gpuSetTexture (GPU_GP1);
++				if ((PacketBuffer.U1[0]>0x5F) && (PacketBuffer.U1[1]>0x5F) && (PacketBuffer.U1[2]>0x5F))
++					gpuDrawS(gpuSpriteSpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | (enableAbbeyHack<<7)  | PixelMSB]);
++				else
++					gpuDrawS(gpuSpriteSpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | Lighting | (enableAbbeyHack<<7)  | PixelMSB]);
++				DO_LOG(("gpuDrawS(0x%x)\n",PRIM));
++			}
++			break;
++		case 0x80:          //  vid -> vid
++			gpuMoveImage();   //  prim handles updateLace && skip
++			DO_LOG(("gpuMoveImage(0x%x)\n",PRIM));
++			break;
++		case 0xA0:          //  sys ->vid
++			gpuLoadImage();   //  prim handles updateLace && skip
++#ifndef isSkip // not a define
++			if (alt_fps) isSkip=false;
++#endif
++			DO_LOG(("gpuLoadImage(0x%x)\n",PRIM));
++			break;
++		case 0xC0:          //  vid -> sys
++			gpuStoreImage();  //  prim handles updateLace && skip
++			DO_LOG(("gpuStoreImage(0x%x)\n",PRIM));
++			break;
++		case 0xE1:
++			{
++				const u32 temp = PacketBuffer.U4[0];
++				GPU_GP1 = (GPU_GP1 & ~0x000007FF) | (temp & 0x000007FF);
++				gpuSetTexture(temp);
++				DO_LOG(("gpuSetTexture(0x%x)\n",PRIM));
++			}
++			break;
++		case 0xE2:	  
++			{
++				static const u8  TextureMask[32] = {
++					255, 7, 15, 7, 31, 7, 15, 7, 63, 7, 15, 7, 31, 7, 15, 7,	//
++					127, 7, 15, 7, 31, 7, 15, 7, 63, 7, 15, 7, 31, 7, 15, 7	  //
++				};
++				const u32 temp = PacketBuffer.U4[0];
++				TextureWindow[0] = ((temp >> 10) & 0x1F) << 3;
++				TextureWindow[1] = ((temp >> 15) & 0x1F) << 3;
++				TextureWindow[2] = TextureMask[(temp >> 0) & 0x1F];
++				TextureWindow[3] = TextureMask[(temp >> 5) & 0x1F];
++				gpuSetTexture(GPU_GP1);
++				//isSkip = false;
++				DO_LOG(("TextureWindow(0x%x)\n",PRIM));
++			}
++			break;
++		case 0xE3:
++			{
++				const u32 temp = PacketBuffer.U4[0];
++				DrawingArea[0] = temp         & 0x3FF;
++				DrawingArea[1] = (temp >> 10) & 0x3FF;
++				//isSkip = false;
++				DO_LOG(("DrawingArea_Pos(0x%x)\n",PRIM));
++			}
++			break;
++		case 0xE4:
++			{
++				const u32 temp = PacketBuffer.U4[0];
++				DrawingArea[2] = (temp         & 0x3FF) + 1;
++				DrawingArea[3] = ((temp >> 10) & 0x3FF) + 1;
++				//isSkip = false;
++				DO_LOG(("DrawingArea_Size(0x%x)\n",PRIM));
++			}
++			break;
++		case 0xE5:
++			{
++				const u32 temp = PacketBuffer.U4[0];
++				DrawingOffset[0] = ((s32)temp<<(32-11))>>(32-11);
++				DrawingOffset[1] = ((s32)temp<<(32-22))>>(32-11);
++				//isSkip = false;
++				DO_LOG(("DrawingOffset(0x%x)\n",PRIM));
++			}
++			break;
++		case 0xE6:
++			{
++				const u32 temp = PacketBuffer.U4[0];
++				//GPU_GP1 = (GPU_GP1 & ~0x00001800) | ((temp&3) << 11);
++				Masking = (temp & 0x2) <<  1;
++				PixelMSB =(temp & 0x1) <<  8;
++				DO_LOG(("SetMask(0x%x)\n",PRIM));
++			}
++			break;
++	}
++}
+diff --git a/plugins/gpu_unai_old/gpu_fixedpoint.h b/plugins/gpu_unai_old/gpu_fixedpoint.h
+new file mode 100644
+index 00000000..e72fda12
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu_fixedpoint.h
+@@ -0,0 +1,131 @@
++/***************************************************************************
++ *   Copyright (C) 2010 PCSX4ALL Team                                      *
++ *   Copyright (C) 2010 Unai                                               *
++ *                                                                         *
++ *   This program is free software; you can redistribute it and/or modify  *
++ *   it under the terms of the GNU General Public License as published by  *
++ *   the Free Software Foundation; either version 2 of the License, or     *
++ *   (at your option) any later version.                                   *
++ *                                                                         *
++ *   This program is distributed in the hope that it will be useful,       *
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++ *   GNU General Public License for more details.                          *
++ *                                                                         *
++ *   You should have received a copy of the GNU General Public License     *
++ *   along with this program; if not, write to the                         *
++ *   Free Software Foundation, Inc.,                                       *
++ *   51 Franklin Street, Fifth Floor, Boston, MA 02111-1307 USA.           *
++ ***************************************************************************/
++
++#ifndef FIXED_H
++#define FIXED_H
++
++#include "arm_features.h"
++
++typedef s32 fixed;
++
++#ifdef GPU_TABLE_10_BITS
++#define TABLE_BITS 10
++#else
++#define TABLE_BITS 16
++#endif
++
++#define FIXED_BITS 16
++
++#define fixed_ZERO ((fixed)0)
++#define fixed_ONE  ((fixed)1<<FIXED_BITS)
++#define fixed_TWO  ((fixed)2<<FIXED_BITS)
++#define fixed_HALF ((fixed)((1<<FIXED_BITS)>>1))
++
++//  big precision inverse table.
++s32 s_invTable[(1<<TABLE_BITS)];
++
++INLINE  fixed i2x(const int   _x) { return  ((_x)<<FIXED_BITS); }
++INLINE  fixed x2i(const fixed _x) { return  ((_x)>>FIXED_BITS); }
++
++/*
++INLINE u32 Log2(u32 _a)
++{
++  u32 c = 0; // result of log2(v) will go here
++  if (_a & 0xFFFF0000) { _a >>= 16; c |= 16;  }
++  if (_a & 0xFF00) { _a >>= 8; c |= 8;  }
++  if (_a & 0xF0) { _a >>= 4; c |= 4;  }
++  if (_a & 0xC) { _a >>= 2; c |= 2;  }
++  if (_a & 0x2) { _a >>= 1; c |= 1;  }
++  return c;
++}
++*/
++
++#ifdef HAVE_ARMV5
++INLINE u32 Log2(u32 x) { u32 res; asm("clz %0,%1" : "=r" (res) : "r" (x)); return 32-res; }
++#else
++INLINE u32 Log2(u32 x) { u32 i = 0; for ( ; x > 0; ++i, x >>= 1); return i - 1; }
++#endif
++
++#ifdef GPU_TABLE_10_BITS
++INLINE  void  xInv (const fixed _b, s32& iFactor_, s32& iShift_)
++{
++    u32 uD   = (_b<0) ? -_b : _b ;
++    u32 uLog = Log2(uD);
++    uLog = uLog>(TABLE_BITS-1) ? uLog-(TABLE_BITS-1) : 0;
++    u32 uDen = uD>>uLog;
++    iFactor_ = s_invTable[uDen];
++    iFactor_ = (_b<0) ? -iFactor_ :iFactor_;
++    iShift_  = 15+uLog;
++}
++#else
++INLINE  void  xInv (const fixed _b, s32& iFactor_, s32& iShift_)
++{
++  u32 uD = (_b<0) ? -_b : _b;
++  if(uD>1)
++  {
++	u32 uLog = Log2(uD);
++    uLog = uLog>(TABLE_BITS-1) ? uLog-(TABLE_BITS-1) : 0;
++    u32 uDen = (uD>>uLog)-1;
++    iFactor_ = s_invTable[uDen];
++    iFactor_ = (_b<0) ? -iFactor_ :iFactor_;
++    iShift_  = 15+uLog;
++  }
++  else
++  {
++    iFactor_=_b;
++    iShift_ = 0;
++  }
++}
++#endif
++
++INLINE  fixed xInvMulx  (const fixed _a, const s32 _iFact, const s32 _iShift)
++{
++	#ifdef __arm__
++		s64 res;
++		asm ("smull %Q0, %R0, %1, %2" : "=&r" (res) : "r"(_a) , "r"(_iFact));
++		return fixed(res>>_iShift);
++	#else
++		return fixed( ((s64)(_a)*(s64)(_iFact))>>(_iShift) );
++	#endif
++}
++
++INLINE  fixed xLoDivx   (const fixed _a, const fixed _b)
++{
++  s32 iFact, iShift;
++  xInv(_b, iFact, iShift);
++  return xInvMulx(_a, iFact, iShift);
++}
++
++///////////////////////////////////////////////////////////////////////////
++template<typename T>
++INLINE  T Min2 (const T _a, const T _b)             { return (_a<_b)?_a:_b; }
++
++template<typename T>
++INLINE  T Min3 (const T _a, const T _b, const T _c) { return  Min2(Min2(_a,_b),_c); }
++
++///////////////////////////////////////////////////////////////////////////
++template<typename T>
++INLINE  T Max2 (const T _a, const T _b)             { return  (_a>_b)?_a:_b; }
++
++template<typename T>
++INLINE  T Max3 (const T _a, const T _b, const T _c) { return  Max2(Max2(_a,_b),_c); }
++
++///////////////////////////////////////////////////////////////////////////
++#endif  //FIXED_H
+diff --git a/plugins/gpu_unai_old/gpu_inner.h b/plugins/gpu_unai_old/gpu_inner.h
+new file mode 100644
+index 00000000..4cd7bffe
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu_inner.h
+@@ -0,0 +1,433 @@
++/***************************************************************************
++*   Copyright (C) 2010 PCSX4ALL Team                                      *
++*   Copyright (C) 2010 Unai                                               *
++*                                                                         *
++*   This program is free software; you can redistribute it and/or modify  *
++*   it under the terms of the GNU General Public License as published by  *
++*   the Free Software Foundation; either version 2 of the License, or     *
++*   (at your option) any later version.                                   *
++*                                                                         *
++*   This program is distributed in the hope that it will be useful,       *
++*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++*   GNU General Public License for more details.                          *
++*                                                                         *
++*   You should have received a copy of the GNU General Public License     *
++*   along with this program; if not, write to the                         *
++*   Free Software Foundation, Inc.,                                       *
++*   51 Franklin Street, Fifth Floor, Boston, MA 02111-1307 USA.           *
++***************************************************************************/
++
++///////////////////////////////////////////////////////////////////////////////
++//  Inner loop driver instanciation file
++
++///////////////////////////////////////////////////////////////////////////////
++//  Option Masks
++#define   L ((CF>>0)&1)
++#define   B ((CF>>1)&1)
++#define   M ((CF>>2)&1)
++#define  BM ((CF>>3)&3)
++#define  TM ((CF>>5)&3)
++#define   G ((CF>>7)&1)
++
++#define  AH ((CF>>7)&1)
++
++#define  MB ((CF>>8)&1)
++
++#include "gpu_inner_blend.h"
++#include "gpu_inner_light.h"
++
++///////////////////////////////////////////////////////////////////////////////
++//  GPU Pixel opperations generator
++template<const int CF>
++INLINE void gpuPixelFn(u16 *pixel,const u16 data)
++{
++	if ((!M)&&(!B))
++	{
++		if(MB) { *pixel = data | 0x8000; }
++		else   { *pixel = data; }
++	}
++	else if ((M)&&(!B))
++	{
++		if (!(*pixel&0x8000))
++		{
++			if(MB) { *pixel = data | 0x8000; }
++			else   { *pixel = data; }
++		}
++	}
++	else
++	{
++		u16 uDst = *pixel;
++		if(M) { if (uDst&0x8000) return; }
++		u16 uSrc = data;
++		u32 uMsk; if (BM==0) uMsk=0x7BDE;
++		if (BM==0) gpuBlending00(uSrc, uDst);
++		if (BM==1) gpuBlending01(uSrc, uDst);
++		if (BM==2) gpuBlending02(uSrc, uDst);
++		if (BM==3) gpuBlending03(uSrc, uDst);
++		if(MB) { *pixel = uSrc | 0x8000; }
++		else   { *pixel = uSrc; }
++	}
++}
++///////////////////////////////////////////////////////////////////////////////
++
++///////////////////////////////////////////////////////////////////////////////
++//  Pixel drawing drivers, for lines (only blending)
++typedef void (*PD)(u16 *pixel,const u16 data);
++const PD  gpuPixelDrivers[32] =   //  We only generate pixel op for MASKING/BLEND_ENABLE/BLEND_MODE
++{ 
++	gpuPixelFn<0x00<<1>,gpuPixelFn<0x01<<1>,gpuPixelFn<0x02<<1>,gpuPixelFn<0x03<<1>,  
++	NULL,gpuPixelFn<0x05<<1>,NULL,gpuPixelFn<0x07<<1>,
++	NULL,gpuPixelFn<0x09<<1>,NULL,gpuPixelFn<0x0B<<1>,
++	NULL,gpuPixelFn<0x0D<<1>,NULL,gpuPixelFn<0x0F<<1>,
++
++	gpuPixelFn<(0x00<<1)|256>,gpuPixelFn<(0x01<<1)|256>,gpuPixelFn<(0x02<<1)|256>,gpuPixelFn<(0x03<<1)|256>,  
++	NULL,gpuPixelFn<(0x05<<1)|256>,NULL,gpuPixelFn<(0x07<<1)|256>,
++	NULL,gpuPixelFn<(0x09<<1)|256>,NULL,gpuPixelFn<(0x0B<<1)|256>,
++	NULL,gpuPixelFn<(0x0D<<1)|256>,NULL,gpuPixelFn<(0x0F<<1)|256>
++};
++
++///////////////////////////////////////////////////////////////////////////////
++//  GPU Tiles innerloops generator
++
++template<const int CF>
++INLINE void  gpuTileSpanFn(u16 *pDst, u32 count, u16 data)
++{
++	if ((!M)&&(!B))
++	{
++		if (MB) { data = data | 0x8000; }
++		do { *pDst++ = data; } while (--count);
++	}
++	else if ((M)&&(!B))
++	{
++		if (MB) { data = data | 0x8000; }
++		do { if (!(*pDst&0x8000)) { *pDst = data; } pDst++; } while (--count);
++	}
++	else
++	{
++		u16 uSrc;
++		u16 uDst;
++		u32 uMsk; if (BM==0) uMsk=0x7BDE;
++		do
++		{
++			//  MASKING
++			uDst = *pDst;
++			if(M) { if (uDst&0x8000) goto endtile;  }
++			uSrc = data;
++
++			//  BLEND
++			if (BM==0) gpuBlending00(uSrc, uDst);
++			if (BM==1) gpuBlending01(uSrc, uDst);
++			if (BM==2) gpuBlending02(uSrc, uDst);
++			if (BM==3) gpuBlending03(uSrc, uDst);
++
++			if (MB) { *pDst = uSrc | 0x8000; }
++			else    { *pDst = uSrc; }
++			endtile: pDst++;
++		}
++		while (--count);
++	}
++}
++
++///////////////////////////////////////////////////////////////////////////////
++//  Tiles innerloops driver
++typedef void (*PT)(u16 *pDst, u32 count, u16 data);
++const PT gpuTileSpanDrivers[64] = 
++{
++	gpuTileSpanFn<0x00>,NULL,gpuTileSpanFn<0x02>,NULL,  gpuTileSpanFn<0x04>,NULL,gpuTileSpanFn<0x06>,NULL,  NULL,NULL,gpuTileSpanFn<0x0A>,NULL,  NULL,NULL,gpuTileSpanFn<0x0E>,NULL,
++	NULL,NULL,gpuTileSpanFn<0x12>,NULL,  NULL,NULL,gpuTileSpanFn<0x16>,NULL,  NULL,NULL,gpuTileSpanFn<0x1A>,NULL,  NULL,NULL,gpuTileSpanFn<0x1E>,NULL,
++
++	gpuTileSpanFn<0x100>,NULL,gpuTileSpanFn<0x102>,NULL,  gpuTileSpanFn<0x104>,NULL,gpuTileSpanFn<0x106>,NULL,  NULL,NULL,gpuTileSpanFn<0x10A>,NULL,  NULL,NULL,gpuTileSpanFn<0x10E>,NULL,
++	NULL,NULL,gpuTileSpanFn<0x112>,NULL,  NULL,NULL,gpuTileSpanFn<0x116>,NULL,  NULL,NULL,gpuTileSpanFn<0x11A>,NULL,  NULL,NULL,gpuTileSpanFn<0x11E>,NULL,
++};
++
++///////////////////////////////////////////////////////////////////////////////
++//  GPU Sprites innerloops generator
++
++template<const int CF>
++INLINE void  gpuSpriteSpanFn(u16 *pDst, u32 count, u32 u0, const u32 mask)
++{
++	u16 uSrc;
++	u16 uDst;
++	const u16* pTxt = TBA+(u0&~0x1ff); u0=u0&0x1ff;
++	const u16 *_CBA; if(TM!=3) _CBA=CBA;
++	u32 lCol; if(L)  { lCol = ((u32)(b4<< 2)&(0x03ff)) | ((u32)(g4<<13)&(0x07ff<<10)) | ((u32)(r4<<24)&(0x07ff<<21));  }
++	u8 rgb; if (TM==1) rgb = ((u8*)pTxt)[u0>>1];
++	u32 uMsk; if ((B)&&(BM==0)) uMsk=0x7BDE;
++
++	do
++	{
++		//  MASKING
++		if(M)   { uDst = *pDst;   if (uDst&0x8000) { u0=(u0+1)&mask; goto endsprite; }  }
++
++		//  TEXTURE MAPPING
++		if (TM==1) { if (!(u0&1)) rgb = ((u8*)pTxt)[u0>>1]; uSrc = _CBA[(rgb>>((u0&1)<<2))&0xf]; u0=(u0+1)&mask; }
++		if (TM==2) { uSrc = _CBA[((u8*)pTxt)[u0]]; u0=(u0+1)&mask; }
++		if (TM==3) { uSrc = pTxt[u0]; u0=(u0+1)&mask; }
++		if(!AH) { if (!uSrc) goto endsprite; }
++
++		//  BLEND
++		if(B)
++		{
++			if(uSrc&0x8000)
++			{
++				//  LIGHTING CALCULATIONS
++				if(L)  { gpuLightingTXT(uSrc, lCol);   }
++
++				if(!M)    { uDst = *pDst; }
++				if (BM==0) gpuBlending00(uSrc, uDst);
++				if (BM==1) gpuBlending01(uSrc, uDst);
++				if (BM==2) gpuBlending02(uSrc, uDst);
++				if (BM==3) gpuBlending03(uSrc, uDst);
++			}
++			else
++			{
++				//  LIGHTING CALCULATIONS
++				if(L)  { gpuLightingTXT(uSrc, lCol); }
++			}
++		}
++		else
++		{
++			//  LIGHTING CALCULATIONS
++			if(L)  { gpuLightingTXT(uSrc, lCol);   } else
++			{ if(!MB) uSrc&= 0x7fff;               }
++		}
++
++		if (MB) { *pDst = uSrc | 0x8000; }
++		else    { *pDst = uSrc; }
++		
++		endsprite: pDst++;
++	}
++	while (--count);
++}
++///////////////////////////////////////////////////////////////////////////////
++
++///////////////////////////////////////////////////////////////////////////////
++//  Sprite innerloops driver
++typedef void (*PS)(u16 *pDst, u32 count, u32 u0, const u32 mask);
++const PS gpuSpriteSpanDrivers[512] = 
++{
++	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
++	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
++	gpuSpriteSpanFn<0x20>,gpuSpriteSpanFn<0x21>,gpuSpriteSpanFn<0x22>,gpuSpriteSpanFn<0x23>,  gpuSpriteSpanFn<0x24>,gpuSpriteSpanFn<0x25>,gpuSpriteSpanFn<0x26>,gpuSpriteSpanFn<0x27>,  NULL,NULL,gpuSpriteSpanFn<0x2A>,gpuSpriteSpanFn<0x2B>,  NULL,NULL,gpuSpriteSpanFn<0x2E>,gpuSpriteSpanFn<0x2F>,
++	NULL,NULL,gpuSpriteSpanFn<0x32>,gpuSpriteSpanFn<0x33>,  NULL,NULL,gpuSpriteSpanFn<0x36>,gpuSpriteSpanFn<0x37>,  NULL,NULL,gpuSpriteSpanFn<0x3A>,gpuSpriteSpanFn<0x3B>,  NULL,NULL,gpuSpriteSpanFn<0x3E>,gpuSpriteSpanFn<0x3F>,
++	gpuSpriteSpanFn<0x40>,gpuSpriteSpanFn<0x41>,gpuSpriteSpanFn<0x42>,gpuSpriteSpanFn<0x43>,  gpuSpriteSpanFn<0x44>,gpuSpriteSpanFn<0x45>,gpuSpriteSpanFn<0x46>,gpuSpriteSpanFn<0x47>,  NULL,NULL,gpuSpriteSpanFn<0x4A>,gpuSpriteSpanFn<0x4B>,  NULL,NULL,gpuSpriteSpanFn<0x4E>,gpuSpriteSpanFn<0x4F>,
++	NULL,NULL,gpuSpriteSpanFn<0x52>,gpuSpriteSpanFn<0x53>,  NULL,NULL,gpuSpriteSpanFn<0x56>,gpuSpriteSpanFn<0x57>,  NULL,NULL,gpuSpriteSpanFn<0x5A>,gpuSpriteSpanFn<0x5B>,  NULL,NULL,gpuSpriteSpanFn<0x5E>,gpuSpriteSpanFn<0x5F>,
++	gpuSpriteSpanFn<0x60>,gpuSpriteSpanFn<0x61>,gpuSpriteSpanFn<0x62>,gpuSpriteSpanFn<0x63>,  gpuSpriteSpanFn<0x64>,gpuSpriteSpanFn<0x65>,gpuSpriteSpanFn<0x66>,gpuSpriteSpanFn<0x67>,  NULL,NULL,gpuSpriteSpanFn<0x6A>,gpuSpriteSpanFn<0x6B>,  NULL,NULL,gpuSpriteSpanFn<0x6E>,gpuSpriteSpanFn<0x6F>,
++	NULL,NULL,gpuSpriteSpanFn<0x72>,gpuSpriteSpanFn<0x73>,  NULL,NULL,gpuSpriteSpanFn<0x76>,gpuSpriteSpanFn<0x77>,  NULL,NULL,gpuSpriteSpanFn<0x7A>,gpuSpriteSpanFn<0x7B>,  NULL,NULL,gpuSpriteSpanFn<0x7E>,gpuSpriteSpanFn<0x7F>,
++
++	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
++	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
++	gpuSpriteSpanFn<0xa0>,gpuSpriteSpanFn<0xa1>,gpuSpriteSpanFn<0xa2>,gpuSpriteSpanFn<0xa3>,  gpuSpriteSpanFn<0xa4>,gpuSpriteSpanFn<0xa5>,gpuSpriteSpanFn<0xa6>,gpuSpriteSpanFn<0xa7>,  NULL,NULL,gpuSpriteSpanFn<0xaA>,gpuSpriteSpanFn<0xaB>,  NULL,NULL,gpuSpriteSpanFn<0xaE>,gpuSpriteSpanFn<0xaF>,
++	NULL,NULL,gpuSpriteSpanFn<0xb2>,gpuSpriteSpanFn<0xb3>,  NULL,NULL,gpuSpriteSpanFn<0xb6>,gpuSpriteSpanFn<0xb7>,  NULL,NULL,gpuSpriteSpanFn<0xbA>,gpuSpriteSpanFn<0xbB>,  NULL,NULL,gpuSpriteSpanFn<0xbE>,gpuSpriteSpanFn<0xbF>,
++	gpuSpriteSpanFn<0xc0>,gpuSpriteSpanFn<0xc1>,gpuSpriteSpanFn<0xc2>,gpuSpriteSpanFn<0xc3>,  gpuSpriteSpanFn<0xc4>,gpuSpriteSpanFn<0xc5>,gpuSpriteSpanFn<0xc6>,gpuSpriteSpanFn<0xc7>,  NULL,NULL,gpuSpriteSpanFn<0xcA>,gpuSpriteSpanFn<0xcB>,  NULL,NULL,gpuSpriteSpanFn<0xcE>,gpuSpriteSpanFn<0xcF>,
++	NULL,NULL,gpuSpriteSpanFn<0xd2>,gpuSpriteSpanFn<0xd3>,  NULL,NULL,gpuSpriteSpanFn<0xd6>,gpuSpriteSpanFn<0xd7>,  NULL,NULL,gpuSpriteSpanFn<0xdA>,gpuSpriteSpanFn<0xdB>,  NULL,NULL,gpuSpriteSpanFn<0xdE>,gpuSpriteSpanFn<0xdF>,
++	gpuSpriteSpanFn<0xe0>,gpuSpriteSpanFn<0xe1>,gpuSpriteSpanFn<0xe2>,gpuSpriteSpanFn<0xe3>,  gpuSpriteSpanFn<0xe4>,gpuSpriteSpanFn<0xe5>,gpuSpriteSpanFn<0xe6>,gpuSpriteSpanFn<0xe7>,  NULL,NULL,gpuSpriteSpanFn<0xeA>,gpuSpriteSpanFn<0xeB>,  NULL,NULL,gpuSpriteSpanFn<0xeE>,gpuSpriteSpanFn<0xeF>,
++	NULL,NULL,gpuSpriteSpanFn<0xf2>,gpuSpriteSpanFn<0xf3>,  NULL,NULL,gpuSpriteSpanFn<0xf6>,gpuSpriteSpanFn<0xf7>,  NULL,NULL,gpuSpriteSpanFn<0xfA>,gpuSpriteSpanFn<0xfB>,  NULL,NULL,gpuSpriteSpanFn<0xfE>,gpuSpriteSpanFn<0xfF>,
++
++	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
++	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
++	gpuSpriteSpanFn<0x120>,gpuSpriteSpanFn<0x121>,gpuSpriteSpanFn<0x122>,gpuSpriteSpanFn<0x123>,  gpuSpriteSpanFn<0x124>,gpuSpriteSpanFn<0x125>,gpuSpriteSpanFn<0x126>,gpuSpriteSpanFn<0x127>,  NULL,NULL,gpuSpriteSpanFn<0x12A>,gpuSpriteSpanFn<0x12B>,  NULL,NULL,gpuSpriteSpanFn<0x12E>,gpuSpriteSpanFn<0x12F>,
++	NULL,NULL,gpuSpriteSpanFn<0x132>,gpuSpriteSpanFn<0x133>,  NULL,NULL,gpuSpriteSpanFn<0x136>,gpuSpriteSpanFn<0x137>,  NULL,NULL,gpuSpriteSpanFn<0x13A>,gpuSpriteSpanFn<0x13B>,  NULL,NULL,gpuSpriteSpanFn<0x13E>,gpuSpriteSpanFn<0x13F>,
++	gpuSpriteSpanFn<0x140>,gpuSpriteSpanFn<0x141>,gpuSpriteSpanFn<0x142>,gpuSpriteSpanFn<0x143>,  gpuSpriteSpanFn<0x144>,gpuSpriteSpanFn<0x145>,gpuSpriteSpanFn<0x146>,gpuSpriteSpanFn<0x147>,  NULL,NULL,gpuSpriteSpanFn<0x14A>,gpuSpriteSpanFn<0x14B>,  NULL,NULL,gpuSpriteSpanFn<0x14E>,gpuSpriteSpanFn<0x14F>,
++	NULL,NULL,gpuSpriteSpanFn<0x152>,gpuSpriteSpanFn<0x153>,  NULL,NULL,gpuSpriteSpanFn<0x156>,gpuSpriteSpanFn<0x157>,  NULL,NULL,gpuSpriteSpanFn<0x15A>,gpuSpriteSpanFn<0x15B>,  NULL,NULL,gpuSpriteSpanFn<0x15E>,gpuSpriteSpanFn<0x15F>,
++	gpuSpriteSpanFn<0x160>,gpuSpriteSpanFn<0x161>,gpuSpriteSpanFn<0x162>,gpuSpriteSpanFn<0x163>,  gpuSpriteSpanFn<0x164>,gpuSpriteSpanFn<0x165>,gpuSpriteSpanFn<0x166>,gpuSpriteSpanFn<0x167>,  NULL,NULL,gpuSpriteSpanFn<0x16A>,gpuSpriteSpanFn<0x16B>,  NULL,NULL,gpuSpriteSpanFn<0x16E>,gpuSpriteSpanFn<0x16F>,
++	NULL,NULL,gpuSpriteSpanFn<0x172>,gpuSpriteSpanFn<0x173>,  NULL,NULL,gpuSpriteSpanFn<0x176>,gpuSpriteSpanFn<0x177>,  NULL,NULL,gpuSpriteSpanFn<0x17A>,gpuSpriteSpanFn<0x17B>,  NULL,NULL,gpuSpriteSpanFn<0x17E>,gpuSpriteSpanFn<0x17F>,
++                                                                                                                                                                                                                                                                                                                                                                                      
++	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
++	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
++	gpuSpriteSpanFn<0x1a0>,gpuSpriteSpanFn<0x1a1>,gpuSpriteSpanFn<0x1a2>,gpuSpriteSpanFn<0x1a3>,  gpuSpriteSpanFn<0x1a4>,gpuSpriteSpanFn<0x1a5>,gpuSpriteSpanFn<0x1a6>,gpuSpriteSpanFn<0x1a7>,  NULL,NULL,gpuSpriteSpanFn<0x1aA>,gpuSpriteSpanFn<0x1aB>,  NULL,NULL,gpuSpriteSpanFn<0x1aE>,gpuSpriteSpanFn<0x1aF>,
++	NULL,NULL,gpuSpriteSpanFn<0x1b2>,gpuSpriteSpanFn<0x1b3>,  NULL,NULL,gpuSpriteSpanFn<0x1b6>,gpuSpriteSpanFn<0x1b7>,  NULL,NULL,gpuSpriteSpanFn<0x1bA>,gpuSpriteSpanFn<0x1bB>,  NULL,NULL,gpuSpriteSpanFn<0x1bE>,gpuSpriteSpanFn<0x1bF>,
++	gpuSpriteSpanFn<0x1c0>,gpuSpriteSpanFn<0x1c1>,gpuSpriteSpanFn<0x1c2>,gpuSpriteSpanFn<0x1c3>,  gpuSpriteSpanFn<0x1c4>,gpuSpriteSpanFn<0x1c5>,gpuSpriteSpanFn<0x1c6>,gpuSpriteSpanFn<0x1c7>,  NULL,NULL,gpuSpriteSpanFn<0x1cA>,gpuSpriteSpanFn<0x1cB>,  NULL,NULL,gpuSpriteSpanFn<0x1cE>,gpuSpriteSpanFn<0x1cF>,
++	NULL,NULL,gpuSpriteSpanFn<0x1d2>,gpuSpriteSpanFn<0x1d3>,  NULL,NULL,gpuSpriteSpanFn<0x1d6>,gpuSpriteSpanFn<0x1d7>,  NULL,NULL,gpuSpriteSpanFn<0x1dA>,gpuSpriteSpanFn<0x1dB>,  NULL,NULL,gpuSpriteSpanFn<0x1dE>,gpuSpriteSpanFn<0x1dF>,
++	gpuSpriteSpanFn<0x1e0>,gpuSpriteSpanFn<0x1e1>,gpuSpriteSpanFn<0x1e2>,gpuSpriteSpanFn<0x1e3>,  gpuSpriteSpanFn<0x1e4>,gpuSpriteSpanFn<0x1e5>,gpuSpriteSpanFn<0x1e6>,gpuSpriteSpanFn<0x1e7>,  NULL,NULL,gpuSpriteSpanFn<0x1eA>,gpuSpriteSpanFn<0x1eB>,  NULL,NULL,gpuSpriteSpanFn<0x1eE>,gpuSpriteSpanFn<0x1eF>,
++	NULL,NULL,gpuSpriteSpanFn<0x1f2>,gpuSpriteSpanFn<0x1f3>,  NULL,NULL,gpuSpriteSpanFn<0x1f6>,gpuSpriteSpanFn<0x1f7>,  NULL,NULL,gpuSpriteSpanFn<0x1fA>,gpuSpriteSpanFn<0x1fB>,  NULL,NULL,gpuSpriteSpanFn<0x1fE>,gpuSpriteSpanFn<0x1fF>
++};
++
++///////////////////////////////////////////////////////////////////////////////
++//  GPU Polygon innerloops generator
++template<const int CF>
++INLINE void  gpuPolySpanFn(u16 *pDst, u32 count)
++{
++	if (!TM)
++	{	
++		// NO TEXTURE
++		if (!G)
++		{
++			// NO GOURAUD
++			u16 data;
++			if (L) { u32 lCol=((u32)(b4<< 2)&(0x03ff)) | ((u32)(g4<<13)&(0x07ff<<10)) | ((u32)(r4<<24)&(0x07ff<<21)); gpuLightingRGB(data,lCol); }
++			else data=PixelData;
++			if ((!M)&&(!B))
++			{
++				if (MB) { data = data | 0x8000; }
++				do { *pDst++ = data; } while (--count);
++			}
++			else if ((M)&&(!B))
++			{
++				if (MB) { data = data | 0x8000; }
++				do { if (!(*pDst&0x8000)) { *pDst = data; } pDst++; } while (--count);
++			}
++			else
++			{
++				u16 uSrc;
++				u16 uDst;
++				u32 uMsk; if (BM==0) uMsk=0x7BDE;
++				do
++				{
++					//  masking
++					uDst = *pDst;
++					if(M) { if (uDst&0x8000) goto endtile;  }
++					uSrc = data;
++					//  blend
++					if (BM==0) gpuBlending00(uSrc, uDst);
++					if (BM==1) gpuBlending01(uSrc, uDst);
++					if (BM==2) gpuBlending02(uSrc, uDst);
++					if (BM==3) gpuBlending03(uSrc, uDst);
++					if (MB) { *pDst = uSrc | 0x8000; }
++					else    { *pDst = uSrc; }
++					endtile: pDst++;
++				}
++				while (--count);
++			}
++		}
++		else
++		{
++			// GOURAUD
++			u16 uDst;
++			u16 uSrc;
++			u32 linc=lInc;
++			u32 lCol=((u32)(b4>>14)&(0x03ff)) | ((u32)(g4>>3)&(0x07ff<<10)) | ((u32)(r4<<8)&(0x07ff<<21));
++			u32 uMsk; if ((B)&&(BM==0)) uMsk=0x7BDE;
++			do
++			{
++				//  masking
++				if(M) { uDst = *pDst;  if (uDst&0x8000) goto endgou;  }
++				//  blend
++				if(B)
++				{
++					//  light
++					gpuLightingRGB(uSrc,lCol);
++					if(!M)    { uDst = *pDst; }
++					if (BM==0) gpuBlending00(uSrc, uDst);
++					if (BM==1) gpuBlending01(uSrc, uDst);
++					if (BM==2) gpuBlending02(uSrc, uDst);
++					if (BM==3) gpuBlending03(uSrc, uDst);
++				}
++				else
++				{
++					//  light
++					gpuLightingRGB(uSrc,lCol);
++				}
++				if (MB) { *pDst = uSrc | 0x8000; }
++				else    { *pDst = uSrc; }
++				endgou: pDst++; lCol=(lCol+linc);
++			}
++			while (--count);
++		}
++	}
++	else
++	{
++		// TEXTURE
++		u16 uDst;
++		u16 uSrc;
++		u32 linc; if (L&&G) linc=lInc;
++		u32 tinc=tInc;
++		u32 tmsk=tMsk;
++		u32 tCor = ((u32)( u4<<7)&0x7fff0000) | ((u32)( v4>>9)&0x00007fff); tCor&= tmsk;
++		const u16* _TBA=TBA;
++		const u16* _CBA; if (TM!=3) _CBA=CBA;
++		u32 lCol;
++		if(L && !G) { lCol = ((u32)(b4<< 2)&(0x03ff)) | ((u32)(g4<<13)&(0x07ff<<10)) | ((u32)(r4<<24)&(0x07ff<<21)); }
++		else if(L && G) { lCol = ((u32)(b4>>14)&(0x03ff)) | ((u32)(g4>>3)&(0x07ff<<10)) | ((u32)(r4<<8)&(0x07ff<<21)); 	}
++		u32 uMsk; if ((B)&&(BM==0)) uMsk=0x7BDE;
++		do
++		{
++			//  masking
++			if(M) { uDst = *pDst;  if (uDst&0x8000) goto endpoly;  }
++			//  texture
++			if (TM==1) { u32 tu=(tCor>>23); u32 tv=(tCor<<4)&(0xff<<11); u8 rgb=((u8*)_TBA)[tv+(tu>>1)]; uSrc=_CBA[(rgb>>((tu&1)<<2))&0xf]; if(!uSrc) goto endpoly; }
++			if (TM==2) { uSrc = _CBA[(((u8*)_TBA)[(tCor>>23)+((tCor<<4)&(0xff<<11))])]; if(!uSrc)  goto endpoly; }
++			if (TM==3) { uSrc = _TBA[(tCor>>23)+((tCor<<3)&(0xff<<10))]; if(!uSrc)  goto endpoly; }
++			//  blend
++			if(B)
++			{
++				if (uSrc&0x8000)
++				{
++					//  light
++					if(L) gpuLightingTXT(uSrc, lCol);
++					if(!M)    { uDst = *pDst; }
++					if (BM==0) gpuBlending00(uSrc, uDst);
++					if (BM==1) gpuBlending01(uSrc, uDst);
++					if (BM==2) gpuBlending02(uSrc, uDst);
++					if (BM==3) gpuBlending03(uSrc, uDst);
++				}
++				else
++				{
++					// light
++					if(L) gpuLightingTXT(uSrc, lCol);
++				}
++			}
++			else
++			{
++				//  light
++				if(L)  { gpuLightingTXT(uSrc, lCol); } else if(!MB) { uSrc&= 0x7fff; }
++			}
++			if (MB) { *pDst = uSrc | 0x8000; }
++			else    { *pDst = uSrc; }
++			endpoly: pDst++;
++			tCor=(tCor+tinc)&tmsk;
++			if (L&&G) lCol=(lCol+linc);
++		}
++		while (--count);
++	}
++}
++
++// supposedly shouldn't be called?
++static void gpuPolySpanFn_NULL_(u16 *pDst, u32 count)
++{
++}
++
++///////////////////////////////////////////////////////////////////////////////
++
++///////////////////////////////////////////////////////////////////////////////
++//  Polygon innerloops driver
++typedef void (*PP)(u16 *pDst, u32 count);
++const PP gpuPolySpanDrivers[512] =
++{
++	gpuPolySpanFn<0x00>,gpuPolySpanFn<0x01>,gpuPolySpanFn<0x02>,gpuPolySpanFn<0x03>,  gpuPolySpanFn<0x04>,gpuPolySpanFn<0x05>,gpuPolySpanFn<0x06>,gpuPolySpanFn<0x07>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x0A>,gpuPolySpanFn<0x0B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x0E>,gpuPolySpanFn<0x0F>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x12>,gpuPolySpanFn<0x13>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x16>,gpuPolySpanFn<0x17>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1A>,gpuPolySpanFn<0x1B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1E>,gpuPolySpanFn<0x1F>,
++	gpuPolySpanFn<0x20>,gpuPolySpanFn<0x21>,gpuPolySpanFn<0x22>,gpuPolySpanFn<0x23>,  gpuPolySpanFn<0x24>,gpuPolySpanFn<0x25>,gpuPolySpanFn<0x26>,gpuPolySpanFn<0x27>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x2A>,gpuPolySpanFn<0x2B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x2E>,gpuPolySpanFn<0x2F>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x32>,gpuPolySpanFn<0x33>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x36>,gpuPolySpanFn<0x37>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x3A>,gpuPolySpanFn<0x3B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x3E>,gpuPolySpanFn<0x3F>,
++	gpuPolySpanFn<0x40>,gpuPolySpanFn<0x41>,gpuPolySpanFn<0x42>,gpuPolySpanFn<0x43>,  gpuPolySpanFn<0x44>,gpuPolySpanFn<0x45>,gpuPolySpanFn<0x46>,gpuPolySpanFn<0x47>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x4A>,gpuPolySpanFn<0x4B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x4E>,gpuPolySpanFn<0x4F>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x52>,gpuPolySpanFn<0x53>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x56>,gpuPolySpanFn<0x57>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x5A>,gpuPolySpanFn<0x5B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x5E>,gpuPolySpanFn<0x5F>,
++	gpuPolySpanFn<0x60>,gpuPolySpanFn<0x61>,gpuPolySpanFn<0x62>,gpuPolySpanFn<0x63>,  gpuPolySpanFn<0x64>,gpuPolySpanFn<0x65>,gpuPolySpanFn<0x66>,gpuPolySpanFn<0x67>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x6A>,gpuPolySpanFn<0x6B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x6E>,gpuPolySpanFn<0x6F>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x72>,gpuPolySpanFn<0x73>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x76>,gpuPolySpanFn<0x77>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x7A>,gpuPolySpanFn<0x7B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x7E>,gpuPolySpanFn<0x7F>,
++
++	gpuPolySpanFn_NULL_,gpuPolySpanFn<0x81>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x83>,  gpuPolySpanFn_NULL_,gpuPolySpanFn<0x85>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x87>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x8B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x8F>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x93>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x97>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x9B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x9F>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn<0xa1>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xa3>,  gpuPolySpanFn_NULL_,gpuPolySpanFn<0xa5>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xa7>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xaB>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xaF>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xb3>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xb7>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xbB>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xbF>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn<0xc1>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xc3>,  gpuPolySpanFn_NULL_,gpuPolySpanFn<0xc5>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xc7>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xcB>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xcF>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xd3>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xd7>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xdB>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xdF>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn<0xe1>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xe3>,  gpuPolySpanFn_NULL_,gpuPolySpanFn<0xe5>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xe7>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xeB>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xeF>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xf3>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xf7>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xfB>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0xfF>,
++
++	gpuPolySpanFn<0x100>,gpuPolySpanFn<0x101>,gpuPolySpanFn<0x102>,gpuPolySpanFn<0x103>,  gpuPolySpanFn<0x104>,gpuPolySpanFn<0x105>,gpuPolySpanFn<0x106>,gpuPolySpanFn<0x107>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x10A>,gpuPolySpanFn<0x10B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x10E>,gpuPolySpanFn<0x10F>,
++	gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_, gpuPolySpanFn<0x112>,gpuPolySpanFn<0x113>,  gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_, gpuPolySpanFn<0x116>,gpuPolySpanFn<0x117>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x11A>,gpuPolySpanFn<0x11B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x11E>,gpuPolySpanFn<0x11F>,
++	gpuPolySpanFn<0x120>,gpuPolySpanFn<0x121>,gpuPolySpanFn<0x122>,gpuPolySpanFn<0x123>,  gpuPolySpanFn<0x124>,gpuPolySpanFn<0x125>,gpuPolySpanFn<0x126>,gpuPolySpanFn<0x127>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x12A>,gpuPolySpanFn<0x12B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x12E>,gpuPolySpanFn<0x12F>,
++	gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_, gpuPolySpanFn<0x132>,gpuPolySpanFn<0x133>,  gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_, gpuPolySpanFn<0x136>,gpuPolySpanFn<0x137>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x13A>,gpuPolySpanFn<0x13B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x13E>,gpuPolySpanFn<0x13F>,
++	gpuPolySpanFn<0x140>,gpuPolySpanFn<0x141>,gpuPolySpanFn<0x142>,gpuPolySpanFn<0x143>,  gpuPolySpanFn<0x144>,gpuPolySpanFn<0x145>,gpuPolySpanFn<0x146>,gpuPolySpanFn<0x147>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x14A>,gpuPolySpanFn<0x14B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x14E>,gpuPolySpanFn<0x14F>,
++	gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_, gpuPolySpanFn<0x152>,gpuPolySpanFn<0x153>,  gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_, gpuPolySpanFn<0x156>,gpuPolySpanFn<0x157>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x15A>,gpuPolySpanFn<0x15B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x15E>,gpuPolySpanFn<0x15F>,
++	gpuPolySpanFn<0x160>,gpuPolySpanFn<0x161>,gpuPolySpanFn<0x162>,gpuPolySpanFn<0x163>,  gpuPolySpanFn<0x164>,gpuPolySpanFn<0x165>,gpuPolySpanFn<0x166>,gpuPolySpanFn<0x167>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x16A>,gpuPolySpanFn<0x16B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x16E>,gpuPolySpanFn<0x16F>,
++	gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_, gpuPolySpanFn<0x172>,gpuPolySpanFn<0x173>,  gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_, gpuPolySpanFn<0x176>,gpuPolySpanFn<0x177>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x17A>,gpuPolySpanFn<0x17B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x17E>,gpuPolySpanFn<0x17F>,
++                                                                                                                                                                                                                                                                                                                                                                                      
++	gpuPolySpanFn_NULL_,gpuPolySpanFn<0x181>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x183>,  gpuPolySpanFn_NULL_,gpuPolySpanFn<0x185>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x187>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x18B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x18F>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_,gpuPolySpanFn<0x193>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_,gpuPolySpanFn<0x197>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x19B>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x19F>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1a1>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1a3>,  gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1a5>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1a7>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1aB>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1aF>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1b3>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1b7>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1bB>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1bF>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1c1>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1c3>,  gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1c5>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1c7>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1cB>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1cF>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1d3>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1d7>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1dB>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1dF>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1e1>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1e3>,  gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1e5>,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1e7>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1eB>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1eF>,
++	gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1f3>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_, gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1f7>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1fB>,  gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn_NULL_,gpuPolySpanFn<0x1fF>
++};
+diff --git a/plugins/gpu_unai_old/gpu_inner_blend.h b/plugins/gpu_unai_old/gpu_inner_blend.h
+new file mode 100644
+index 00000000..ce439d3b
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu_inner_blend.h
+@@ -0,0 +1,154 @@
++/***************************************************************************
++*   Copyright (C) 2010 PCSX4ALL Team                                      *
++*   Copyright (C) 2010 Unai                                               *
++*                                                                         *
++*   This program is free software; you can redistribute it and/or modify  *
++*   it under the terms of the GNU General Public License as published by  *
++*   the Free Software Foundation; either version 2 of the License, or     *
++*   (at your option) any later version.                                   *
++*                                                                         *
++*   This program is distributed in the hope that it will be useful,       *
++*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++*   GNU General Public License for more details.                          *
++*                                                                         *
++*   You should have received a copy of the GNU General Public License     *
++*   along with this program; if not, write to the                         *
++*   Free Software Foundation, Inc.,                                       *
++*   51 Franklin Street, Fifth Floor, Boston, MA 02111-1307 USA.           *
++***************************************************************************/
++
++#ifndef _OP_BLEND_H_
++#define _OP_BLEND_H_
++
++//  GPU Blending operations functions
++
++#ifdef __arm__
++#define gpuBlending00(uSrc,uDst) \
++{ \
++	asm ("and  %[src], %[src], %[msk]\n" \
++	     "and  %[dst], %[dst], %[msk]\n" \
++	     "add  %[src], %[dst], %[src]\n" \
++	     "mov  %[src], %[src], lsr #1\n" \
++	 : [src] "=&r" (uSrc), [dst] "=&r" (uDst) : "0" (uSrc), "1" (uDst), [msk] "r" (uMsk)); \
++}
++#else
++#define gpuBlending00(uSrc,uDst) \
++{ \
++	uSrc = (((uDst & uMsk) + (uSrc & uMsk)) >> 1); \
++}
++#endif
++
++//	1.0 x Back + 1.0 x Forward
++#ifdef __arm__
++#define gpuBlending01(uSrc,uDst) \
++{ \
++	u32 st,dt,out; \
++	asm ("and    %[dt],  %[dst],   #0x7C00\n" \
++	     "and    %[st],  %[src],   #0x7C00\n" \
++	     "add    %[out], %[dt],    %[st]  \n" \
++	     "cmp    %[out], #0x7C00          \n" \
++	     "movhi  %[out], #0x7C00          \n" \
++	     "and    %[dt],  %[dst],   #0x03E0\n" \
++	     "and    %[st],  %[src],   #0x03E0\n" \
++	     "add    %[dt],  %[dt],    %[st]  \n" \
++	     "cmp    %[dt],  #0x03E0          \n" \
++	     "movhi  %[dt],  #0x03E0          \n" \
++	     "orr    %[out], %[out],   %[dt]  \n" \
++	     "and    %[dt],  %[dst],   #0x001F\n" \
++	     "and    %[st],  %[src],   #0x001F\n" \
++	     "add    %[dt],  %[dt],    %[st]  \n" \
++	     "cmp    %[dt],  #0x001F          \n" \
++	     "movhi  %[dt],  #0x001F          \n" \
++	     "orr    %[src], %[out],  %[dt]  \n" \
++	 : [src] "=r" (uSrc), [st] "=&r" (st), [dt] "=&r" (dt), [out] "=&r" (out) \
++	 : [dst] "r" (uDst), "0" (uSrc) : "cc"); \
++}
++#else
++#define gpuBlending01(uSrc,uDst) \
++{ \
++	u16 rr, gg, bb; \
++	bb = (uDst & 0x7C00) + (uSrc & 0x7C00);   if (bb > 0x7C00)  bb = 0x7C00; \
++	gg = (uDst & 0x03E0) + (uSrc & 0x03E0);   if (gg > 0x03E0)  gg = 0x03E0;  bb |= gg; \
++	rr = (uDst & 0x001F) + (uSrc & 0x001F);   if (rr > 0x001F)  rr = 0x001F;  bb |= rr; \
++	uSrc = bb; \
++}
++#endif
++
++//	1.0 x Back - 1.0 x Forward	*/
++#ifdef __arm__
++#define gpuBlending02(uSrc,uDst) \
++{ \
++	u32 st,dt,out; \
++	asm ("and    %[dt],  %[dst],   #0x7C00\n" \
++	     "and    %[st],  %[src],   #0x7C00\n" \
++	     "subs   %[out], %[dt],    %[st]  \n" \
++	     "movmi  %[out], #0x0000          \n" \
++	     "and    %[dt],  %[dst],   #0x03E0\n" \
++	     "and    %[st],  %[src],   #0x03E0\n" \
++	     "subs   %[dt],  %[dt],    %[st]  \n" \
++	     "orrpl  %[out], %[out],   %[dt]  \n" \
++	     "and    %[dt],  %[dst],   #0x001F\n" \
++	     "and    %[st],  %[src],   #0x001F\n" \
++	     "subs   %[dt],  %[dt],    %[st]  \n" \
++	     "orrpl  %[out], %[out],   %[dt]  \n" \
++	     "mov    %[src], %[out]           \n" \
++	 : [src] "=r" (uSrc), [st] "=&r" (st), [dt] "=&r" (dt), [out] "=&r" (out) \
++	 : [dst] "r" (uDst), "0" (uSrc) : "cc"); \
++}
++
++int btest(int s, int d)
++{
++	gpuBlending02(s, d);
++	return s;
++}
++#else
++#define gpuBlending02(uSrc,uDst) \
++{ \
++	s32 rr, gg, bb; \
++	bb = (uDst & 0x7C00) - (uSrc & 0x7C00);   if (bb < 0)  bb  =  0; \
++	gg = (uDst & 0x03E0) - (uSrc & 0x03E0);   if (gg > 0)  bb |= gg; \
++	rr = (uDst & 0x001F) - (uSrc & 0x001F);   if (rr > 0)  bb |= rr; \
++	uSrc = bb; \
++}
++#endif
++
++//	1.0 x Back + 0.25 x Forward	*/
++#ifdef __arm__
++#define gpuBlending03(uSrc,uDst) \
++{ \
++	u32 st,dt,out; \
++	asm ("mov    %[src], %[src],   lsr #2 \n" \
++	     "and    %[dt],  %[dst],   #0x7C00\n" \
++	     "and    %[st],  %[src],   #0x1C00\n" \
++	     "add    %[out], %[dt],    %[st]  \n" \
++	     "cmp    %[out], #0x7C00          \n" \
++	     "movhi  %[out], #0x7C00          \n" \
++	     "and    %[dt],  %[dst],   #0x03E0\n" \
++	     "and    %[st],  %[src],   #0x00E0\n" \
++	     "add    %[dt],  %[dt],    %[st]  \n" \
++	     "cmp    %[dt],  #0x03E0          \n" \
++	     "movhi  %[dt],  #0x03E0          \n" \
++	     "orr    %[out], %[out],   %[dt]  \n" \
++	     "and    %[dt],  %[dst],   #0x001F\n" \
++	     "and    %[st],  %[src],   #0x0007\n" \
++	     "add    %[dt],  %[dt],    %[st]  \n" \
++	     "cmp    %[dt],  #0x001F          \n" \
++	     "movhi  %[dt],  #0x001F          \n" \
++	     "orr    %[src], %[out],   %[dt]  \n" \
++	 : [src] "=r" (uSrc), [st] "=&r" (st), [dt] "=&r" (dt), [out] "=&r" (out) \
++	 : [dst] "r" (uDst), "0" (uSrc) : "cc"); \
++}
++#else
++#define gpuBlending03(uSrc,uDst) \
++{ \
++	u16 rr, gg, bb; \
++	uSrc >>= 2; \
++	bb = (uDst & 0x7C00) + (uSrc & 0x1C00);   if (bb > 0x7C00)  bb = 0x7C00; \
++	gg = (uDst & 0x03E0) + (uSrc & 0x00E0);   if (gg > 0x03E0)  gg = 0x03E0;  bb |= gg; \
++	rr = (uDst & 0x001F) + (uSrc & 0x0007);   if (rr > 0x001F)  rr = 0x001F;  bb |= rr; \
++	uSrc = bb; \
++}
++#endif
++
++#endif  //_OP_BLEND_H_
+diff --git a/plugins/gpu_unai_old/gpu_inner_light.h b/plugins/gpu_unai_old/gpu_inner_light.h
+new file mode 100644
+index 00000000..d291418c
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu_inner_light.h
+@@ -0,0 +1,82 @@
++/***************************************************************************
++*   Copyright (C) 2010 PCSX4ALL Team                                      *
++*   Copyright (C) 2010 Unai                                               *
++*                                                                         *
++*   This program is free software; you can redistribute it and/or modify  *
++*   it under the terms of the GNU General Public License as published by  *
++*   the Free Software Foundation; either version 2 of the License, or     *
++*   (at your option) any later version.                                   *
++*                                                                         *
++*   This program is distributed in the hope that it will be useful,       *
++*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++*   GNU General Public License for more details.                          *
++*                                                                         *
++*   You should have received a copy of the GNU General Public License     *
++*   along with this program; if not, write to the                         *
++*   Free Software Foundation, Inc.,                                       *
++*   51 Franklin Street, Fifth Floor, Boston, MA 02111-1307 USA.           *
++***************************************************************************/
++
++#ifndef _OP_LIGHT_H_
++#define _OP_LIGHT_H_
++
++//  GPU color operations for lighting calculations
++
++#ifdef __arm__
++#define gpuLightingRGB(uSrc,lCol) \
++{ \
++	u32 cb,cg; \
++	asm ("and %[cb],  %[lCol], #0x7C00/32      \n" \
++	     "and %[cg],  %[lCol], #0x03E0*2048    \n" \
++	     "mov %[res], %[lCol],          lsr #27\n" \
++	     "orr %[res], %[res], %[cb],    lsl #5 \n" \
++	     "orr %[res], %[res], %[cg],    lsr #11\n" \
++	 : [res] "=&r" (uSrc), [cb] "=&r" (cb), [cg] "=&r" (cg) \
++	 : [lCol] "r" (lCol)); \
++}
++#else
++#define gpuLightingRGB(uSrc,lCol) uSrc=((lCol<<5)&0x7C00) | ((lCol>>11)&0x3E0) | (lCol>>27)
++#endif
++
++INLINE void gpuLightingTXT(u16 &uSrc, u32 &lCol)
++{
++	//  Pixelops Table
++	static const u8 _gpuLitT[32*32] = {
++		 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++		 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
++		 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
++		 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5,
++		 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7,
++		 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9,
++		 0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 9, 9, 9,10,10,10,11,11,
++		 0, 0, 0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 7, 8, 8, 9, 9,10,10,10,11,11,12,12,13,13,
++		 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9,10,10,11,11,12,12,13,13,14,14,15,15,
++		 0, 0, 1, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 8, 9, 9,10,10,11,11,12,12,13,14,14,15,15,16,16,17,
++		 0, 0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 8, 8, 9,10,10,11,11,12,13,13,14,15,15,16,16,17,18,18,19,
++		 0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7, 8, 8, 9,10,11,11,12,13,13,14,15,15,16,17,17,18,19,19,20,21,
++		 0, 0, 1, 2, 3, 3, 4, 5, 6, 6, 7, 8, 9, 9,10,11,12,12,13,14,15,15,16,17,18,18,19,20,21,21,22,23,
++		 0, 0, 1, 2, 3, 4, 4, 5, 6, 7, 8, 8, 9,10,11,12,13,13,14,15,16,17,17,18,19,20,21,21,22,23,24,25,
++		 0, 0, 1, 2, 3, 4, 5, 6, 7, 7, 8, 9,10,11,12,13,14,14,15,16,17,18,19,20,21,21,22,23,24,25,26,27,
++		 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,
++		 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
++		 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,31,
++		 0, 1, 2, 3, 4, 5, 6, 7, 9,10,11,12,13,14,15,16,18,19,20,21,22,23,24,25,27,28,29,30,31,31,31,31,
++		 0, 1, 2, 3, 4, 5, 7, 8, 9,10,11,13,14,15,16,17,19,20,21,22,23,24,26,27,28,29,30,31,31,31,31,31,
++		 0, 1, 2, 3, 5, 6, 7, 8,10,11,12,13,15,16,17,18,20,21,22,23,25,26,27,28,30,31,31,31,31,31,31,31,
++		 0, 1, 2, 3, 5, 6, 7, 9,10,11,13,14,15,17,18,19,21,22,23,24,26,27,28,30,31,31,31,31,31,31,31,31,
++		 0, 1, 2, 4, 5, 6, 8, 9,11,12,13,15,16,17,19,20,22,23,24,26,27,28,30,31,31,31,31,31,31,31,31,31,
++		 0, 1, 2, 4, 5, 7, 8,10,11,12,14,15,17,18,20,21,23,24,25,27,28,30,31,31,31,31,31,31,31,31,31,31,
++		 0, 1, 3, 4, 6, 7, 9,10,12,13,15,16,18,19,21,22,24,25,27,28,30,31,31,31,31,31,31,31,31,31,31,31,
++		 0, 1, 3, 4, 6, 7, 9,10,12,14,15,17,18,20,21,23,25,26,28,29,31,31,31,31,31,31,31,31,31,31,31,31,
++		 0, 1, 3, 4, 6, 8, 9,11,13,14,16,17,19,21,22,24,26,27,29,30,31,31,31,31,31,31,31,31,31,31,31,31,
++		 0, 1, 3, 5, 6, 8,10,11,13,15,16,18,20,21,23,25,27,28,30,31,31,31,31,31,31,31,31,31,31,31,31,31,
++		 0, 1, 3, 5, 7, 8,10,12,14,15,17,19,21,22,24,26,28,29,31,31,31,31,31,31,31,31,31,31,31,31,31,31,
++		 0, 1, 3, 5, 7, 9,10,12,14,16,18,19,21,23,25,27,29,30,31,31,31,31,31,31,31,31,31,31,31,31,31,31,
++		 0, 1, 3, 5, 7, 9,11,13,15,16,18,20,22,24,26,28,30,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,
++		 0, 1, 3, 5, 7, 9,11,13,15,17,19,21,23,25,27,29,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31
++	};
++	uSrc  = (_gpuLitT[((uSrc&0x7C00)>>5)|((lCol>>5)&0x1f)]<<10)|(_gpuLitT[(uSrc&0x03E0)|((lCol>>16)&0x1f)]<<5)|(_gpuLitT[((uSrc&0x001F)<<5)|(lCol>>27)]);
++}
++
++#endif  //_OP_LIGHT_H_
+diff --git a/plugins/gpu_unai_old/gpu_raster_image.h b/plugins/gpu_unai_old/gpu_raster_image.h
+new file mode 100644
+index 00000000..0c82aa97
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu_raster_image.h
+@@ -0,0 +1,203 @@
++/***************************************************************************
++ *   Copyright (C) 2010 PCSX4ALL Team                                      *
++ *   Copyright (C) 2010 Unai                                               *
++ *                                                                         *
++ *   This program is free software; you can redistribute it and/or modify  *
++ *   it under the terms of the GNU General Public License as published by  *
++ *   the Free Software Foundation; either version 2 of the License, or     *
++ *   (at your option) any later version.                                   *
++ *                                                                         *
++ *   This program is distributed in the hope that it will be useful,       *
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++ *   GNU General Public License for more details.                          *
++ *                                                                         *
++ *   You should have received a copy of the GNU General Public License     *
++ *   along with this program; if not, write to the                         *
++ *   Free Software Foundation, Inc.,                                       *
++ *   51 Franklin Street, Fifth Floor, Boston, MA 02111-1307 USA.           *
++ ***************************************************************************/
++
++///////////////////////////////////////////////////////////////////////////////
++INLINE void gpuLoadImage(void)
++{
++	u16 x0, y0, w0, h0;
++	x0 = PacketBuffer.U2[2] & 1023;
++	y0 = PacketBuffer.U2[3] & 511;
++	w0 = PacketBuffer.U2[4];
++	h0 = PacketBuffer.U2[5];
++
++	if ((y0 + h0) > FRAME_HEIGHT)
++	{
++		h0 = FRAME_HEIGHT - y0;
++	}
++
++	FrameToWrite = ((w0)&&(h0));
++
++	px = 0;
++	py = 0;
++	x_end = w0;
++	y_end = h0;
++	pvram = &((u16*)GPU_FrameBuffer)[x0+(y0*1024)];
++
++	GPU_GP1 |= 0x08000000;
++}
++
++///////////////////////////////////////////////////////////////////////////////
++INLINE void gpuStoreImage(void)
++{
++	u16 x0, y0, w0, h0;
++	x0 = PacketBuffer.U2[2] & 1023;
++	y0 = PacketBuffer.U2[3] & 511;
++	w0 = PacketBuffer.U2[4];
++	h0 = PacketBuffer.U2[5];
++
++	if ((y0 + h0) > FRAME_HEIGHT)
++	{
++		h0 = FRAME_HEIGHT - y0;
++	}
++	FrameToRead = ((w0)&&(h0));
++
++	px = 0;
++	py = 0;
++	x_end = w0;
++	y_end = h0;
++	pvram = &((u16*)GPU_FrameBuffer)[x0+(y0*1024)];
++	
++	GPU_GP1 |= 0x08000000;
++}
++
++INLINE void gpuMoveImage(void)
++{
++	u32 x0, y0, x1, y1;
++	s32 w0, h0;
++	x0 = PacketBuffer.U2[2] & 1023;
++	y0 = PacketBuffer.U2[3] & 511;
++	x1 = PacketBuffer.U2[4] & 1023;
++	y1 = PacketBuffer.U2[5] & 511;
++	w0 = PacketBuffer.U2[6];
++	h0 = PacketBuffer.U2[7];
++
++	if( (x0==x1) && (y0==y1) ) return;
++	if ((w0<=0) || (h0<=0)) return;
++	
++	if (((y0+h0)>512)||((x0+w0)>1024)||((y1+h0)>512)||((x1+w0)>1024))
++	{
++		u16 *psxVuw=GPU_FrameBuffer;
++		s32 i,j;
++	    for(j=0;j<h0;j++)
++		 for(i=0;i<w0;i++)
++		  psxVuw [(1024*((y1+j)&511))+((x1+i)&0x3ff)]=
++		   psxVuw[(1024*((y0+j)&511))+((x0+i)&0x3ff)];
++	}
++	else if ((x0&1)||(x1&1))
++	{
++		u16 *lpDst, *lpSrc;
++		lpDst = lpSrc = (u16*)GPU_FrameBuffer;
++		lpSrc += FRAME_OFFSET(x0, y0);
++		lpDst += FRAME_OFFSET(x1, y1);
++		x1 = FRAME_WIDTH - w0;
++		do {
++			x0=w0;
++			do { *lpDst++ = *lpSrc++; } while (--x0);
++			lpDst += x1;
++			lpSrc += x1;
++		} while (--h0);
++	}
++	else
++	{
++		u32 *lpDst, *lpSrc;
++		lpDst = lpSrc = (u32*)(void*)GPU_FrameBuffer;
++		lpSrc += ((FRAME_OFFSET(x0, y0))>>1);
++		lpDst += ((FRAME_OFFSET(x1, y1))>>1);
++		if (w0&1)
++		{
++			x1 = (FRAME_WIDTH - w0 +1)>>1;
++			w0>>=1;
++			if (!w0) {
++				do {
++					*((u16*)lpDst) = *((u16*)lpSrc);
++					lpDst += x1;
++					lpSrc += x1;
++				} while (--h0);
++			} else
++			do {
++				x0=w0;
++				do { *lpDst++ = *lpSrc++; } while (--x0);
++				*((u16*)lpDst) = *((u16*)lpSrc);
++				lpDst += x1;
++				lpSrc += x1;
++			} while (--h0);
++		}
++		else
++		{
++			x1 = (FRAME_WIDTH - w0)>>1;
++			w0>>=1;
++			do {
++				x0=w0;
++				do { *lpDst++ = *lpSrc++; } while (--x0);
++				lpDst += x1;
++				lpSrc += x1;
++			} while (--h0);
++		}
++	}
++}
++
++INLINE void gpuClearImage(void)
++{
++	s32   x0, y0, w0, h0;
++	x0 = PacketBuffer.S2[2];
++	y0 = PacketBuffer.S2[3];
++	w0 = PacketBuffer.S2[4] & 0x3ff;
++	h0 = PacketBuffer.S2[5] & 0x3ff;
++	 
++	w0 += x0;
++	if (x0 < 0) x0 = 0;
++	if (w0 > FRAME_WIDTH) w0 = FRAME_WIDTH;
++	w0 -= x0;
++	if (w0 <= 0) return;
++	h0 += y0;
++	if (y0 < 0) y0 = 0;
++	if (h0 > FRAME_HEIGHT) h0 = FRAME_HEIGHT;
++	h0 -= y0;
++	if (h0 <= 0) return;
++
++	if (x0&1)
++	{
++		u16* pixel = (u16*)GPU_FrameBuffer + FRAME_OFFSET(x0, y0);
++		u16 rgb = GPU_RGB16(PacketBuffer.S4[0]);
++		y0 = FRAME_WIDTH - w0;
++		do {
++			x0=w0;
++			do { *pixel++ = rgb; } while (--x0);
++			pixel += y0;
++		} while (--h0);
++	}
++	else
++	{
++		u32* pixel = (u32*)(void*)GPU_FrameBuffer + ((FRAME_OFFSET(x0, y0))>>1);
++		u32 rgb = GPU_RGB16(PacketBuffer.S4[0]);
++		rgb |= (rgb<<16);
++		if (w0&1)
++		{
++			y0 = (FRAME_WIDTH - w0 +1)>>1;
++			w0>>=1;
++			do {
++				x0=w0;
++				do { *pixel++ = rgb; } while (--x0);
++				*((u16*)pixel) = (u16)rgb;
++				pixel += y0;
++			} while (--h0);
++		}
++		else
++		{
++			y0 = (FRAME_WIDTH - w0)>>1;
++			w0>>=1;
++			do {
++				x0=w0;
++				do { *pixel++ = rgb; } while (--x0);
++				pixel += y0;
++			} while (--h0);
++		}
++	}
++}
+diff --git a/plugins/gpu_unai_old/gpu_raster_line.h b/plugins/gpu_unai_old/gpu_raster_line.h
+new file mode 100644
+index 00000000..fc59b797
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu_raster_line.h
+@@ -0,0 +1,257 @@
++/***************************************************************************
++*   Copyright (C) 2010 PCSX4ALL Team                                      *
++*   Copyright (C) 2010 Unai                                               *
++*                                                                         *
++*   This program is free software; you can redistribute it and/or modify  *
++*   it under the terms of the GNU General Public License as published by  *
++*   the Free Software Foundation; either version 2 of the License, or     *
++*   (at your option) any later version.                                   *
++*                                                                         *
++*   This program is distributed in the hope that it will be useful,       *
++*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++*   GNU General Public License for more details.                          *
++*                                                                         *
++*   You should have received a copy of the GNU General Public License     *
++*   along with this program; if not, write to the                         *
++*   Free Software Foundation, Inc.,                                       *
++*   51 Franklin Street, Fifth Floor, Boston, MA 02111-1307 USA.           *
++***************************************************************************/
++
++#define	GPU_TESTRANGE(x)      { if((u32)(x+1024) > 2047) return; }
++
++///////////////////////////////////////////////////////////////////////////////
++//  GPU internal line drawing functions
++
++#define GPU_DIGITS  16
++#define GPU_DIGITSC (GPU_DIGITS+3)
++
++INLINE s32 GPU_DIV(s32 rs, s32 rt)
++{
++	return rt ? (rs / rt) : (0);
++}
++
++///////////////////////////////////////////////////////////////////////////////
++void gpuDrawLF(const PD gpuPixelDriver)
++{
++	s32 temp;
++	s32 xmin, xmax;
++	s32 ymin, ymax;
++	s32 x0, x1, dx;
++	s32 y0, y1, dy;
++
++	x0 = PacketBuffer.S2[2] + DrawingOffset[0]; 	GPU_TESTRANGE(x0);
++	y0 = PacketBuffer.S2[3] + DrawingOffset[1]; 	GPU_TESTRANGE(y0);
++	x1 = PacketBuffer.S2[4] + DrawingOffset[0]; 	GPU_TESTRANGE(x1);
++	y1 = PacketBuffer.S2[5] + DrawingOffset[1]; 	GPU_TESTRANGE(y1);
++
++	xmin = DrawingArea[0];	xmax = DrawingArea[2];
++	ymin = DrawingArea[1];	ymax = DrawingArea[3];
++	const u16 pixeldata = GPU_RGB16(PacketBuffer.U4[0]);
++
++	dy = (y1 - y0);
++	if (dy < 0) dy = -dy;
++	dx = (x1 - x0);
++	if (dx < 0) dx = -dx;
++	if (dx > dy) {
++		if (x0 > x1) {
++			GPU_SWAP(x0, x1, temp);
++			GPU_SWAP(y0, y1, temp);
++		}
++		y1 = GPU_DIV((y1 - y0) << GPU_DIGITS, dx);
++		y0 <<= GPU_DIGITS;
++		temp = xmin - x0;
++		if (temp > 0) {
++			x0 = xmin;
++			y0 += (y1 * temp);
++		}
++		if (x1 > xmax) x1 = xmax;
++		x1 -= x0;
++		if (x1 < 0) x1 = 0;
++
++		const int li=linesInterlace;
++		for (; x1; x1--) {
++			temp = y0 >> GPU_DIGITS;
++			if( 0 == (temp&li) )  {
++				if ((u32) (temp - ymin) < (u32) (ymax - ymin)) {
++					gpuPixelDriver(&((u16*)GPU_FrameBuffer)[FRAME_OFFSET(x0, temp)],pixeldata);
++				}
++			}
++			x0++;
++			y0 += y1;
++		}
++	} else if (dy) {
++		if (y0 > y1) {
++			GPU_SWAP(x0, x1, temp);
++			GPU_SWAP(y0, y1, temp);
++		}
++		x1 = GPU_DIV((x1 - x0) << GPU_DIGITS, dy);
++		x0 <<= GPU_DIGITS;
++		temp = ymin - y0;
++		if (temp > 0) {
++			y0 = ymin;
++			x0 += (x1 * temp);
++		}
++		if (y1 > ymax) y1 = ymax;
++		y1 -= y0;
++		if (y1 < 0) y1 = 0;
++		
++		const int li=linesInterlace;
++		for (; y1; y1--) {
++			if( 0 == (y0&li) )  {
++				temp = x0 >> GPU_DIGITS;
++				if ((u32) (temp - xmin) < (u32) (xmax - xmin)) {
++					gpuPixelDriver(&((u16*)GPU_FrameBuffer)[FRAME_OFFSET(temp, y0)],pixeldata);
++				}
++			}
++			y0++;
++			x0 += x1;
++		}
++		
++	} else {
++		if( 0 == (y0&linesInterlace) )  {
++			if ((u32) (x0 - xmin) < (u32) (xmax - xmin)) {
++				if ((u32) (y0 - ymin) < (u32) (ymax - ymin)) {
++					gpuPixelDriver(&((u16*)GPU_FrameBuffer)[FRAME_OFFSET(x0, y0)],pixeldata);
++				}
++			}
++		}
++	}
++}
++
++/*----------------------------------------------------------------------
++GF
++----------------------------------------------------------------------*/
++
++///////////////////////////////////////////////////////////////////////////////
++void gpuDrawLG(const PD gpuPixelDriver)
++{
++	s32 temp;
++	s32 xmin, xmax;
++	s32 ymin, ymax;
++	s32 x0, x1, dx;
++	s32 y0, y1, dy;
++	s32 r0, r1;
++	s32 g0, g1;
++	s32 b0, b1;
++
++	x0 = PacketBuffer.S2[2] + DrawingOffset[0];	GPU_TESTRANGE(x0);
++	y0 = PacketBuffer.S2[3] + DrawingOffset[1];	GPU_TESTRANGE(y0);
++	x1 = PacketBuffer.S2[6] + DrawingOffset[0];	GPU_TESTRANGE(x1);
++	y1 = PacketBuffer.S2[7] + DrawingOffset[1];	GPU_TESTRANGE(y1);
++
++	r0 = PacketBuffer.U1[0];  g0 = PacketBuffer.U1[1];  b0 = PacketBuffer.U1[2];
++	r1 = PacketBuffer.U1[8];  g1 = PacketBuffer.U1[9];	b1 = PacketBuffer.U1[10];
++
++	xmin = DrawingArea[0];	xmax = DrawingArea[2];
++	ymin = DrawingArea[1];	ymax = DrawingArea[3];
++
++	dy = (y1 - y0);
++	if (dy < 0)
++	dy = -dy;
++	dx = (x1 - x0);
++	if (dx < 0)
++	dx = -dx;
++	if (dx > dy) {
++		if (x0 > x1) {
++			GPU_SWAP(x0, x1, temp);
++			GPU_SWAP(y0, y1, temp);
++			GPU_SWAP(r0, r1, temp);
++			GPU_SWAP(g0, g1, temp);
++			GPU_SWAP(b0, b1, temp);
++		}
++		y1 = GPU_DIV((y1 - y0) << GPU_DIGITS, dx);
++		r1 = GPU_DIV((r1 - r0) << GPU_DIGITS, dx);
++		g1 = GPU_DIV((g1 - g0) << GPU_DIGITS, dx);
++		b1 = GPU_DIV((b1 - b0) << GPU_DIGITS, dx);
++		y0 <<= GPU_DIGITS;
++		r0 <<= GPU_DIGITS;
++		g0 <<= GPU_DIGITS;
++		b0 <<= GPU_DIGITS;
++		temp = xmin - x0;
++		if (temp > 0) {
++			x0 = xmin;
++			y0 += (y1 * temp);
++			r0 += (r1 * temp);
++			g0 += (g1 * temp);
++			b0 += (b1 * temp);
++		}
++		if (x1 > xmax) x1 = xmax;
++		x1 -= x0;
++		if (x1 < 0) x1 = 0;
++		
++		const int li=linesInterlace;
++		for (; x1; x1--) {
++			temp = y0 >> GPU_DIGITS;
++			if( 0 == (temp&li) )  {
++				if ((u32) (temp - ymin) < (u32) (ymax - ymin)) {
++					gpuPixelDriver (
++						&((u16*)GPU_FrameBuffer)[FRAME_OFFSET(x0, temp)],
++						(((b0>>GPU_DIGITSC)&0x1F)<<10) | (((g0>>GPU_DIGITSC)&0x1F)<< 5) | ((r0>>GPU_DIGITSC)&0x1F)
++					);
++				}
++			}
++			x0++;
++			y0 += y1;
++			r0 += r1;
++			g0 += g1;
++			b0 += b1;
++		}
++	} else if (dy) {
++		if (y0 > y1) {
++			GPU_SWAP(x0, x1, temp);
++			GPU_SWAP(y0, y1, temp);
++			GPU_SWAP(r0, r1, temp);
++			GPU_SWAP(g0, g1, temp);
++			GPU_SWAP(b0, b1, temp);
++		}
++		x1 = GPU_DIV((x1 - x0) << GPU_DIGITS, dy);
++		r1 = GPU_DIV((r1 - r0) << GPU_DIGITS, dy);
++		g1 = GPU_DIV((g1 - g0) << GPU_DIGITS, dy);
++		b1 = GPU_DIV((b1 - b0) << GPU_DIGITS, dy);
++		x0 <<= GPU_DIGITS;
++		r0 <<= GPU_DIGITS;
++		g0 <<= GPU_DIGITS;
++		b0 <<= GPU_DIGITS;
++		temp = ymin - y0;
++		if (temp > 0) {
++			y0 = ymin;
++			x0 += (x1 * temp);
++			r0 += (r1 * temp);
++			g0 += (g1 * temp);
++			b0 += (b1 * temp);
++		}
++		if (y1 > ymax) y1 = ymax;
++		y1 -= y0;
++		if (y1 < 0) y1 = 0;
++		
++		const int li=linesInterlace;
++		for (; y1; y1--) {
++			if( 0 == (y0&li) )  {
++				temp = x0 >> GPU_DIGITS;
++				if ((u32) (temp - xmin) < (u32) (xmax - xmin)) {
++					gpuPixelDriver (
++						&((u16*)GPU_FrameBuffer)[FRAME_OFFSET(temp, y0)],
++						(((b0>>GPU_DIGITSC)&0x1F)<<10) | (((g0>>GPU_DIGITSC)&0x1F)<< 5) | ((r0>>GPU_DIGITSC)&0x1F)
++					);
++				}
++			}
++			y0++;
++			x0 += x1;
++			r0 += r1;
++			g0 += g1;
++			b0 += b1;
++		}
++	} else {
++		if( 0 == (y0&linesInterlace) )  {
++			if ((u32) (x0 - xmin) < (u32) (xmax - xmin)) {
++				if ((u32) (y0 - ymin) < (u32) (ymax - ymin)) {
++					gpuPixelDriver (
++						&((u16*)GPU_FrameBuffer)[FRAME_OFFSET(x0, y0)],
++						(((b0>>GPU_DIGITSC)&0x1F)<<10) | (((g0>>GPU_DIGITSC)&0x1F)<< 5) | ((r0>>GPU_DIGITSC)&0x1F)
++					);
++				}
++			}
++		}
++	}
++}
+diff --git a/plugins/gpu_unai_old/gpu_raster_polygon.h b/plugins/gpu_unai_old/gpu_raster_polygon.h
+new file mode 100644
+index 00000000..c4b03509
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu_raster_polygon.h
+@@ -0,0 +1,749 @@
++/***************************************************************************
++*   Copyright (C) 2010 PCSX4ALL Team                                      *
++*   Copyright (C) 2010 Unai                                               *
++*                                                                         *
++*   This program is free software; you can redistribute it and/or modify  *
++*   it under the terms of the GNU General Public License as published by  *
++*   the Free Software Foundation; either version 2 of the License, or     *
++*   (at your option) any later version.                                   *
++*                                                                         *
++*   This program is distributed in the hope that it will be useful,       *
++*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++*   GNU General Public License for more details.                          *
++*                                                                         *
++*   You should have received a copy of the GNU General Public License     *
++*   along with this program; if not, write to the                         *
++*   Free Software Foundation, Inc.,                                       *
++*   51 Franklin Street, Fifth Floor, Boston, MA 02111-1307 USA.           *
++***************************************************************************/
++
++#define GPU_TESTRANGE3() \
++{ \
++	if(x0<0) { if((x1-x0)>CHKMAX_X) return; if((x2-x0)>CHKMAX_X) return; } \
++	if(x1<0) { if((x0-x1)>CHKMAX_X) return; if((x2-x1)>CHKMAX_X) return; } \
++	if(x2<0) { if((x0-x2)>CHKMAX_X) return; if((x1-x2)>CHKMAX_X) return; } \
++	if(y0<0) { if((y1-y0)>CHKMAX_Y) return; if((y2-y0)>CHKMAX_Y) return; } \
++	if(y1<0) { if((y0-y1)>CHKMAX_Y) return; if((y2-y1)>CHKMAX_Y) return; } \
++	if(y2<0) { if((y0-y2)>CHKMAX_Y) return; if((y1-y2)>CHKMAX_Y) return; } \
++}
++
++///////////////////////////////////////////////////////////////////////////////
++//  GPU internal polygon drawing functions
++
++///////////////////////////////////////////////////////////////////////////////
++void gpuDrawF3(const PP gpuPolySpanDriver)
++{
++	const int li=linesInterlace;
++	s32 temp;
++	s32 xa, xb, xmin, xmax;
++	s32 ya, yb, ymin, ymax;
++	s32 x0, x1, x2, x3, dx3=0, x4, dx4=0, dx;
++	s32 y0, y1, y2;
++
++	x0 = GPU_EXPANDSIGN(PacketBuffer.S2[2]);
++	y0 = GPU_EXPANDSIGN(PacketBuffer.S2[3]);
++	x1 = GPU_EXPANDSIGN(PacketBuffer.S2[4]);
++	y1 = GPU_EXPANDSIGN(PacketBuffer.S2[5]);
++	x2 = GPU_EXPANDSIGN(PacketBuffer.S2[6]);
++	y2 = GPU_EXPANDSIGN(PacketBuffer.S2[7]);
++
++	GPU_TESTRANGE3();
++
++	x0 += DrawingOffset[0];   x1 += DrawingOffset[0];   x2 += DrawingOffset[0];
++	y0 += DrawingOffset[1];   y1 += DrawingOffset[1];   y2 += DrawingOffset[1];
++
++	xmin = DrawingArea[0];  xmax = DrawingArea[2];
++	ymin = DrawingArea[1];  ymax = DrawingArea[3];
++
++	{
++		int rx0 = Max2(xmin,Min3(x0,x1,x2));
++		int ry0 = Max2(ymin,Min3(y0,y1,y2));
++		int rx1 = Min2(xmax,Max3(x0,x1,x2));
++		int ry1 = Min2(ymax,Max3(y0,y1,y2));
++		if( rx0>=rx1 || ry0>=ry1) return;
++	}
++	
++	PixelData = GPU_RGB16(PacketBuffer.U4[0]);
++
++	if (y0 >= y1)
++	{
++		if( y0!=y1 || x0>x1 )
++		{
++			GPU_SWAP(x0, x1, temp);
++			GPU_SWAP(y0, y1, temp);
++		}
++	}
++	if (y1 >= y2)
++	{
++		if( y1!=y2 || x1>x2 )
++		{
++			GPU_SWAP(x1, x2, temp);
++			GPU_SWAP(y1, y2, temp);
++		}
++	}
++	if (y0 >= y1)
++	{
++		if( y0!=y1 || x0>x1 )
++		{
++			GPU_SWAP(x0, x1, temp);
++			GPU_SWAP(y0, y1, temp);
++		}
++	}
++
++	ya = y2 - y0;
++	yb = y2 - y1;
++	dx =(x2 - x1) * ya - (x2 - x0) * yb;
++
++	for (s32 loop0 = 2; loop0; --loop0)
++	{
++		if (loop0 == 2)
++		{
++			ya = y0;
++			yb = y1;
++			x3 = i2x(x0);
++			x4 = y0!=y1 ? x3 : i2x(x1);
++			if (dx < 0)
++			{
++				dx3 = xLoDivx((x2 - x0), (y2 - y0));
++				dx4 = xLoDivx((x1 - x0), (y1 - y0));
++			}
++			else
++			{
++				dx3 = xLoDivx((x1 - x0), (y1 - y0));
++				dx4 = xLoDivx((x2 - x0), (y2 - y0));
++			}
++		}
++		else
++		{
++			ya = y1;
++			yb = y2;
++			if (dx < 0)
++			{
++				x4  = i2x(x1);
++				x3  = i2x(x0) + (dx3 * (y1 - y0));
++				dx4 = xLoDivx((x2 - x1), (y2 - y1));
++			}
++			else
++			{
++				x3  = i2x(x1);
++				x4  = i2x(x0) + (dx4 * (y1 - y0));
++				dx3 = xLoDivx((x2 - x1), (y2 - y1));
++			}
++		}
++
++		temp = ymin - ya;
++		if (temp > 0)
++		{
++			ya  = ymin;
++			x3 += dx3*temp;
++			x4 += dx4*temp;
++		}
++		if (yb > ymax) yb = ymax;
++		if (ya>=yb) continue;
++
++		x3+= fixed_HALF;
++		x4+= fixed_HALF;
++
++		u16* PixelBase  = &((u16*)GPU_FrameBuffer)[FRAME_OFFSET(0, ya)];
++		
++		for(;ya<yb;++ya, PixelBase += FRAME_WIDTH, x3+=dx3, x4+=dx4)
++		{
++			if (ya&li) continue;
++			xa = x2i(x3);
++			xb = x2i(x4);
++			if( (xa>xmax) || (xb<xmin) ) continue;
++			if(xa < xmin) xa = xmin;
++			if(xb > xmax) xb = xmax;
++			xb-=xa;
++			if(xb>0) gpuPolySpanDriver(PixelBase + xa,xb);
++		}
++	}
++}
++
++/*----------------------------------------------------------------------
++FT3
++----------------------------------------------------------------------*/
++
++void gpuDrawFT3(const PP gpuPolySpanDriver)
++{
++	const int li=linesInterlace;
++	s32 temp;
++	s32 xa, xb, xmin, xmax;
++	s32 ya, yb, ymin, ymax;
++	s32 x0, x1, x2, x3, dx3=0, x4, dx4=0, dx;
++	s32 y0, y1, y2;
++	s32 u0, u1, u2, u3, du3=0;
++	s32 v0, v1, v2, v3, dv3=0;
++
++	x0 = GPU_EXPANDSIGN(PacketBuffer.S2[2] );
++	y0 = GPU_EXPANDSIGN(PacketBuffer.S2[3] );
++	x1 = GPU_EXPANDSIGN(PacketBuffer.S2[6] );
++	y1 = GPU_EXPANDSIGN(PacketBuffer.S2[7] );
++	x2 = GPU_EXPANDSIGN(PacketBuffer.S2[10]);
++	y2 = GPU_EXPANDSIGN(PacketBuffer.S2[11]);
++
++	GPU_TESTRANGE3();
++
++	x0 += DrawingOffset[0];   x1 += DrawingOffset[0];   x2 += DrawingOffset[0];
++	y0 += DrawingOffset[1];   y1 += DrawingOffset[1];   y2 += DrawingOffset[1];
++
++	xmin = DrawingArea[0];  xmax = DrawingArea[2];
++	ymin = DrawingArea[1];  ymax = DrawingArea[3];
++
++	{
++		int rx0 = Max2(xmin,Min3(x0,x1,x2));
++		int ry0 = Max2(ymin,Min3(y0,y1,y2));
++		int rx1 = Min2(xmax,Max3(x0,x1,x2));
++		int ry1 = Min2(ymax,Max3(y0,y1,y2));
++		if( rx0>=rx1 || ry0>=ry1) return;
++	}
++	
++	u0 = PacketBuffer.U1[8];  v0 = PacketBuffer.U1[9];
++	u1 = PacketBuffer.U1[16]; v1 = PacketBuffer.U1[17];
++	u2 = PacketBuffer.U1[24]; v2 = PacketBuffer.U1[25];
++
++	r4 = s32(PacketBuffer.U1[0]);
++	g4 = s32(PacketBuffer.U1[1]);
++	b4 = s32(PacketBuffer.U1[2]);
++	dr4 = dg4 = db4 = 0;
++
++	if (y0 >= y1)
++	{
++		if( y0!=y1 || x0>x1 )
++		{
++			GPU_SWAP(x0, x1, temp);
++			GPU_SWAP(y0, y1, temp);
++			GPU_SWAP(u0, u1, temp);
++			GPU_SWAP(v0, v1, temp);
++		}
++	}
++	if (y1 >= y2)
++	{
++		if( y1!=y2 || x1>x2 )
++		{
++			GPU_SWAP(x1, x2, temp);
++			GPU_SWAP(y1, y2, temp);
++			GPU_SWAP(u1, u2, temp);
++			GPU_SWAP(v1, v2, temp);
++		}
++	}
++	if (y0 >= y1)
++	{
++		if( y0!=y1 || x0>x1 )
++		{
++			GPU_SWAP(x0, x1, temp);
++			GPU_SWAP(y0, y1, temp);
++			GPU_SWAP(u0, u1, temp);
++			GPU_SWAP(v0, v1, temp);
++		}
++	}
++
++	ya  = y2 - y0;
++	yb  = y2 - y1;
++	dx  = (x2 - x1) * ya - (x2 - x0) * yb;
++	du4 = (u2 - u1) * ya - (u2 - u0) * yb;
++	dv4 = (v2 - v1) * ya - (v2 - v0) * yb;
++
++	s32 iF,iS;
++	xInv( dx, iF, iS);
++	du4 = xInvMulx( du4, iF, iS);
++	dv4 = xInvMulx( dv4, iF, iS);
++	tInc = ((u32)(du4<<7)&0x7fff0000) | ((u32)(dv4>>9)&0x00007fff);
++	tMsk = (TextureWindow[2]<<23) | (TextureWindow[3]<<7) | 0x00ff00ff;
++
++	for (s32 loop0 = 2; loop0; --loop0)
++	{
++		if (loop0 == 2)
++		{
++			ya = y0;
++			yb = y1;
++			u3 = i2x(u0);
++			v3 = i2x(v0);
++			x3 = i2x(x0);
++			x4 = y0!=y1 ? x3 : i2x(x1);
++			if (dx < 0)
++			{
++				xInv( (y2 - y0), iF, iS);
++				dx3 = xInvMulx( (x2 - x0), iF, iS);
++				du3 = xInvMulx( (u2 - u0), iF, iS);
++				dv3 = xInvMulx( (v2 - v0), iF, iS);
++				dx4 = xLoDivx ( (x1 - x0), (y1 - y0));
++			}
++			else
++			{
++				xInv( (y1 - y0), iF, iS);
++				dx3 = xInvMulx( (x1 - x0), iF, iS);
++				du3 = xInvMulx( (u1 - u0), iF, iS);
++				dv3 = xInvMulx( (v1 - v0), iF, iS);
++				dx4 = xLoDivx ( (x2 - x0), (y2 - y0));
++			}
++		}
++		else
++		{
++			ya = y1;
++			yb = y2;
++			if (dx < 0)
++			{
++				temp = y1 - y0;
++				u3 = i2x(u0) + (du3 * temp);
++				v3 = i2x(v0) + (dv3 * temp);
++				x3 = i2x(x0) + (dx3 * temp);
++				x4 = i2x(x1);
++				dx4 = xLoDivx((x2 - x1), (y2 - y1));
++			}
++			else
++			{
++				u3 = i2x(u1);
++				v3 = i2x(v1);
++				x3 = i2x(x1);
++				x4 = i2x(x0) + (dx4 * (y1 - y0));
++				xInv( (y2 - y1), iF, iS);
++				dx3 = xInvMulx( (x2 - x1), iF, iS);
++				du3 = xInvMulx( (u2 - u1), iF, iS);
++				dv3 = xInvMulx( (v2 - v1), iF, iS);
++			}
++		}
++
++		temp = ymin - ya;
++		if (temp > 0)
++		{
++			ya  = ymin;
++			x3 += dx3*temp;
++			x4 += dx4*temp;
++			u3 += du3*temp;
++			v3 += dv3*temp;
++		}
++		if (yb > ymax) yb = ymax;
++		if (ya>=yb) continue;
++
++		x3+= fixed_HALF;
++		x4+= fixed_HALF;
++		u3+= fixed_HALF;
++		v4+= fixed_HALF;
++
++		u16* PixelBase  = &((u16*)GPU_FrameBuffer)[FRAME_OFFSET(0, ya)];
++
++		for(;ya<yb;++ya, PixelBase += FRAME_WIDTH, x3+=dx3, x4+=dx4, u3+=du3, v3+=dv3)
++		{
++			if (ya&li) continue;
++			xa = x2i(x3);
++			xb = x2i(x4);
++			if( (xa>xmax) || (xb<xmin) ) continue;
++
++			temp = xmin - xa;
++			if(temp > 0)
++			{
++				xa  = xmin;
++				u4 = u3 + du4*temp;
++				v4 = v3 + dv4*temp;
++			}
++			else
++			{
++				u4 = u3;
++				v4 = v3;
++			}
++			if(xb > xmax) xb = xmax;
++			xb-=xa;
++			if(xb>0) gpuPolySpanDriver(PixelBase + xa,xb);
++		}
++	}
++}
++
++/*----------------------------------------------------------------------
++G3
++----------------------------------------------------------------------*/
++
++void gpuDrawG3(const PP gpuPolySpanDriver)
++{
++	const int li=linesInterlace;
++	s32 temp;
++	s32 xa, xb, xmin, xmax;
++	s32 ya, yb, ymin, ymax;
++	s32 x0, x1, x2, x3, dx3=0, x4, dx4=0, dx;
++	s32 y0, y1, y2;
++	s32 r0, r1, r2, r3, dr3=0;
++	s32 g0, g1, g2, g3, dg3=0;
++	s32 b0, b1, b2, b3, db3=0;
++
++	x0 = GPU_EXPANDSIGN(PacketBuffer.S2[2] );
++	y0 = GPU_EXPANDSIGN(PacketBuffer.S2[3] );
++	x1 = GPU_EXPANDSIGN(PacketBuffer.S2[6] );
++	y1 = GPU_EXPANDSIGN(PacketBuffer.S2[7] );
++	x2 = GPU_EXPANDSIGN(PacketBuffer.S2[10]);
++	y2 = GPU_EXPANDSIGN(PacketBuffer.S2[11]);
++
++	GPU_TESTRANGE3();
++
++	x0 += DrawingOffset[0];   x1 += DrawingOffset[0];   x2 += DrawingOffset[0];
++	y0 += DrawingOffset[1];   y1 += DrawingOffset[1];   y2 += DrawingOffset[1];
++
++	xmin = DrawingArea[0];  xmax = DrawingArea[2];
++	ymin = DrawingArea[1];  ymax = DrawingArea[3];
++
++	{
++		int rx0 = Max2(xmin,Min3(x0,x1,x2));
++		int ry0 = Max2(ymin,Min3(y0,y1,y2));
++		int rx1 = Min2(xmax,Max3(x0,x1,x2));
++		int ry1 = Min2(ymax,Max3(y0,y1,y2));
++		if( rx0>=rx1 || ry0>=ry1) return;
++	}
++	
++	r0 = PacketBuffer.U1[0];	g0 = PacketBuffer.U1[1];	b0 = PacketBuffer.U1[2];
++	r1 = PacketBuffer.U1[8];	g1 = PacketBuffer.U1[9];	b1 = PacketBuffer.U1[10];
++	r2 = PacketBuffer.U1[16];	g2 = PacketBuffer.U1[17];	b2 = PacketBuffer.U1[18];
++
++	if (y0 >= y1)
++	{
++		if( y0!=y1 || x0>x1 )
++		{
++			GPU_SWAP(x0, x1, temp);		GPU_SWAP(y0, y1, temp);
++			GPU_SWAP(r0, r1, temp);		GPU_SWAP(g0, g1, temp);		GPU_SWAP(b0, b1, temp);
++		}
++	}
++	if (y1 >= y2)
++	{
++		if( y1!=y2 || x1>x2 )
++		{
++			GPU_SWAP(x1, x2, temp);		GPU_SWAP(y1, y2, temp);
++			GPU_SWAP(r1, r2, temp);		GPU_SWAP(g1, g2, temp);   GPU_SWAP(b1, b2, temp);
++		}
++	}
++	if (y0 >= y1)
++	{
++		if( y0!=y1 || x0>x1 )
++		{
++			GPU_SWAP(x0, x1, temp);		GPU_SWAP(y0, y1, temp);
++			GPU_SWAP(r0, r1, temp);   GPU_SWAP(g0, g1, temp);		GPU_SWAP(b0, b1, temp);
++		}
++	}
++
++	ya  = y2 - y0;
++	yb  = y2 - y1;
++	dx  = (x2 - x1) * ya - (x2 - x0) * yb;
++	dr4 = (r2 - r1) * ya - (r2 - r0) * yb;
++	dg4 = (g2 - g1) * ya - (g2 - g0) * yb;
++	db4 = (b2 - b1) * ya - (b2 - b0) * yb;
++
++	s32 iF,iS;
++	xInv(            dx, iF, iS);
++	dr4 = xInvMulx( dr4, iF, iS);
++	dg4 = xInvMulx( dg4, iF, iS);
++	db4 = xInvMulx( db4, iF, iS);
++	u32 dr = (u32)(dr4<< 8)&(0xffffffff<<21);   if(dr4<0) dr+= 1<<21;
++	u32 dg = (u32)(dg4>> 3)&(0xffffffff<<10);   if(dg4<0) dg+= 1<<10;
++	u32 db = (u32)(db4>>14)&(0xffffffff    );   if(db4<0) db+= 1<< 0;
++	lInc = db + dg + dr;
++
++	for (s32 loop0 = 2; loop0; --loop0)
++	{
++		if (loop0 == 2)
++		{
++			ya = y0;
++			yb = y1;
++			r3 = i2x(r0);
++			g3 = i2x(g0);
++			b3 = i2x(b0);
++			x3 = i2x(x0);
++			x4 = y0!=y1 ? x3 : i2x(x1);
++			if (dx < 0)
++			{
++				xInv(           (y2 - y0), iF, iS);
++				dx3 = xInvMulx( (x2 - x0), iF, iS);
++				dr3 = xInvMulx( (r2 - r0), iF, iS);
++				dg3 = xInvMulx( (g2 - g0), iF, iS);
++				db3 = xInvMulx( (b2 - b0), iF, iS);
++				dx4 = xLoDivx ( (x1 - x0), (y1 - y0));
++			}
++			else
++			{
++				xInv(           (y1 - y0), iF, iS);
++				dx3 = xInvMulx( (x1 - x0), iF, iS);
++				dr3 = xInvMulx( (r1 - r0), iF, iS);
++				dg3 = xInvMulx( (g1 - g0), iF, iS);
++				db3 = xInvMulx( (b1 - b0), iF, iS);
++				dx4 = xLoDivx ( (x2 - x0), (y2 - y0));
++			}
++		}
++		else
++		{
++			ya = y1;
++			yb = y2;
++			if (dx < 0)
++			{
++				temp = y1 - y0;
++				r3  = i2x(r0) + (dr3 * temp);
++				g3  = i2x(g0) + (dg3 * temp);
++				b3  = i2x(b0) + (db3 * temp);
++				x3  = i2x(x0) + (dx3 * temp);
++				x4  = i2x(x1);
++				dx4 = xLoDivx((x2 - x1), (y2 - y1));
++			}
++			else
++			{
++				r3 = i2x(r1);
++				g3 = i2x(g1);
++				b3 = i2x(b1);
++				x3 = i2x(x1);
++				x4 = i2x(x0) + (dx4 * (y1 - y0));
++
++				xInv(           (y2 - y1), iF, iS);
++				dx3 = xInvMulx( (x2 - x1), iF, iS);
++				dr3 = xInvMulx( (r2 - r1), iF, iS);
++				dg3 = xInvMulx( (g2 - g1), iF, iS);
++				db3 = xInvMulx( (b2 - b1), iF, iS);
++			}
++		}
++
++		temp = ymin - ya;
++		if (temp > 0)
++		{
++			ya  = ymin;
++			x3 += dx3*temp;   x4 += dx4*temp;
++			r3 += dr3*temp;   g3 += dg3*temp;   b3 += db3*temp;
++		}
++		if (yb > ymax) yb = ymax;
++		if (ya>=yb) continue;
++
++		x3+= fixed_HALF;  x4+= fixed_HALF;
++		r3+= fixed_HALF;  g3+= fixed_HALF;  b3+= fixed_HALF;
++
++		u16* PixelBase  = &((u16*)GPU_FrameBuffer)[FRAME_OFFSET(0, ya)];
++		
++		for(;ya<yb;++ya, PixelBase += FRAME_WIDTH, x3+=dx3, x4+=dx4, r3+=dr3, g3+=dg3, b3+=db3)
++		{
++			if (ya&li) continue;
++			xa = x2i(x3);
++			xb = x2i(x4);
++			if( (xa>xmax) || (xb<xmin) ) continue;
++
++			temp = xmin - xa;
++			if(temp > 0)
++			{
++				xa  = xmin;
++				r4 = r3 + dr4*temp;   g4 = g3 + dg4*temp;   b4 = b3 + db4*temp;
++			}
++			else
++			{
++				r4 = r3;  g4 = g3;  b4 = b3;
++			}
++			if(xb > xmax) xb = xmax;
++			xb-=xa;
++			if(xb>0) gpuPolySpanDriver(PixelBase + xa,xb);
++		}
++	}
++}
++
++/*----------------------------------------------------------------------
++GT3
++----------------------------------------------------------------------*/
++
++void gpuDrawGT3(const PP gpuPolySpanDriver)
++{
++	const int li=linesInterlace;
++	s32 temp;
++	s32 xa, xb, xmin, xmax;
++	s32 ya, yb, ymin, ymax;
++	s32 x0, x1, x2, x3, dx3=0, x4, dx4=0, dx;
++	s32 y0, y1, y2;
++	s32 u0, u1, u2, u3, du3=0;
++	s32 v0, v1, v2, v3, dv3=0;
++	s32 r0, r1, r2, r3, dr3=0;
++	s32 g0, g1, g2, g3, dg3=0;
++	s32 b0, b1, b2, b3, db3=0;
++
++	x0 = GPU_EXPANDSIGN(PacketBuffer.S2[2] );
++	y0 = GPU_EXPANDSIGN(PacketBuffer.S2[3] );
++	x1 = GPU_EXPANDSIGN(PacketBuffer.S2[8] );
++	y1 = GPU_EXPANDSIGN(PacketBuffer.S2[9] );
++	x2 = GPU_EXPANDSIGN(PacketBuffer.S2[14]);
++	y2 = GPU_EXPANDSIGN(PacketBuffer.S2[15]);
++
++	GPU_TESTRANGE3();
++
++	x0 += DrawingOffset[0];   x1 += DrawingOffset[0];   x2 += DrawingOffset[0];
++	y0 += DrawingOffset[1];   y1 += DrawingOffset[1];   y2 += DrawingOffset[1];
++
++	xmin = DrawingArea[0];	xmax = DrawingArea[2];
++	ymin = DrawingArea[1];	ymax = DrawingArea[3];
++
++	{
++		int rx0 = Max2(xmin,Min3(x0,x1,x2));
++		int ry0 = Max2(ymin,Min3(y0,y1,y2));
++		int rx1 = Min2(xmax,Max3(x0,x1,x2));
++		int ry1 = Min2(ymax,Max3(y0,y1,y2));
++		if( rx0>=rx1 || ry0>=ry1) return;
++	}
++
++	r0 = PacketBuffer.U1[0];	g0 = PacketBuffer.U1[1];	b0 = PacketBuffer.U1[2];
++	u0 = PacketBuffer.U1[8];	v0 = PacketBuffer.U1[9];
++	r1 = PacketBuffer.U1[12];	g1 = PacketBuffer.U1[13];	b1 = PacketBuffer.U1[14];
++	u1 = PacketBuffer.U1[20];	v1 = PacketBuffer.U1[21];
++	r2 = PacketBuffer.U1[24];	g2 = PacketBuffer.U1[25];	b2 = PacketBuffer.U1[26];
++	u2 = PacketBuffer.U1[32];	v2 = PacketBuffer.U1[33];
++
++	if (y0 >= y1)
++	{
++		if( y0!=y1 || x0>x1 )
++		{
++			GPU_SWAP(x0, x1, temp);		GPU_SWAP(y0, y1, temp);
++			GPU_SWAP(u0, u1, temp);		GPU_SWAP(v0, v1, temp);
++			GPU_SWAP(r0, r1, temp);		GPU_SWAP(g0, g1, temp);   GPU_SWAP(b0, b1, temp);
++		}
++	}
++	if (y1 >= y2)
++	{
++		if( y1!=y2 || x1>x2 )
++		{
++			GPU_SWAP(x1, x2, temp);		GPU_SWAP(y1, y2, temp);
++			GPU_SWAP(u1, u2, temp);		GPU_SWAP(v1, v2, temp);
++			GPU_SWAP(r1, r2, temp);   GPU_SWAP(g1, g2, temp);		GPU_SWAP(b1, b2, temp);
++		}
++	}
++	if (y0 >= y1)
++	{
++		if( y0!=y1 || x0>x1 )
++		{
++			GPU_SWAP(x0, x1, temp);		GPU_SWAP(y0, y1, temp);
++			GPU_SWAP(u0, u1, temp);		GPU_SWAP(v0, v1, temp);
++			GPU_SWAP(r0, r1, temp);		GPU_SWAP(g0, g1, temp);		GPU_SWAP(b0, b1, temp);
++		}
++	}
++
++	ya  = y2 - y0;
++	yb  = y2 - y1;
++	dx  = (x2 - x1) * ya - (x2 - x0) * yb;
++	du4 = (u2 - u1) * ya - (u2 - u0) * yb;
++	dv4 = (v2 - v1) * ya - (v2 - v0) * yb;
++	dr4 = (r2 - r1) * ya - (r2 - r0) * yb;
++	dg4 = (g2 - g1) * ya - (g2 - g0) * yb;
++	db4 = (b2 - b1) * ya - (b2 - b0) * yb;
++
++	s32 iF,iS;
++
++	xInv(            dx, iF, iS);
++	du4 = xInvMulx( du4, iF, iS);
++	dv4 = xInvMulx( dv4, iF, iS);
++	dr4 = xInvMulx( dr4, iF, iS);
++	dg4 = xInvMulx( dg4, iF, iS);
++	db4 = xInvMulx( db4, iF, iS);
++	u32 dr = (u32)(dr4<< 8)&(0xffffffff<<21);   if(dr4<0) dr+= 1<<21;
++	u32 dg = (u32)(dg4>> 3)&(0xffffffff<<10);   if(dg4<0) dg+= 1<<10;
++	u32 db = (u32)(db4>>14)&(0xffffffff    );   if(db4<0) db+= 1<< 0;
++	lInc = db + dg + dr;
++	tInc = ((u32)(du4<<7)&0x7fff0000) | ((u32)(dv4>>9)&0x00007fff);
++	tMsk = (TextureWindow[2]<<23) | (TextureWindow[3]<<7) | 0x00ff00ff;
++
++	for (s32 loop0 = 2; loop0; --loop0)
++	{
++		if (loop0 == 2)
++		{
++			ya = y0;
++			yb = y1;
++			u3 = i2x(u0);
++			v3 = i2x(v0);
++			r3 = i2x(r0);
++			g3 = i2x(g0);
++			b3 = i2x(b0);
++			x3 = i2x(x0);
++			x4 = y0!=y1 ? x3 : i2x(x1);
++			if (dx < 0)
++			{
++				xInv(           (y2 - y0), iF, iS);
++				dx3 = xInvMulx( (x2 - x0), iF, iS);
++				du3 = xInvMulx( (u2 - u0), iF, iS);
++				dv3 = xInvMulx( (v2 - v0), iF, iS);
++				dr3 = xInvMulx( (r2 - r0), iF, iS);
++				dg3 = xInvMulx( (g2 - g0), iF, iS);
++				db3 = xInvMulx( (b2 - b0), iF, iS);
++				dx4 = xLoDivx ( (x1 - x0), (y1 - y0));
++			}
++			else
++			{
++				xInv(           (y1 - y0), iF, iS);
++				dx3 = xInvMulx( (x1 - x0), iF, iS);
++				du3 = xInvMulx( (u1 - u0), iF, iS);
++				dv3 = xInvMulx( (v1 - v0), iF, iS);
++				dr3 = xInvMulx( (r1 - r0), iF, iS);
++				dg3 = xInvMulx( (g1 - g0), iF, iS);
++				db3 = xInvMulx( (b1 - b0), iF, iS);
++				dx4 = xLoDivx ( (x2 - x0), (y2 - y0));
++			}
++		}
++		else
++		{
++			ya = y1;
++			yb = y2;
++			if (dx < 0)
++			{
++				temp = y1 - y0;
++				u3  = i2x(u0) + (du3 * temp);
++				v3  = i2x(v0) + (dv3 * temp);
++				r3  = i2x(r0) + (dr3 * temp);
++				g3  = i2x(g0) + (dg3 * temp);
++				b3  = i2x(b0) + (db3 * temp);
++				x3  = i2x(x0) + (dx3 * temp);
++				x4  = i2x(x1);
++				dx4 = xLoDivx((x2 - x1), (y2 - y1));
++			}
++			else
++			{
++				u3 = i2x(u1);
++				v3 = i2x(v1);
++				r3 = i2x(r1);
++				g3 = i2x(g1);
++				b3 = i2x(b1);
++				x3 = i2x(x1);
++				x4 = i2x(x0) + (dx4 * (y1 - y0));
++
++				xInv(           (y2 - y1), iF, iS);
++				dx3 = xInvMulx( (x2 - x1), iF, iS);
++				du3 = xInvMulx( (u2 - u1), iF, iS);
++				dv3 = xInvMulx( (v2 - v1), iF, iS);
++				dr3 = xInvMulx( (r2 - r1), iF, iS);
++				dg3 = xInvMulx( (g2 - g1), iF, iS);
++				db3 = xInvMulx( (b2 - b1), iF, iS);
++			}
++		}
++
++		temp = ymin - ya;
++		if (temp > 0)
++		{
++			ya  = ymin;
++			x3 += dx3*temp;   x4 += dx4*temp;
++			u3 += du3*temp;   v3 += dv3*temp;
++			r3 += dr3*temp;   g3 += dg3*temp;   b3 += db3*temp;
++		}
++		if (yb > ymax) yb = ymax;
++		if (ya>=yb) continue;
++
++		x3+= fixed_HALF;  x4+= fixed_HALF;
++		u3+= fixed_HALF;  v4+= fixed_HALF;
++		r3+= fixed_HALF;  g3+= fixed_HALF;  b3+= fixed_HALF;
++		u16* PixelBase  = &((u16*)GPU_FrameBuffer)[FRAME_OFFSET(0, ya)];
++		
++		for(;ya<yb;++ya, PixelBase += FRAME_WIDTH, x3+=dx3, x4+=dx4, u3+=du3, v3+=dv3, r3+=dr3, g3+=dg3,	b3+=db3)
++		{
++			if (ya&li) continue;
++			xa = x2i(x3);
++			xb = x2i(x4);
++			if( (xa>xmax) || (xb<xmin))	continue;
++
++			temp = xmin - xa;
++			if(temp > 0)
++			{
++				xa  = xmin;
++				u4 = u3 + du4*temp;   v4 = v3 + dv4*temp;
++				r4 = r3 + dr4*temp;   g4 = g3 + dg4*temp;   b4 = b3 + db4*temp;
++			}
++			else
++			{
++				u4 = u3;  v4 = v3;
++				r4 = r3;  g4 = g3;  b4 = b3;
++			}
++			if(xb > xmax) xb = xmax;
++			xb-=xa;
++			if(xb>0) gpuPolySpanDriver(PixelBase + xa,xb);
++		}
++	}
++}
+diff --git a/plugins/gpu_unai_old/gpu_raster_sprite.h b/plugins/gpu_unai_old/gpu_raster_sprite.h
+new file mode 100644
+index 00000000..a700db32
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpu_raster_sprite.h
+@@ -0,0 +1,174 @@
++/***************************************************************************
++*   Copyright (C) 2010 PCSX4ALL Team                                      *
++*   Copyright (C) 2010 Unai                                               *
++*                                                                         *
++*   This program is free software; you can redistribute it and/or modify  *
++*   it under the terms of the GNU General Public License as published by  *
++*   the Free Software Foundation; either version 2 of the License, or     *
++*   (at your option) any later version.                                   *
++*                                                                         *
++*   This program is distributed in the hope that it will be useful,       *
++*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++*   GNU General Public License for more details.                          *
++*                                                                         *
++*   You should have received a copy of the GNU General Public License     *
++*   along with this program; if not, write to the                         *
++*   Free Software Foundation, Inc.,                                       *
++*   51 Franklin Street, Fifth Floor, Boston, MA 02111-1307 USA.           *
++***************************************************************************/
++
++///////////////////////////////////////////////////////////////////////////////
++//  GPU internal sprite drawing functions
++
++///////////////////////////////////////////////////////////////////////////////
++void gpuDrawS(const PS gpuSpriteSpanDriver)
++{
++	s32 x0, x1;
++	s32 y0, y1;
++	s32 u0;
++	s32 v0;
++
++	x1 = x0 = GPU_EXPANDSIGN(PacketBuffer.S2[2]) + DrawingOffset[0];
++	y1 = y0 = GPU_EXPANDSIGN(PacketBuffer.S2[3]) + DrawingOffset[1];
++	x1+= PacketBuffer.S2[6];
++	y1+= PacketBuffer.S2[7];
++
++	{
++		s32 xmin, xmax;
++		s32 ymin, ymax;
++		xmin = DrawingArea[0];	xmax = DrawingArea[2];
++		ymin = DrawingArea[1];	ymax = DrawingArea[3];
++
++		{
++			int rx0 = Max2(xmin,Min2(x0,x1));
++			int ry0 = Max2(ymin,Min2(y0,y1));
++			int rx1 = Min2(xmax,Max2(x0,x1));
++			int ry1 = Min2(ymax,Max2(y0,y1));
++			if( rx0>=rx1 || ry0>=ry1) return;
++		}
++
++		u0 = PacketBuffer.U1[8];
++		v0 = PacketBuffer.U1[9];
++
++		r4 = s32(PacketBuffer.U1[0]);
++		g4 = s32(PacketBuffer.U1[1]);
++		b4 = s32(PacketBuffer.U1[2]);
++
++		{
++			s32 temp;
++			temp = ymin - y0;
++			if (temp > 0) { y0 = ymin; v0 += temp; }
++			if (y1 > ymax) y1 = ymax;
++			if (y1 <= y0) return;
++			
++			temp = xmin - x0;
++			if (temp > 0) { x0 = xmin; u0 += temp; }
++			if (x1 > xmax) x1 = xmax;
++			x1 -= x0;
++			if (x1 <= 0) return;
++		}
++	}
++
++	{
++		u16 *Pixel = &((u16*)GPU_FrameBuffer)[FRAME_OFFSET(x0, y0)];
++		const int li=linesInterlace;
++		const u32 masku=TextureWindow[2];
++		const u32 maskv=TextureWindow[3];
++
++		for (;y0<y1;++y0) {
++			if( 0 == (y0&li) ) gpuSpriteSpanDriver(Pixel,x1,FRAME_OFFSET(u0,v0),masku);
++			Pixel += FRAME_WIDTH;
++			v0 = (v0+1)&maskv;
++		}
++	}
++}
++
++#ifdef __arm__
++#include "gpu_arm.h"
++
++void gpuDrawS16(void)
++{
++	s32 x0, y0;
++	s32 u0, v0;
++	s32 xmin, xmax;
++	s32 ymin, ymax;
++	u32 h = 16;
++
++	x0 = GPU_EXPANDSIGN(PacketBuffer.S2[2]) + DrawingOffset[0];
++	y0 = GPU_EXPANDSIGN(PacketBuffer.S2[3]) + DrawingOffset[1];
++
++	xmin = DrawingArea[0];	xmax = DrawingArea[2];
++	ymin = DrawingArea[1];	ymax = DrawingArea[3];
++	u0 = PacketBuffer.U1[8];
++	v0 = PacketBuffer.U1[9];
++
++	if (x0 > xmax - 16 || x0 < xmin ||
++	    ((u0 | v0) & 15) || !(TextureWindow[2] & TextureWindow[3] & 8)) {
++		// send corner cases to general handler
++		PacketBuffer.U4[3] = 0x00100010;
++		gpuDrawS(gpuSpriteSpanFn<0x20>);
++		return;
++	}
++
++	if (y0 >= ymax || y0 <= ymin - 16)
++		return;
++	if (y0 < ymin) {
++		h -= ymin - y0;
++		v0 += ymin - y0;
++		y0 = ymin;
++	}
++	else if (ymax - y0 < 16)
++		h = ymax - y0;
++
++	draw_spr16_full(&GPU_FrameBuffer[FRAME_OFFSET(x0, y0)], &TBA[FRAME_OFFSET(u0/4, v0)], CBA, h);
++}
++#endif // __arm__
++
++///////////////////////////////////////////////////////////////////////////////
++void gpuDrawT(const PT gpuTileSpanDriver)
++{
++	s32 x0, y0;
++	s32 x1, y1;
++
++	x1 = x0 = GPU_EXPANDSIGN(PacketBuffer.S2[2]) + DrawingOffset[0];
++	y1 = y0 = GPU_EXPANDSIGN(PacketBuffer.S2[3]) + DrawingOffset[1];
++	x1+= PacketBuffer.S2[4];
++	y1+= PacketBuffer.S2[5];
++
++	{
++		s32 xmin, xmax;
++		s32 ymin, ymax;
++		xmin = DrawingArea[0];	xmax = DrawingArea[2];
++		ymin = DrawingArea[1];	ymax = DrawingArea[3];
++
++		{
++			int rx0 = Max2(xmin,Min2(x0,x1));
++			int ry0 = Max2(ymin,Min2(y0,y1));
++			int rx1 = Min2(xmax,Max2(x0,x1));
++			int ry1 = Min2(ymax,Max2(y0,y1));
++			if(rx0>=rx1 || ry0>=ry1) return;
++		}
++
++		if (y0 < ymin) y0 = ymin;
++		if (y1 > ymax) y1 = ymax;
++		if (y1 <= y0) return;
++
++		if (x0 < xmin) x0 = xmin;
++		if (x1 > xmax) x1 = xmax;
++		x1 -= x0;
++		if (x1 <= 0) return;
++	}
++	
++	{
++		u16 *Pixel = &((u16*)GPU_FrameBuffer)[FRAME_OFFSET(x0, y0)];
++		const u16 Data = GPU_RGB16(PacketBuffer.U4[0]);
++		const int li=linesInterlace;
++
++		for (; y0<y1; ++y0)
++		{
++			if( 0 == (y0&li) ) gpuTileSpanDriver(Pixel,x1,Data);
++			Pixel += FRAME_WIDTH;
++		}
++	}
++}
+diff --git a/plugins/gpu_unai_old/gpulib_if.cpp b/plugins/gpu_unai_old/gpulib_if.cpp
+new file mode 100644
+index 00000000..af1cdc10
+--- /dev/null
++++ b/plugins/gpu_unai_old/gpulib_if.cpp
+@@ -0,0 +1,583 @@
++/***************************************************************************
++*   Copyright (C) 2010 PCSX4ALL Team                                      *
++*   Copyright (C) 2010 Unai                                               *
++*   Copyright (C) 2011 notaz                                              *
++*                                                                         *
++*   This program is free software; you can redistribute it and/or modify  *
++*   it under the terms of the GNU General Public License as published by  *
++*   the Free Software Foundation; either version 2 of the License, or     *
++*   (at your option) any later version.                                   *
++*                                                                         *
++*   This program is distributed in the hope that it will be useful,       *
++*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
++*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
++*   GNU General Public License for more details.                          *
++*                                                                         *
++*   You should have received a copy of the GNU General Public License     *
++*   along with this program; if not, write to the                         *
++*   Free Software Foundation, Inc.,                                       *
++*   51 Franklin Street, Fifth Floor, Boston, MA 02111-1307 USA.           *
++***************************************************************************/
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include "../gpulib/gpu.h"
++#include "arm_features.h"
++
++#ifdef THREAD_RENDERING
++#include "../gpulib/gpulib_thread_if.h"
++#define do_cmd_list real_do_cmd_list
++#define renderer_init real_renderer_init
++#define renderer_finish real_renderer_finish
++#define renderer_sync_ecmds real_renderer_sync_ecmds
++#define renderer_update_caches real_renderer_update_caches
++#define renderer_flush_queues real_renderer_flush_queues
++#define renderer_set_interlace real_renderer_set_interlace
++#define renderer_set_config real_renderer_set_config
++#define renderer_notify_res_change real_renderer_notify_res_change
++#define renderer_notify_update_lace real_renderer_notify_update_lace
++#define renderer_sync real_renderer_sync
++#define ex_regs scratch_ex_regs
++#endif
++
++
++#define u8 uint8_t
++#define s8 int8_t
++#define u16 uint16_t
++#define s16 int16_t
++#define u32 uint32_t
++#define s32 int32_t
++#define s64 int64_t
++
++#define INLINE static
++
++#define	FRAME_BUFFER_SIZE  (1024*512*2)
++#define	FRAME_WIDTH        1024
++#define	FRAME_HEIGHT       512
++#define	FRAME_OFFSET(x,y)  (((y)<<10)+(x))
++
++#define isSkip 0 /* skip frame (info coming from GPU) */
++#define alt_fps 0
++static int linesInterlace;  /* internal lines interlace */
++static int force_interlace;
++
++static bool light = true; /* lighting */
++static bool blend = true; /* blending */
++static bool FrameToRead = false; /* load image in progress */
++static bool FrameToWrite = false; /* store image in progress */
++
++static bool enableAbbeyHack = false; /* Abe's Odyssey hack */
++
++static u8 BLEND_MODE;
++static u8 TEXT_MODE;
++static u8 Masking;
++
++static u16 PixelMSB;
++static u16 PixelData;
++
++///////////////////////////////////////////////////////////////////////////////
++//  GPU Global data
++///////////////////////////////////////////////////////////////////////////////
++
++//  Dma Transfers info
++static s32		px,py;
++static s32		x_end,y_end;
++static u16*  pvram;
++
++static s32 PacketCount;
++static s32 PacketIndex;
++
++//  Rasterizer status
++static u32 TextureWindow [4];
++static u32 DrawingArea   [4];
++static u32 DrawingOffset [2];
++
++static u16* TBA;
++static u16* CBA;
++
++//  Inner Loops
++static s32   u4, du4;
++static s32   v4, dv4;
++static s32   r4, dr4;
++static s32   g4, dg4;
++static s32   b4, db4;
++static u32   lInc;
++static u32   tInc, tMsk;
++
++union GPUPacket
++{
++	u32 U4[16];
++	s32 S4[16];
++	u16 U2[32];
++	s16 S2[32];
++	u8  U1[64];
++	s8  S1[64];
++};
++
++static GPUPacket PacketBuffer;
++static u16  *GPU_FrameBuffer;
++static u32   GPU_GP1;
++
++///////////////////////////////////////////////////////////////////////////////
++
++#include "gpu_fixedpoint.h"
++
++//  Inner loop driver instanciation file
++#include "gpu_inner.h"
++
++//  GPU Raster Macros
++#define	GPU_RGB16(rgb)        ((((rgb)&0xF80000)>>9)|(((rgb)&0xF800)>>6)|(((rgb)&0xF8)>>3))
++
++#define GPU_EXPANDSIGN(x)  (((s32)(x)<<21)>>21)
++
++#define CHKMAX_X 1024
++#define CHKMAX_Y 512
++
++#define	GPU_SWAP(a,b,t)	{(t)=(a);(a)=(b);(b)=(t);}
++
++// GPU internal image drawing functions
++#include "gpu_raster_image.h"
++
++// GPU internal line drawing functions
++#include "gpu_raster_line.h"
++
++// GPU internal polygon drawing functions
++#include "gpu_raster_polygon.h"
++
++// GPU internal sprite drawing functions
++#include "gpu_raster_sprite.h"
++
++// GPU command buffer execution/store
++#include "gpu_command.h"
++
++/////////////////////////////////////////////////////////////////////////////
++
++int renderer_init(void)
++{
++	GPU_FrameBuffer = (u16 *)gpu.vram;
++
++	// s_invTable
++	for(int i=1;i<=(1<<TABLE_BITS);++i)
++	{
++		double v = 1.0 / double(i);
++		#ifdef GPU_TABLE_10_BITS
++		v *= double(0xffffffff>>1);
++		#else
++		v *= double(0x80000000);
++		#endif
++		s_invTable[i-1]=s32(v);
++	}
++
++	return 0;
++}
++
++void renderer_finish(void)
++{
++}
++
++void renderer_notify_res_change(void)
++{
++}
++
++void renderer_notify_scanout_change(int x, int y)
++{
++}
++
++extern const unsigned char cmd_lengths[256];
++
++int do_cmd_list(uint32_t *list, int list_len,
++ int *cycles_sum_out, int *cycles_last, int *last_cmd)
++{
++  unsigned int cmd = 0, len, i;
++  unsigned int *list_start = list;
++  unsigned int *list_end = list + list_len;
++
++  linesInterlace = force_interlace;
++#ifdef HAVE_PRE_ARMV7 /* XXX */
++  linesInterlace |= !!(gpu.status & PSX_GPU_STATUS_INTERLACE);
++#endif
++
++  for (; list < list_end; list += 1 + len)
++  {
++    cmd = *list >> 24;
++    len = cmd_lengths[cmd];
++    if (list + 1 + len > list_end) {
++      cmd = -1;
++      break;
++    }
++
++    #define PRIM cmd
++    PacketBuffer.U4[0] = list[0];
++    for (i = 1; i <= len; i++)
++      PacketBuffer.U4[i] = list[i];
++
++    switch (cmd)
++    {
++      case 0x02:
++        gpuClearImage();
++        break;
++
++      case 0x20:
++      case 0x21:
++      case 0x22:
++      case 0x23:
++        gpuDrawF3(gpuPolySpanDrivers [Blending_Mode | Masking | Blending | PixelMSB]);
++        break;
++
++      case 0x24:
++      case 0x25:
++      case 0x26:
++      case 0x27:
++        gpuSetCLUT   (PacketBuffer.U4[2] >> 16);
++        gpuSetTexture(PacketBuffer.U4[4] >> 16);
++        if ((PacketBuffer.U1[0]>0x5F) && (PacketBuffer.U1[1]>0x5F) && (PacketBuffer.U1[2]>0x5F))
++          gpuDrawFT3(gpuPolySpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | PixelMSB]);
++        else
++          gpuDrawFT3(gpuPolySpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | Lighting | PixelMSB]);
++        break;
++
++      case 0x28:
++      case 0x29:
++      case 0x2A:
++      case 0x2B: {
++        const PP gpuPolySpanDriver = gpuPolySpanDrivers [Blending_Mode | Masking | Blending | PixelMSB];
++        gpuDrawF3(gpuPolySpanDriver);
++        PacketBuffer.U4[1] = PacketBuffer.U4[4];
++        gpuDrawF3(gpuPolySpanDriver);
++        break;
++      }
++
++      case 0x2C:
++      case 0x2D:
++      case 0x2E:
++      case 0x2F: {
++        gpuSetCLUT   (PacketBuffer.U4[2] >> 16);
++        gpuSetTexture(PacketBuffer.U4[4] >> 16);
++        PP gpuPolySpanDriver;
++        if ((PacketBuffer.U1[0]>0x5F) && (PacketBuffer.U1[1]>0x5F) && (PacketBuffer.U1[2]>0x5F))
++          gpuPolySpanDriver = gpuPolySpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | PixelMSB];
++        else
++          gpuPolySpanDriver = gpuPolySpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | Lighting | PixelMSB];
++        gpuDrawFT3(gpuPolySpanDriver);
++        PacketBuffer.U4[1] = PacketBuffer.U4[7];
++        PacketBuffer.U4[2] = PacketBuffer.U4[8];
++        gpuDrawFT3(gpuPolySpanDriver);
++        break;
++      }
++
++      case 0x30:
++      case 0x31:
++      case 0x32:
++      case 0x33:
++        gpuDrawG3(gpuPolySpanDrivers [Blending_Mode | Masking | Blending | 129 | PixelMSB]);
++        break;
++
++      case 0x34:
++      case 0x35:
++      case 0x36:
++      case 0x37:
++        gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++        gpuSetTexture (PacketBuffer.U4[5] >> 16);
++        gpuDrawGT3(gpuPolySpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | ((Lighting)?129:0) | PixelMSB]);
++        break;
++
++      case 0x38:
++      case 0x39:
++      case 0x3A:
++      case 0x3B: {
++        const PP gpuPolySpanDriver  = gpuPolySpanDrivers [Blending_Mode | Masking | Blending | 129 | PixelMSB];
++        gpuDrawG3(gpuPolySpanDriver);
++        PacketBuffer.U4[0] = PacketBuffer.U4[6];
++        PacketBuffer.U4[1] = PacketBuffer.U4[7];
++        gpuDrawG3(gpuPolySpanDriver);
++        break;
++      }
++
++      case 0x3C:
++      case 0x3D:
++      case 0x3E:
++      case 0x3F: {
++        gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++        gpuSetTexture (PacketBuffer.U4[5] >> 16);
++        const PP gpuPolySpanDriver  = gpuPolySpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | ((Lighting)?129:0) | PixelMSB];
++        gpuDrawGT3(gpuPolySpanDriver);
++        PacketBuffer.U4[0] = PacketBuffer.U4[9];
++        PacketBuffer.U4[1] = PacketBuffer.U4[10];
++        PacketBuffer.U4[2] = PacketBuffer.U4[11];
++        gpuDrawGT3(gpuPolySpanDriver);
++        break;
++      }
++
++      case 0x40:
++      case 0x41:
++      case 0x42:
++      case 0x43:
++        gpuDrawLF(gpuPixelDrivers [ (Blending_Mode | Masking | Blending | (PixelMSB>>3)) >> 1]);
++        break;
++
++      case 0x48 ... 0x4F:
++      {
++        u32 num_vertexes = 1;
++        u32 *list_position = &(list[2]);
++
++        gpuDrawLF(gpuPixelDrivers [ (Blending_Mode | Masking | Blending | (PixelMSB>>3)) >> 1]);
++
++        while(1)
++        {
++          PacketBuffer.U4[1] = PacketBuffer.U4[2];
++          PacketBuffer.U4[2] = *list_position++;
++          gpuDrawLF(gpuPixelDrivers [ (Blending_Mode | Masking | Blending | (PixelMSB>>3)) >> 1]);
++
++          num_vertexes++;
++          if(list_position >= list_end) {
++            cmd = -1;
++            goto breakloop;
++          }
++          if((*list_position & 0xf000f000) == 0x50005000)
++            break;
++        }
++
++        len += (num_vertexes - 2);
++        break;
++      }
++
++      case 0x50:
++      case 0x51:
++      case 0x52:
++      case 0x53:
++        gpuDrawLG(gpuPixelDrivers [ (Blending_Mode | Masking | Blending | (PixelMSB>>3)) >> 1]);
++        break;
++
++      case 0x58 ... 0x5F:
++      {
++        u32 num_vertexes = 1;
++        u32 *list_position = &(list[2]);
++
++        gpuDrawLG(gpuPixelDrivers [ (Blending_Mode | Masking | Blending | (PixelMSB>>3)) >> 1]);
++
++        while(1)
++        {
++          PacketBuffer.U4[0] = PacketBuffer.U4[2];
++          PacketBuffer.U4[1] = PacketBuffer.U4[3];
++          PacketBuffer.U4[2] = *list_position++;
++          PacketBuffer.U4[3] = *list_position++;
++          gpuDrawLG(gpuPixelDrivers [ (Blending_Mode | Masking | Blending | (PixelMSB>>3)) >> 1]);
++
++          num_vertexes++;
++          if(list_position >= list_end) {
++            cmd = -1;
++            goto breakloop;
++          }
++          if((*list_position & 0xf000f000) == 0x50005000)
++            break;
++        }
++
++        len += (num_vertexes - 2) * 2;
++        break;
++      }
++
++      case 0x60:
++      case 0x61:
++      case 0x62:
++      case 0x63:
++        gpuDrawT(gpuTileSpanDrivers [Blending_Mode | Masking | Blending | (PixelMSB>>3)]);
++        break;
++
++      case 0x64:
++      case 0x65:
++      case 0x66:
++      case 0x67:
++        gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++        gpuSetTexture (GPU_GP1);
++        if ((PacketBuffer.U1[0]>0x5F) && (PacketBuffer.U1[1]>0x5F) && (PacketBuffer.U1[2]>0x5F))
++          gpuDrawS(gpuSpriteSpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | (enableAbbeyHack<<7)  | PixelMSB]);
++        else
++          gpuDrawS(gpuSpriteSpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | Lighting | (enableAbbeyHack<<7)  | PixelMSB]);
++        break;
++
++      case 0x68:
++      case 0x69:
++      case 0x6A:
++      case 0x6B:
++        PacketBuffer.U4[2] = 0x00010001;
++        gpuDrawT(gpuTileSpanDrivers [Blending_Mode | Masking | Blending | (PixelMSB>>3)]);
++        break;
++
++      case 0x70:
++      case 0x71:
++      case 0x72:
++      case 0x73:
++        PacketBuffer.U4[2] = 0x00080008;
++        gpuDrawT(gpuTileSpanDrivers [Blending_Mode | Masking | Blending | (PixelMSB>>3)]);
++        break;
++
++      case 0x74:
++      case 0x75:
++      case 0x76:
++      case 0x77:
++        PacketBuffer.U4[3] = 0x00080008;
++        gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++        gpuSetTexture (GPU_GP1);
++        if ((PacketBuffer.U1[0]>0x5F) && (PacketBuffer.U1[1]>0x5F) && (PacketBuffer.U1[2]>0x5F))
++          gpuDrawS(gpuSpriteSpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | (enableAbbeyHack<<7)  | PixelMSB]);
++        else
++          gpuDrawS(gpuSpriteSpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | Lighting | (enableAbbeyHack<<7)  | PixelMSB]);
++        break;
++
++      case 0x78:
++      case 0x79:
++      case 0x7A:
++      case 0x7B:
++        PacketBuffer.U4[2] = 0x00100010;
++        gpuDrawT(gpuTileSpanDrivers [Blending_Mode | Masking | Blending | (PixelMSB>>3)]);
++        break;
++
++      case 0x7C:
++      case 0x7D:
++#ifdef __arm__
++        if ((GPU_GP1 & 0x180) == 0 && (Masking | PixelMSB) == 0)
++        {
++          gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++          gpuSetTexture (GPU_GP1);
++          gpuDrawS16();
++          break;
++        }
++        // fallthrough
++#endif
++      case 0x7E:
++      case 0x7F:
++        PacketBuffer.U4[3] = 0x00100010;
++        gpuSetCLUT    (PacketBuffer.U4[2] >> 16);
++        gpuSetTexture (GPU_GP1);
++        if ((PacketBuffer.U1[0]>0x5F) && (PacketBuffer.U1[1]>0x5F) && (PacketBuffer.U1[2]>0x5F))
++          gpuDrawS(gpuSpriteSpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | (enableAbbeyHack<<7)  | PixelMSB]);
++        else
++          gpuDrawS(gpuSpriteSpanDrivers [Blending_Mode | TEXT_MODE | Masking | Blending | Lighting | (enableAbbeyHack<<7)  | PixelMSB]);
++        break;
++
++#ifdef TEST
++      case 0x80:          //  vid -> vid
++        gpuMoveImage();   //  prim handles updateLace && skip
++        break;
++      case 0xA0:          //  sys -> vid
++      {
++        u32 load_width = list[2] & 0xffff;
++        u32 load_height = list[2] >> 16;
++        u32 load_size = load_width * load_height;
++
++        len += load_size / 2;
++        break;
++      }
++      case 0xC0:
++        break;
++#else
++      case 0x80 ... 0x9F:          //  vid -> vid
++      case 0xA0 ... 0xBF:          //  sys -> vid
++      case 0xC0 ... 0xDF:          //  vid -> sys
++        // Handled by gpulib
++        goto breakloop;
++#endif
++      case 0xE1: {
++        const u32 temp = PacketBuffer.U4[0];
++        GPU_GP1 = (GPU_GP1 & ~0x000007FF) | (temp & 0x000007FF);
++        gpuSetTexture(temp);
++        gpu.ex_regs[1] = temp;
++        break;
++      }
++      case 0xE2: {
++        static const u8  TextureMask[32] = {
++          255, 7, 15, 7, 31, 7, 15, 7, 63, 7, 15, 7, 31, 7, 15, 7,
++          127, 7, 15, 7, 31, 7, 15, 7, 63, 7, 15, 7, 31, 7, 15, 7
++        };
++        const u32 temp = PacketBuffer.U4[0];
++        TextureWindow[0] = ((temp >> 10) & 0x1F) << 3;
++        TextureWindow[1] = ((temp >> 15) & 0x1F) << 3;
++        TextureWindow[2] = TextureMask[(temp >> 0) & 0x1F];
++        TextureWindow[3] = TextureMask[(temp >> 5) & 0x1F];
++        gpuSetTexture(GPU_GP1);
++        gpu.ex_regs[2] = temp;
++        break;
++      }
++      case 0xE3: {
++        const u32 temp = PacketBuffer.U4[0];
++        DrawingArea[0] = temp         & 0x3FF;
++        DrawingArea[1] = (temp >> 10) & 0x3FF;
++        gpu.ex_regs[3] = temp;
++        break;
++      }
++      case 0xE4: {
++        const u32 temp = PacketBuffer.U4[0];
++        DrawingArea[2] = (temp         & 0x3FF) + 1;
++        DrawingArea[3] = ((temp >> 10) & 0x3FF) + 1;
++        gpu.ex_regs[4] = temp;
++        break;
++      }
++      case 0xE5: {
++        const u32 temp = PacketBuffer.U4[0];
++        DrawingOffset[0] = ((s32)temp<<(32-11))>>(32-11);
++        DrawingOffset[1] = ((s32)temp<<(32-22))>>(32-11);
++        gpu.ex_regs[5] = temp;
++        break;
++      }
++      case 0xE6: {
++        const u32 temp = PacketBuffer.U4[0];
++        Masking = (temp & 0x2) <<  1;
++        PixelMSB =(temp & 0x1) <<  8;
++        gpu.ex_regs[6] = temp;
++        break;
++      }
++    }
++  }
++
++breakloop:
++  gpu.ex_regs[1] &= ~0x1ff;
++  gpu.ex_regs[1] |= GPU_GP1 & 0x1ff;
++
++  *last_cmd = cmd;
++  return list - list_start;
++}
++
++void renderer_sync_ecmds(uint32_t *ecmds)
++{
++  int dummy;
++  do_cmd_list(&ecmds[1], 6, &dummy, &dummy, &dummy);
++}
++
++void renderer_update_caches(int x, int y, int w, int h, int state_changed)
++{
++}
++
++void renderer_flush_queues(void)
++{
++}
++
++void renderer_set_interlace(int enable, int is_odd)
++{
++}
++
++#ifndef TEST
++
++#include "../../frontend/plugin_lib.h"
++
++void renderer_set_config(const struct rearmed_cbs *cbs)
++{
++  force_interlace = cbs->gpu_unai_old.lineskip;
++  enableAbbeyHack = cbs->gpu_unai_old.abe_hack;
++  light = !cbs->gpu_unai_old.no_light;
++  blend = !cbs->gpu_unai_old.no_blend;
++
++  GPU_FrameBuffer = (u16 *)gpu.vram;
++}
++
++#endif
++
++void renderer_sync(void)
++{
++}
++
++void renderer_notify_update_lace(int updated)
++{
++}
++
++// vim:shiftwidth=2:expandtab
+diff --git a/plugins/gpu_unai_old/port.h b/plugins/gpu_unai_old/port.h
+new file mode 100644
+index 00000000..238b98bc
+--- /dev/null
++++ b/plugins/gpu_unai_old/port.h
+@@ -0,0 +1,36 @@
++#include <stddef.h>
++#include <string.h>
++
++#define INLINE static inline
++
++#define GPU_init	GPUinit
++#define GPU_shutdown	GPUshutdown
++//#define GPU_freeze	GPUfreeze
++#define GPU_writeDataMem GPUwriteDataMem
++#define GPU_dmaChain	GPUdmaChain
++#define GPU_writeData	GPUwriteData
++#define GPU_readDataMem	GPUreadDataMem
++#define GPU_readData	GPUreadData
++#define GPU_readStatus	GPUreadStatus
++#define GPU_writeStatus	GPUwriteStatus
++#define GPU_updateLace	GPUupdateLace
++
++extern "C" {
++
++#define u32 unsigned int
++#define s32 signed int
++
++bool GPUinit(void);
++void GPUshutdown(void);
++void GPUwriteDataMem(u32* dmaAddress, s32 dmaCount);
++long GPUdmaChain(u32* baseAddr, u32 dmaVAddr);
++void GPUwriteData(u32 data);
++void GPUreadDataMem(u32* dmaAddress, s32 dmaCount);
++u32  GPUreadData(void);
++u32  GPUreadStatus(void);
++void GPUwriteStatus(u32 data);
++
++#undef u32
++#undef s32
++
++}
+diff --git a/plugins/gpu_unai_old/profiler.h b/plugins/gpu_unai_old/profiler.h
+new file mode 100644
+index 00000000..c09c95f5
+--- /dev/null
++++ b/plugins/gpu_unai_old/profiler.h
+@@ -0,0 +1,4 @@
++#define pcsx4all_prof_pause(...)
++#define pcsx4all_prof_start_with_pause(...)
++#define pcsx4all_prof_end_with_resume(...)
++#define pcsx4all_prof_resume(...)
