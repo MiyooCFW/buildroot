@@ -1,0 +1,35 @@
+diff --git a/Makefile.miyoo b/Makefile.miyoo
+index 2880af10ad..f1a785f818 100644
+--- a/Makefile.miyoo
++++ b/Makefile.miyoo
+@@ -124,7 +124,7 @@ DEF_FLAGS += -I. -Ideps -Ideps/stb -DMIYOO=1 -DDINGUX -MMD
+ DEF_FLAGS += -Wall -Wno-unused-variable -flto
+ DEF_FLAGS += -std=gnu99 -D_GNU_SOURCE
+ LIBS := -ldl -lz -lrt -pthread -lasound
+-CFLAGS :=
++CFLAGS := -Ofast -fdata-sections -ffunction-sections -fsingle-precision-constant -fno-PIC -flto
+ CXXFLAGS := -fno-exceptions -fno-rtti -std=c++11 -D__STDC_CONSTANT_MACROS
+ ASFLAGS :=
+ LDFLAGS := -Wl,--gc-sections
+diff --git a/config.def.h b/config.def.h
+index 25f0dbe463..a53076361c 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -356,7 +356,7 @@
+ #define DEFAULT_DISABLE_COMPOSITION false
+ 
+ /* Video VSYNC (recommended) */
+-#define DEFAULT_VSYNC true
++#define DEFAULT_VSYNC false
+ 
+ /* Vulkan specific */
+ #define DEFAULT_MAX_SWAPCHAIN_IMAGES 3
+@@ -513,7 +513,7 @@
+ #if defined(DINGUX)
+ /* Enables aspect ratio correction (1:1 PAR) when
+  * using the IPU hardware scaler in Dingux devices */
+-#define DEFAULT_DINGUX_IPU_KEEP_ASPECT true
++#define DEFAULT_DINGUX_IPU_KEEP_ASPECT false
+ /* Sets image filtering method when using the
+  * IPU hardware scaler in Dingux devices */
+ #if defined(RETROFW)
