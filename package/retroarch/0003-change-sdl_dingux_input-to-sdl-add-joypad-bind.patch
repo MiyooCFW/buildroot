@@ -1,0 +1,321 @@
+Subject: [PATCH] change sdl_dingux gamepad to sdl & add joypad bind
+
+Signed-off-by: Apaczer <94932128+Apaczer@users.noreply.github.com>
+---
+ Makefile.miyoo        |  2 +-
+ config.def.h          |  4 ++-
+ config.def.keybinds.h | 60 +++++++++++++++++++++----------------------
+ configuration.c       | 12 ++++-----
+ input/input_driver.c  |  4 +--
+ 5 files changed, 42 insertions(+), 40 deletions(-)
+
+diff --git a/Makefile.miyoo b/Makefile.miyoo
+index 2880af10ad..b343697d2d 100644
+--- a/Makefile.miyoo
++++ b/Makefile.miyoo
+@@ -120,7 +120,7 @@ OBJ :=
+ LINK := $(CXX)
+ DEF_FLAGS := -march=armv5te -mtune=arm926ej-s -ffast-math -fomit-frame-pointer
+ DEF_FLAGS += -ffunction-sections -fdata-sections
+-DEF_FLAGS += -I. -Ideps -Ideps/stb -DMIYOO=1 -DDINGUX -MMD
++DEF_FLAGS += -I. -Ideps -Ideps/stb -DMIYOO=1 -DMIYOO -DDINGUX -MMD
+ DEF_FLAGS += -Wall -Wno-unused-variable -flto
+ DEF_FLAGS += -std=gnu99 -D_GNU_SOURCE
+ LIBS := -ldl -lz -lrt -pthread -lasound
+diff --git a/config.def.h b/config.def.h
+index 73d09d3b6b..6795278dc7 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -1546,8 +1546,10 @@
+ #define DEFAULT_INPUT_DESCRIPTOR_LABEL_SHOW true
+ #define DEFAULT_INPUT_DESCRIPTOR_HIDE_UNBOUND false
+ 
+-#if defined(DINGUX)
++#if defined(DINGUX) && !defined(MIYOO)
+ #define DEFAULT_INPUT_MAX_USERS 1
++#elif (DINGUX) && defined(MIYOO)
++#define DEFAULT_INPUT_MAX_USERS 2
+ #else
+ #define DEFAULT_INPUT_MAX_USERS 8
+ #endif
+diff --git a/config.def.keybinds.h b/config.def.keybinds.h
+index d86c8b6413..6be1e223ad 100644
+--- a/config.def.keybinds.h
++++ b/config.def.keybinds.h
+@@ -661,167 +661,167 @@ static const struct retro_keybind retro_keybinds_1[] = {
+    { 
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+-      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_B, RETROK_LALT,
+-      RETRO_DEVICE_ID_JOYPAD_B, NO_BTN, NO_BTN, 0,
++      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_B, RETROK_LCTRL,
++      RETRO_DEVICE_ID_JOYPAD_B, NO_BTN, 2, 0,
+       true
+    },
+    { 
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_Y, RETROK_LSHIFT,
+-      RETRO_DEVICE_ID_JOYPAD_Y, NO_BTN, NO_BTN, 0,
++      RETRO_DEVICE_ID_JOYPAD_Y, NO_BTN, 0, 0,
+       true
+    },
+    { 
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_SELECT, RETROK_ESCAPE,
+-      RETRO_DEVICE_ID_JOYPAD_SELECT, NO_BTN, NO_BTN, 0,
++      RETRO_DEVICE_ID_JOYPAD_SELECT, NO_BTN, 8, 0,
+       true
+    },
+    { 
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_START, RETROK_RETURN,
+-      RETRO_DEVICE_ID_JOYPAD_START, NO_BTN, NO_BTN, 0,
++      RETRO_DEVICE_ID_JOYPAD_START, NO_BTN, 9, 0,
+       true
+    },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_UP, RETROK_UP,
+-      RETRO_DEVICE_ID_JOYPAD_UP, NO_BTN, NO_BTN, 0,
++      RETRO_DEVICE_ID_JOYPAD_UP, NO_BTN, HAT_UP_MASK, 0,
+       true
+    },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_DOWN, RETROK_DOWN,
+-      RETRO_DEVICE_ID_JOYPAD_DOWN, NO_BTN, NO_BTN, 0,
++      RETRO_DEVICE_ID_JOYPAD_DOWN, NO_BTN, HAT_DOWN_MASK, 0,
+       true
+    },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_LEFT, RETROK_LEFT,
+-      RETRO_DEVICE_ID_JOYPAD_LEFT, NO_BTN, NO_BTN, 0,
++      RETRO_DEVICE_ID_JOYPAD_LEFT, NO_BTN, HAT_LEFT_MASK, 0,
+       true
+    },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_RIGHT, RETROK_RIGHT,
+-      RETRO_DEVICE_ID_JOYPAD_RIGHT, NO_BTN, NO_BTN, 0,
++      RETRO_DEVICE_ID_JOYPAD_RIGHT, NO_BTN, HAT_RIGHT_MASK, 0,
+       true
+    },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+-      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_A, RETROK_LCTRL,
+-      RETRO_DEVICE_ID_JOYPAD_A, NO_BTN, NO_BTN, 0,
++      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_A, RETROK_LALT,
++      RETRO_DEVICE_ID_JOYPAD_A, NO_BTN, 1, 0,
+       true
+    },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_X, RETROK_SPACE,
+-      RETRO_DEVICE_ID_JOYPAD_X, NO_BTN, NO_BTN, 0,
++      RETRO_DEVICE_ID_JOYPAD_X, NO_BTN, 3, 0,
+       true
+    },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_L, RETROK_TAB,
+-      RETRO_DEVICE_ID_JOYPAD_L, NO_BTN, NO_BTN, 0,
++      RETRO_DEVICE_ID_JOYPAD_L, NO_BTN, 4, 0,
+       true
+    },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_R, RETROK_BACKSPACE,
+-      RETRO_DEVICE_ID_JOYPAD_R, NO_BTN, NO_BTN, 0,
++      RETRO_DEVICE_ID_JOYPAD_R, NO_BTN, 5, 0,
+       true
+    },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_L2, RETROK_PAGEUP,
+-      RETRO_DEVICE_ID_JOYPAD_L2, NO_BTN, NO_BTN, 0,
++      RETRO_DEVICE_ID_JOYPAD_L2, NO_BTN, 6, 0,
+       true
+    },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_R2, RETROK_PAGEDOWN,
+-      RETRO_DEVICE_ID_JOYPAD_R2, NO_BTN, NO_BTN, 0,
++      RETRO_DEVICE_ID_JOYPAD_R2, NO_BTN, 7, 0,
+       true
+    },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+-      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_L3, RETROK_KP_DIVIDE,
+-      RETRO_DEVICE_ID_JOYPAD_L3, NO_BTN, NO_BTN, 0,
++      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_L3, RETROK_RALT,
++      RETRO_DEVICE_ID_JOYPAD_L3, NO_BTN, 10, 0,
+       true
+    },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+-      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_R3, RETROK_KP_PERIOD,
+-      RETRO_DEVICE_ID_JOYPAD_R3, NO_BTN, NO_BTN, 0,
++      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_R3, RETROK_RSHIFT,
++      RETRO_DEVICE_ID_JOYPAD_R3, NO_BTN, 11, 0,
+       true
+    },
+    {
+       NULL, NULL,
+-      AXIS_NONE, AXIS_NONE, AXIS_NONE,
++      AXIS_POS(0), AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_LEFT_X_PLUS, RETROK_UNKNOWN,
+       RARCH_ANALOG_LEFT_X_PLUS, NO_BTN, NO_BTN, 0,
+       true
+    },
+    {
+       NULL, NULL,
+-      AXIS_NONE, AXIS_NONE, AXIS_NONE,
++      AXIS_NEG(0), AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_LEFT_X_MINUS, RETROK_UNKNOWN,
+       RARCH_ANALOG_LEFT_X_MINUS, NO_BTN, NO_BTN, 0,
+       true
+    },
+    {
+       NULL, NULL,
+-      AXIS_NONE, AXIS_NONE, AXIS_NONE,
++      AXIS_POS(1), AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_LEFT_Y_PLUS, RETROK_UNKNOWN,
+       RARCH_ANALOG_LEFT_Y_PLUS, NO_BTN, NO_BTN, 0,
+       true
+    },
+    {
+       NULL, NULL,
+-      AXIS_NONE, AXIS_NONE, AXIS_NONE,
++      AXIS_NEG(1), AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_LEFT_Y_MINUS, RETROK_UNKNOWN,
+       RARCH_ANALOG_LEFT_Y_MINUS, NO_BTN, NO_BTN, 0,
+       true
+    },
+    {
+       NULL, NULL,
+-      AXIS_NONE, AXIS_NONE, AXIS_NONE,
++      AXIS_POS(2), AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_RIGHT_X_PLUS, RETROK_UNKNOWN,
+       RARCH_ANALOG_RIGHT_X_PLUS, NO_BTN, NO_BTN, 0,
+       true
+    },
+    {
+       NULL, NULL,
+-      AXIS_NONE, AXIS_NONE, AXIS_NONE,
++      AXIS_NEG(2), AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_RIGHT_X_MINUS, RETROK_UNKNOWN,
+       RARCH_ANALOG_RIGHT_X_MINUS, NO_BTN, NO_BTN, 0,
+       true
+    },
+    {
+       NULL, NULL,
+-      AXIS_NONE, AXIS_NONE, AXIS_NONE,
++      AXIS_POS(3), AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_RIGHT_Y_PLUS, RETROK_UNKNOWN,
+       RARCH_ANALOG_RIGHT_Y_PLUS, NO_BTN, NO_BTN, 0,
+       true
+    },
+    {
+       NULL, NULL,
+-      AXIS_NONE, AXIS_NONE, AXIS_NONE,
++      AXIS_NEG(3), AXIS_NONE, AXIS_NONE,
+       MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_RIGHT_Y_MINUS, RETROK_UNKNOWN,
+       RARCH_ANALOG_RIGHT_Y_MINUS, NO_BTN, NO_BTN, 0,
+       true
+@@ -921,8 +921,8 @@ static const struct retro_keybind retro_keybinds_1[] = {
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+-      MENU_ENUM_LABEL_VALUE_INPUT_META_MENU_TOGGLE, RETROK_HOME,
+-      RARCH_MENU_TOGGLE, NO_BTN, NO_BTN, 0,
++      MENU_ENUM_LABEL_VALUE_INPUT_META_MENU_TOGGLE, RETROK_RCTRL,
++      RARCH_MENU_TOGGLE, NO_BTN, 12, 0,
+       true
+    },
+    {
+diff --git a/configuration.c b/configuration.c
+index 01f3229baf..9b0eca87e5 100644
+--- a/configuration.c
++++ b/configuration.c
+@@ -621,13 +621,13 @@ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SWITCH;
+ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WII;
+ #elif defined(WIIU)
+ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WIIU;
+-#elif defined(DINGUX) && defined(HAVE_SDL_DINGUX)
++#elif defined(DINGUX) && defined(HAVE_SDL_DINGUX) && !defined(MIYOO)
+ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SDL_DINGUX;
+ #elif defined(HAVE_X11)
+ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_X;
+ #elif defined(HAVE_UDEV)
+ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_UDEV;
+-#elif defined(__linux__) && !defined(ANDROID)
++#elif defined(__linux__) && !defined(ANDROID) && !defined(MIYOO)
+ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_LINUXRAW;
+ #elif defined(HAVE_WAYLAND)
+ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WAYLAND;
+@@ -635,7 +635,7 @@ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WAYLAND;
+ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_COCOA;
+ #elif defined(__QNX__)
+ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_QNX;
+-#elif defined(HAVE_SDL)
++#elif defined(HAVE_SDL) || defined(MIYOO)
+ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SDL;
+ #elif defined(HAVE_SDL2)
+ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SDL2;
+@@ -669,17 +669,17 @@ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_PSP;
+ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_CTR;
+ #elif defined(SWITCH)
+ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_SWITCH;
+-#elif defined(DINGUX) && defined(HAVE_SDL_DINGUX)
++#elif defined(DINGUX) && defined(HAVE_SDL_DINGUX) && !defined(MIYOO)
+ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_SDL_DINGUX;
+ #elif defined(HAVE_DINPUT)
+ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_DINPUT;
+ #elif defined(HAVE_UDEV)
+ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_UDEV;
+-#elif defined(__linux) && !defined(ANDROID)
++#elif defined(__linux) && !defined(ANDROID) && !defined(MIYOO)
+ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_LINUXRAW;
+ #elif defined(ANDROID)
+ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_ANDROID;
+-#elif defined(HAVE_SDL) || defined(HAVE_SDL2)
++#elif defined(HAVE_SDL) || defined(HAVE_SDL2) || defined(MIYOO)
+ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_SDL;
+ #elif defined(DJGPP)
+ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_DOS;
+diff --git a/input/input_driver.c b/input/input_driver.c
+index 177d5df2b8..dcceb2e1e2 100644
+--- a/input/input_driver.c
++++ b/input/input_driver.c
+@@ -257,10 +257,10 @@ input_device_driver_t *joypad_drivers[] = {
+ #ifdef ANDROID
+    &android_joypad,
+ #endif
+-#if defined(HAVE_SDL) || defined(HAVE_SDL2)
++#if defined(HAVE_SDL) || defined(HAVE_SDL2) || defined(MIYOO)
+    &sdl_joypad,
+ #endif
+-#if defined(DINGUX) && defined(HAVE_SDL_DINGUX)
++#if defined(DINGUX) && defined(HAVE_SDL_DINGUX) && !defined(MIYOO)
+    &sdl_dingux_joypad,
+ #endif
+ #ifdef __QNX__
+-- 
+2.43.0.windows.1
+
