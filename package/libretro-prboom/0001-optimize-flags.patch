@@ -1,0 +1,16 @@
+diff --git a/Makefile b/Makefile
+index 1322d47..1b57f43 100644
+--- a/Makefile
++++ b/Makefile
+@@ -368,9 +368,9 @@ else ifeq ($(platform), miyoo)
+    CC = /opt/miyoo/usr/bin/arm-linux-gcc
+    CXX = /opt/miyoo/usr/bin/arm-linux-g++
+    AR = /opt/miyoo/usr/bin/arm-linux-ar
+-   fpic := -fPIC
++   fpic :=
+    SHARED := -shared -Wl,--version-script=libretro/link.T -Wl,-no-undefined
+-   CFLAGS += -ffast-math -march=armv5te -mtune=arm926ej-s -fomit-frame-pointer
++   CFLAGS += -fomit-frame-pointer -ffast-math -flto -mcpu=arm926ej-s -Ofast
+    HAVE_LOW_MEMORY = 1
+ 
+ # Windows MSVC 2003 Xbox 1
