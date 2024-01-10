@@ -1,5 +1,5 @@
-RETROARCH_VERSION = 1.16.0.3
-RETROARCH_SITE = $(call github,libretro,RetroArch,v$(RETROARCH_VERSION))
+RETROARCH_VERSION = 35e140ae0840b702a166ab5f1e35be32d065d6b5
+RETROARCH_SITE = $(call github,libretro,RetroArch,$(RETROARCH_VERSION))
 RETROARCH_LICENSE = GPL-3.0
 RETROARCH_LICENSE_FILES = COPYING
 RETROARCH_DEPENDENCIES = host-pkgconf sdl sdl_image sdl_mixer sdl_sound sdl_ttf freetype
