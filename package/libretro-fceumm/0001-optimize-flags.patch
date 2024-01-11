@@ -1,0 +1,18 @@
+diff --git a/Makefile.libretro b/Makefile.libretro
+index 522bd06..152101c 100644
+--- a/Makefile.libretro
++++ b/Makefile.libretro
+@@ -458,9 +458,11 @@ else ifeq ($(platform), miyoo)
+ 	CC = /opt/miyoo/usr/bin/arm-linux-gcc
+ 	CXX = /opt/miyoo/usr/bin/arm-linux-g++
+ 	AR = /opt/miyoo/usr/bin/arm-linux-ar
+-	fpic := -fPIC
++	fpic :=
+ 	SHARED := -shared -Wl,--version-script=src/libretro/link.T -Wl,-no-undefined
+-	PLATFORM_DEFINES += -fomit-frame-pointer -ffast-math -mcpu=arm926ej-s
++	PLATFORM_DEFINES += -mcpu=arm926ej-s -Wno-write-strings -Wno-sign-compare -fomit-frame-pointer -fno-builtin -fno-common -fpermissive -Ofast -flto -fomit-frame-pointer -fno-builtin   \
++            -fno-common -Wno-write-strings -Wno-sign-compare -ffast-math -ftree-vectorize \
++	    -funswitch-loops -fno-strict-aliasing
+ 	EXTERNAL_ZLIB = 1
+ 
+ # Windows MSVC 2017 all architectures

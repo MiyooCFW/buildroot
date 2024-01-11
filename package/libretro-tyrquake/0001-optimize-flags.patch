@@ -1,0 +1,16 @@
+diff --git a/Makefile b/Makefile
+index ef82d42..bb51b40 100644
+--- a/Makefile
++++ b/Makefile
+@@ -232,9 +232,9 @@ else ifeq ($(platform), miyoo)
+         TARGET := $(TARGET_NAME)_libretro.so
+         CC = /opt/miyoo/usr/bin/arm-linux-gcc
+         AR = /opt/miyoo/usr/bin/arm-linux-ar
+-        fpic := -fPIC
++        fpic := 
+         SHARED := -shared -Wl,--version-script=common/libretro-link.T
+-        CFLAGS += -DDINGUX -D_MIYOO -fomit-frame-pointer -ffast-math -mcpu=arm926ej-s
++        CFLAGS += -DDINGUX -D_MIYOO -fomit-frame-pointer -ffast-math -mcpu=arm926ej-s -Ofast -fdata-sections -ffunction-sections -fsingle-precision-constant -flto -marm -DARM
+         HAVE_NETWORKING=0
+ 
+ # Raspberry Pi 1
