@@ -51,7 +51,7 @@ jobs:
         make miyoo_uclibc_defconfig
         set -o pipefail
         if ! ( \
-        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" 2>&1 \
+        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" APPEND_VERSION="-Dev_build" 2>&1 \
         | tee build.log \
         | grep ">>>" \
         ); then tail -n100 build.log && exit 1
@@ -135,7 +135,7 @@ jobs:
         make miyoo_musl_defconfig
         set -o pipefail
         if ! ( \
-        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" 2>&1 \
+        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" APPEND_VERSION="-Dev_build" 2>&1 \
         | tee build.log \
         | grep ">>>" \
         ); then tail -n100 build.log && exit 1
