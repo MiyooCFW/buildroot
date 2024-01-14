@@ -1,7 +1,16 @@
 diff --git a/Makefile b/Makefile
-index 4786a922..c5029c00 100644
+index 4786a922..e27ec29b 100644
 --- a/Makefile
 +++ b/Makefile
+@@ -9,7 +9,7 @@ else
+ ifeq ($(platform), $(filter $(platform), vita ctr))
+ CFLAGS += -O3 -DNDEBUG
+ else
+-CFLAGS += -O2 -DNDEBUG
++CFLAGS += -O3 -DNDEBUG
+ endif
+ endif
+ ifeq ($(DEBUG_ASAN), 1)
 @@ -231,20 +231,20 @@ CFLAGS += -DTHREAD_RENDERING
  OBJS += plugins/gpulib/gpulib_thread_if.o
  endif
@@ -23,29 +32,43 @@ index 4786a922..c5029c00 100644
  OBJS += plugins/gpulib/gpulib_thread_if.o
  endif
 -plugins/gpu_unai/gpulib_if.o: CFLAGS += -DREARMED -O3 
-+plugins/gpu_unai_old/gpulib_if.o: CFLAGS += -DREARMED -O3
++plugins/gpu_unai_old/gpulib_if.o: CFLAGS += -DREARMED -Ofast
  CC_LINK = $(CXX)
  endif
  
 diff --git a/Makefile.libretro b/Makefile.libretro
-index 1169d892..99fb3870 100644
+index 1169d892..144601b3 100644
 --- a/Makefile.libretro
 +++ b/Makefile.libretro
-@@ -532,11 +532,11 @@ else ifneq (,$(findstring armv,$(platform)))
+@@ -532,13 +532,25 @@ else ifneq (,$(findstring armv,$(platform)))
  
  else ifeq ($(platform), miyoo)
  	TARGET := $(TARGET_NAME)_libretro.so
 -	fpic := -fPIC
 -	CFLAGS += -mcpu=arm926ej-s -fsingle-precision-constant
 +	fpic := -fno-PIC
-+	CFLAGS += -mcpu=arm926ej-s -fsingle-precision-constant -Ofast -fdata-sections -ffunction-sections -fsingle-precision-constant -flto
++	CFLAGS += -mcpu=arm926ej-s -fsingle-precision-constant -Ofast -fdata-sections -ffunction-sections -fsingle-precision-constant
  	CFLAGS += -DGPU_UNAI_USE_INT_DIV_MULTINV -D_MIYOO
++	CFLAGS += -Ofast \
++	-flto=auto -fuse-linker-plugin \
++	-fno-stack-protector -fno-ident -fomit-frame-pointer \
++	-falign-functions=1 -falign-jumps=1 -falign-loops=1 \
++	-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-unroll-loops \
++	-fmerge-all-constants -fno-math-errno \
++	-marm
++	CXXFLAGS += $(CFLAGS)
++	CPPFLAGS += $(CFLAGS)
++	ASFLAGS += $(CFLAGS)
++	THREAD_RENDERING := 1
  	ARCH = arm
 -	BUILTIN_GPU = unai
 +	BUILTIN_GPU = unai_old
  	DYNAREC = ari64
  	HAVE_NEON = 0
++	BASE_ADDR_DYNAMIC := 1
  
+ # Emscripten
+ else ifeq ($(platform), emscripten)
 diff --git a/plugins/gpu_unai_old/Makefile b/plugins/gpu_unai_old/Makefile
 new file mode 100644
 index 00000000..1f4b8bdb
