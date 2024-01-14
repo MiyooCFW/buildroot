@@ -1,0 +1,108 @@
+diff --git a/Makefile b/Makefile
+index b6af83f..7a5c8de 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,5 +1,5 @@
+ DEBUG              = 0
+-LAGFIX             = 1
++LAGFIX             = 0
+ USE_OLD_COLOUR_OPS = 0
+ TARGET_NAME = snes9x2002
+ 
+@@ -27,12 +27,12 @@ LIBS :=
+ 
+ ifeq ($(platform), unix)
+    TARGET := $(TARGET_NAME)_libretro.so
+-   fpic := -fPIC
++   fpic := 
+    SHARED := -shared -Wl,--version-script=libretro/link.T -Wl,--no-undefined
+    CFLAGS += -fno-builtin -fno-exceptions
+ else ifeq ($(platform), osx)
+    TARGET := $(TARGET_NAME)_libretro.dylib
+-   fpic := -fPIC
++   fpic := 
+    SHARED := -dynamiclib
+ 
+    ifeq ($(CROSS_COMPILE),1)
+@@ -45,7 +45,7 @@ else ifeq ($(platform), osx)
+ 
+ else ifneq (,$(findstring ios,$(platform)))
+    TARGET := $(TARGET_NAME)_libretro_ios.dylib
+-   fpic := -fPIC
++   fpic := 
+    SHARED := -dynamiclib
+    MINVERSION :=
+ 
+@@ -72,7 +72,7 @@ else ifneq (,$(findstring ios,$(platform)))
+    CXXFLAGS += $(MINVERSION)
+ else ifeq ($(platform), tvos-arm64)
+    TARGET := $(TARGET_NAME)_libretro_tvos.dylib
+-   fpic := -fPIC
++   fpic := 
+    SHARED := -dynamiclib
+    ifeq ($(IOSSDK),)
+       IOSSDK := $(shell xcodebuild -version -sdk appletvos Path)
+@@ -143,7 +143,7 @@ else ifeq ($(platform), wiiu)
+ # NESC, SNESC, C64 mini 
+ else ifeq ($(platform),$(filter $(platform),classic_armv7_a7 unix-armv7-hardfloat-neon))
+ 	TARGET := $(TARGET_NAME)_libretro.so
+-	fpic := -fPIC
++	fpic := 
+ 	SHARED := -shared -Wl,--version-script=libretro/link.T -Wl,--no-undefined
+ 	CFLAGS += -Ofast \
+ 	-flto=4 -fwhole-program -fuse-linker-plugin \
+@@ -238,7 +238,7 @@ else ifeq ($(platform), gcw0)
+    CC = /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
+    CXX = /opt/gcw0-toolchain/usr/bin/mipsel-linux-g++
+    AR = /opt/gcw0-toolchain/usr/bin/mipsel-linux-ar
+-   fpic := -fPIC
++   fpic := 
+    SHARED := -shared -Wl,--version-script=libretro/link.T -Wl,--no-undefined
+    CFLAGS += -std=c99 -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
+    CFLAGS += -fno-builtin -fno-exceptions
+@@ -250,14 +250,19 @@ else ifeq ($(platform), miyoo)
+    CC = /opt/miyoo/usr/bin/arm-linux-gcc
+    CXX = /opt/miyoo/usr/bin/arm-linux-g++
+    AR = /opt/miyoo/usr/bin/arm-linux-ar
+-   fpic := -fPIC
++   fpic := 
+    ARM_ASM = 1
+    ASM_CPU = 0
+    ASM_SPC700 = 0
+    SHARED := -shared -Wl,--version-script=libretro/link.T -Wl,--no-undefined
+-   CFLAGS += -fomit-frame-pointer -ffast-math -fno-unroll-loops -flto -mcpu=arm926ej-s
+-   CFLAGS += -DFAST_ALIGNED_LSB_WORD_ACCESS
+-
++   CFLAGS += -fomit-frame-pointer -ffast-math -flto -mcpu=arm926ej-s -Ofast -msoft-float -finline-limit=42 -fno-unroll-loops -fno-ipa-cp -fno-common -fno-stack-protector -fno-guess-branch-probability -fno-caller-saves -fno-regmove
++   CFLAGS += -DFAST_ALIGNED_LSB_WORD_ACCESS \
++      -DDINGUX \
++      -DLSB_FIRST \
++      -DPSS_STYLE=1 \
++      -DHAVE_ASPRINTF \
++      -DFRAMESKIP \
++      -D_REENTRANT
+ # Windows MSVC 2010 x64
+ else ifeq ($(platform), windows_msvc2010_x64)
+ 	CC  = cl.exe
+@@ -396,7 +401,7 @@ LIBRETRO_DIR := ./libretro
+ ifeq ($(DEBUG), 1)
+ DEFINES += -O0 -g
+ else ifneq (,$(findstring msvc,$(platform)))
+-DEFINES += -O2 -DNDEBUG=1
++DEFINES += -O3 -DNDEBUG=1
+ else
+ DEFINES += -O3 -DNDEBUG=1
+ endif
+diff --git a/libretro/libretro_core_options.h b/libretro/libretro_core_options.h
+index ad03eae..6876868 100644
+--- a/libretro/libretro_core_options.h
++++ b/libretro/libretro_core_options.h
+@@ -133,7 +133,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+          { "enabled",  NULL },
+          { NULL, NULL },
+       },
+-      "enabled"
++      "disabled"
+    },
+    {
+       "snes9x2002_low_pass_filter",
