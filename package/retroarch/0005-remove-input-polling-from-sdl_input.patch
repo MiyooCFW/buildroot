@@ -1,0 +1,119 @@
+Subject: [PATCH] remove input polling from sdl_input.c 
+
+fix double events register in e.g. on screen keyboard (osk)
+correct Miyoo mapping in MENU
+
+Signed-off-by: Apaczer <94932128+Apaczer@users.noreply.github.com>
+---
+ input/drivers/sdl_input.c |  2 ++
+ input/input_driver.c      | 42 ++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 43 insertions(+), 1 deletion(-)
+
+diff --git a/input/drivers/sdl_input.c b/input/drivers/sdl_input.c
+index 3774c82421..c0b7ec5111 100644
+--- a/input/drivers/sdl_input.c
++++ b/input/drivers/sdl_input.c
+@@ -370,6 +370,7 @@ static void sdl_input_poll(void *data)
+ 
+    sdl_poll_mouse(sdl);
+ 
++#ifndef MIYOO
+ #ifdef HAVE_SDL2
+    while (SDL_PeepEvents(&event, 1,
+             SDL_GETEVENT, SDL_KEYDOWN, SDL_MOUSEWHEEL) > 0)
+@@ -445,6 +446,7 @@ static void sdl_input_poll(void *data)
+       }
+ #endif
+    }
++#endif
+ }
+ 
+ static uint64_t sdl_get_capabilities(void *data)
+diff --git a/input/input_driver.c b/input/input_driver.c
+index 177d5df2b8..459aabb6e3 100644
+--- a/input/input_driver.c
++++ b/input/input_driver.c
+@@ -6298,6 +6298,22 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
+          unsigned i;
+          unsigned ids[][2] =
+          {
++#ifdef MIYOO
++            {RETROK_LALT,      RETRO_DEVICE_ID_JOYPAD_A      },
++            {RETROK_LCTRL,     RETRO_DEVICE_ID_JOYPAD_B      },
++            {RETROK_SPACE,     RETRO_DEVICE_ID_JOYPAD_Y      },
++            {RETROK_LSHIFT,    RETRO_DEVICE_ID_JOYPAD_X      },
++            {RETROK_RETURN,    RETRO_DEVICE_ID_JOYPAD_START  },
++            {RETROK_ESCAPE,    RETRO_DEVICE_ID_JOYPAD_SELECT },
++            {RETROK_UP,        RETRO_DEVICE_ID_JOYPAD_UP     },
++            {RETROK_DOWN,      RETRO_DEVICE_ID_JOYPAD_DOWN   },
++            {RETROK_LEFT,      RETRO_DEVICE_ID_JOYPAD_LEFT   },
++            {RETROK_RIGHT,     RETRO_DEVICE_ID_JOYPAD_RIGHT  },
++            {RETROK_TAB,       RETRO_DEVICE_ID_JOYPAD_L      },
++            {RETROK_BACKSPACE, RETRO_DEVICE_ID_JOYPAD_R      },
++            {RETROK_RALT,      RETRO_DEVICE_ID_JOYPAD_L3     },
++            {RETROK_RSHIFT,    RETRO_DEVICE_ID_JOYPAD_R3     },
++#else
+             {RETROK_RETURN,    RETRO_DEVICE_ID_JOYPAD_A      },
+             {RETROK_BACKSPACE, RETRO_DEVICE_ID_JOYPAD_B      },
+             {RETROK_DELETE,    RETRO_DEVICE_ID_JOYPAD_Y      },
+@@ -6312,6 +6328,7 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
+             {RETROK_PAGEDOWN,  RETRO_DEVICE_ID_JOYPAD_R      },
+             {RETROK_HOME,      RETRO_DEVICE_ID_JOYPAD_L3     },
+             {RETROK_END,       RETRO_DEVICE_ID_JOYPAD_R3     },
++#endif
+             {0,                RARCH_QUIT_KEY                }, /* 14 */
+             {0,                RARCH_FULLSCREEN_TOGGLE_KEY   },
+             {0,                RARCH_UI_COMPANION_TOGGLE     },
+@@ -6357,7 +6374,11 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
+          unsigned i;
+          unsigned ids[][2] =
+          {
++#ifdef MIYOO
++            {RETROK_LALT,     RETRO_DEVICE_ID_JOYPAD_A      },
++#else
+             {RETROK_LCTRL,     RETRO_DEVICE_ID_JOYPAD_A      },
++#endif
+             {RETROK_UP,        RETRO_DEVICE_ID_JOYPAD_UP     },
+             {RETROK_DOWN,      RETRO_DEVICE_ID_JOYPAD_DOWN   },
+             {RETROK_LEFT,      RETRO_DEVICE_ID_JOYPAD_LEFT   },
+@@ -6523,10 +6544,28 @@ void input_keyboard_event(bool down, unsigned code,
+     * is active */
+    if (menu_st->flags & MENU_ST_FLAG_SCREENSAVER_ACTIVE)
+    {
++#ifdef MIYOO
+       if (   (down)
+           && (code != RETROK_UNKNOWN)
+           && (menu_input_dialog_get_display_kb() ||
+-              !((code == RETROK_SPACE)    || /* RETRO_DEVICE_ID_JOYPAD_START */
++              !((code == RETROK_RETURN)   || /* RETRO_DEVICE_ID_JOYPAD_START */
++                (code == RETROK_ESCAPE)   || /* RETRO_DEVICE_ID_JOYPAD_SELECT */
++                (code == RETROK_TAB)      || /* RETRO_DEVICE_ID_JOYPAD_L */
++                (code == RETROK_BACKSPACE)|| /* RETRO_DEVICE_ID_JOYPAD_R */
++                (code == RETROK_LCTRL)    || /* RETRO_DEVICE_ID_JOYPAD_B */
++                (code == RETROK_LALT)     || /* RETRO_DEVICE_ID_JOYPAD_A */
++                (code == RETROK_SPACE)    || /* RETRO_DEVICE_ID_JOYPAD_Y */
++                (code == RETROK_LSHIFT)   || /* RETRO_DEVICE_ID_JOYPAD_X */
++                (code == RETROK_RIGHT)    || /* RETRO_DEVICE_ID_JOYPAD_RIGHT */
++                (code == RETROK_LEFT)     || /* RETRO_DEVICE_ID_JOYPAD_LEFT */
++                (code == RETROK_DOWN)     || /* RETRO_DEVICE_ID_JOYPAD_DOWN */
++                (code == RETROK_UP)       || /* RETRO_DEVICE_ID_JOYPAD_UP */
++                 BIT512_GET(input_st->keyboard_mapping_bits, code))))
++#else
++      if (   (down)
++          && (code != RETROK_UNKNOWN)
++          && (menu_input_dialog_get_display_kb() ||
++               !((code == RETROK_SPACE)    || /* RETRO_DEVICE_ID_JOYPAD_START */
+                 (code == RETROK_SLASH)    || /* RETRO_DEVICE_ID_JOYPAD_X */
+                 (code == RETROK_RSHIFT)   || /* RETRO_DEVICE_ID_JOYPAD_SELECT */
+                 (code == RETROK_RIGHT)    || /* RETRO_DEVICE_ID_JOYPAD_RIGHT */
+@@ -6539,6 +6578,7 @@ void input_keyboard_event(bool down, unsigned code,
+                 (code == RETROK_RETURN)   || /* RETRO_DEVICE_ID_JOYPAD_A */
+                 (code == RETROK_DELETE)   || /* RETRO_DEVICE_ID_JOYPAD_Y */
+                  BIT512_GET(input_st->keyboard_mapping_bits, code))))
++#endif
+       {
+          struct menu_state *menu_st  = menu_state_get_ptr();
+          menu_st->flags             &= ~MENU_ST_FLAG_SCREENSAVER_ACTIVE;
+-- 
+2.34.1
+
