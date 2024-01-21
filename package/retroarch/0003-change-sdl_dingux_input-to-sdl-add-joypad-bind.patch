@@ -299,23 +299,6 @@ index 01f3229baf..9b0eca87e5 100644
  static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_SDL;
  #elif defined(DJGPP)
  static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_DOS;
-diff --git a/input/input_driver.c b/input/input_driver.c
-index 177d5df2b8..dcceb2e1e2 100644
---- a/input/input_driver.c
-+++ b/input/input_driver.c
-@@ -257,10 +257,10 @@ input_device_driver_t *joypad_drivers[] = {
- #ifdef ANDROID
-    &android_joypad,
- #endif
--#if defined(HAVE_SDL) || defined(HAVE_SDL2)
-+#if defined(HAVE_SDL) || defined(HAVE_SDL2) || defined(MIYOO)
-    &sdl_joypad,
- #endif
--#if defined(DINGUX) && defined(HAVE_SDL_DINGUX)
-+#if defined(DINGUX) && defined(HAVE_SDL_DINGUX) && !defined(MIYOO)
-    &sdl_dingux_joypad,
- #endif
- #ifdef __QNX__
 -- 
 2.43.0.windows.1
 
