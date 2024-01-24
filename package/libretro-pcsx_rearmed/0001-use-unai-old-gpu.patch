@@ -49,12 +49,12 @@ index 1169d892..144601b3 100644
 +	fpic := -fno-PIC
 +	CFLAGS += -mcpu=arm926ej-s -fsingle-precision-constant -Ofast -fdata-sections -ffunction-sections -fsingle-precision-constant
  	CFLAGS += -DGPU_UNAI_USE_INT_DIV_MULTINV -D_MIYOO
-+	CFLAGS += -Ofast \
-+	-flto=auto -fuse-linker-plugin \
++	CFLAGS += -flto=auto -fno-common -fno-ipa-cp -fno-caller-saves -fno-regmove -finline-limit=42 \
++	-fuse-linker-plugin \
 +	-fno-stack-protector -fno-ident -fomit-frame-pointer \
-+	-falign-functions=1 -falign-jumps=1 -falign-loops=1 \
-+	-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-unroll-loops \
-+	-fmerge-all-constants -fno-math-errno \
++	-fprofile-use -fprofile-dir=$(BASE_DIR)/../board/miyoo/profile/libretro-pcsx_rearmed/profile \
++	-fno-unroll-loops -ffast-math \
++	-fbranch-probabilities -Wno-error=coverage-mismatch \
 +	-marm
 +	CXXFLAGS += $(CFLAGS)
 +	CPPFLAGS += $(CFLAGS)
