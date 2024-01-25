@@ -16,9 +16,9 @@ index 5a3bab7..fda6869 100644
 +	-flto=4 -fwhole-program -fuse-linker-plugin \
 +	-fdata-sections -ffunction-sections -Wl,--gc-sections \
 +	-fno-stack-protector -fno-ident -fomit-frame-pointer \
-+	-falign-functions=1 -falign-jumps=1 -falign-loops=1 \
-+	-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-unroll-loops \
-+	-fmerge-all-constants -fno-math-errno \
++	-fprofile-use -fprofile-dir=$(BASE_DIR)/../board/miyoo/profile/libretro-gpsp/profile \
++	-fno-unroll-loops \
++	-fbranch-probabilities -Wno-error=coverage-mismatch \
 +	-marm
 +	ASFLAGS += $(CFLAGS)
 +	ARCH = arm
