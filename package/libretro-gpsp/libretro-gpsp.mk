@@ -10,6 +10,9 @@ LIBRETRO_GPSP_SITE = $(call github,libretro,gpsp,$(LIBRETRO_GPSP_VERSION))
 LIBRETRO_GPSP_LICENSE = GPL-2.0
 LIBRETRO_GPSP_LICENSE_FILES = COPYING
 
+define LIBRETRO_GPSP_CONFIGURE_CMDS
+	cp -r $(BASE_DIR)/../board/miyoo/profile/libretro-gpsp/* $(@D)/
+endef
 define LIBRETRO_GPSP_BUILD_CMDS
 	CFLAGS="$(TARGET_CFLAGS) $(COMPILER_COMMONS_CFLAGS_SO) -Ofast -fdata-sections -ffunction-sections -fsingle-precision-constant -flto" \
 		CXXFLAGS="$(TARGET_CXXFLAGS) $(COMPILER_COMMONS_CXXFLAGS_SO)" \

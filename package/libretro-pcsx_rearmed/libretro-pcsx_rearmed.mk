@@ -10,6 +10,9 @@ LIBRETRO_PCSX_REARMED_SITE = $(call github,libretro,pcsx_rearmed,$(LIBRETRO_PCSX
 LIBRETRO_PCSX_REARMED_LICENSE = GPL-2.0
 LIBRETRO_PCSX_REARMED_LICENSE_FILES = COPYING
 
+define LIBRETRO_PCSX_REARMED_CONFIGURE_CMDS
+       cp -r $(BASE_DIR)/../board/miyoo/profile/libretro-pcsx_rearmed/* $(@D)/
+endef
 
 define LIBRETRO_PCSX_REARMED_BUILD_CMDS
 	$(SED) "s|-O2|-O3|g" $(@D)/Makefile

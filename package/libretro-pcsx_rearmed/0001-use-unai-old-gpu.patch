@@ -52,7 +52,7 @@ index 1169d892..144601b3 100644
 +	CFLAGS += -flto=auto -fno-common -fno-ipa-cp -fno-caller-saves -fno-regmove -finline-limit=42 \
 +	-fuse-linker-plugin \
 +	-fno-stack-protector -fno-ident -fomit-frame-pointer \
-+	-fprofile-use -fprofile-dir=$(BASE_DIR)/../board/miyoo/profile/libretro-pcsx_rearmed/profile \
++	-fprofile-use \
 +	-fno-unroll-loops -ffast-math \
 +	-fbranch-probabilities -Wno-error=coverage-mismatch \
 +	-marm
