@@ -1,15 +1,18 @@
 diff --git a/Makefile b/Makefile
-index b6af83f..f9f146f 100644
+index b6af83f..127c61d 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -1,5 +1,5 @@
+@@ -1,7 +1,8 @@
  DEBUG              = 0
 -LAGFIX             = 1
 +LAGFIX             = 0
  USE_OLD_COLOUR_OPS = 0
  TARGET_NAME = snes9x2002
++PROFILE ?= 0
  
-@@ -27,12 +27,12 @@ LIBS :=
+ ifeq ($(platform),)
+    ifeq (,$(findstring classic_,$(platform)))
+@@ -27,12 +28,12 @@ LIBS :=
  
  ifeq ($(platform), unix)
     TARGET := $(TARGET_NAME)_libretro.so
@@ -24,7 +27,7 @@ index b6af83f..f9f146f 100644
     SHARED := -dynamiclib
  
     ifeq ($(CROSS_COMPILE),1)
-@@ -45,7 +45,7 @@ else ifeq ($(platform), osx)
+@@ -45,7 +46,7 @@ else ifeq ($(platform), osx)
  
  else ifneq (,$(findstring ios,$(platform)))
     TARGET := $(TARGET_NAME)_libretro_ios.dylib
@@ -33,7 +36,7 @@ index b6af83f..f9f146f 100644
     SHARED := -dynamiclib
     MINVERSION :=
  
-@@ -72,7 +72,7 @@ else ifneq (,$(findstring ios,$(platform)))
+@@ -72,7 +73,7 @@ else ifneq (,$(findstring ios,$(platform)))
     CXXFLAGS += $(MINVERSION)
  else ifeq ($(platform), tvos-arm64)
     TARGET := $(TARGET_NAME)_libretro_tvos.dylib
@@ -42,7 +45,7 @@ index b6af83f..f9f146f 100644
     SHARED := -dynamiclib
     ifeq ($(IOSSDK),)
        IOSSDK := $(shell xcodebuild -version -sdk appletvos Path)
-@@ -143,7 +143,7 @@ else ifeq ($(platform), wiiu)
+@@ -143,7 +144,7 @@ else ifeq ($(platform), wiiu)
  # NESC, SNESC, C64 mini 
  else ifeq ($(platform),$(filter $(platform),classic_armv7_a7 unix-armv7-hardfloat-neon))
  	TARGET := $(TARGET_NAME)_libretro.so
@@ -51,7 +54,7 @@ index b6af83f..f9f146f 100644
  	SHARED := -shared -Wl,--version-script=libretro/link.T -Wl,--no-undefined
  	CFLAGS += -Ofast \
  	-flto=4 -fwhole-program -fuse-linker-plugin \
-@@ -238,7 +238,7 @@ else ifeq ($(platform), gcw0)
+@@ -238,7 +239,7 @@ else ifeq ($(platform), gcw0)
     CC = /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
     CXX = /opt/gcw0-toolchain/usr/bin/mipsel-linux-g++
     AR = /opt/gcw0-toolchain/usr/bin/mipsel-linux-ar
@@ -60,7 +63,7 @@ index b6af83f..f9f146f 100644
     SHARED := -shared -Wl,--version-script=libretro/link.T -Wl,--no-undefined
     CFLAGS += -std=c99 -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
     CFLAGS += -fno-builtin -fno-exceptions
-@@ -250,14 +250,28 @@ else ifeq ($(platform), miyoo)
+@@ -250,14 +251,33 @@ else ifeq ($(platform), miyoo)
     CC = /opt/miyoo/usr/bin/arm-linux-gcc
     CXX = /opt/miyoo/usr/bin/arm-linux-g++
     AR = /opt/miyoo/usr/bin/arm-linux-ar
@@ -81,8 +84,13 @@ index b6af83f..f9f146f 100644
 +	-fno-stack-protector -fno-ident -fomit-frame-pointer \
 +	-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-unroll-loops \
 +	-fmerge-all-constants -fno-math-errno \
-+	-marm -fno-gcse -fbranch-probabilities -Wno-error=coverage-mismatch \
-+	-fprofile-use
++	-marm -fno-gcse
++ifeq ($(PROFILE), YES)
++   CFLAGS += -fprofile-generate=$(HOMEPATH)/profile # rm path if you want dir structure intact at runtime
++   LDFLAGS += -lgcov
++else ifeq ($(PROFILE), APPLY)
++   CFLAGS += -fprofile-use -fbranch-probabilities -Wno-error=coverage-mismatch
++endif
 +   CFLAGS += -DFAST_ALIGNED_LSB_WORD_ACCESS \
 +      -DDINGUX \
 +      -DLSB_FIRST \
@@ -93,7 +101,7 @@ index b6af83f..f9f146f 100644
  # Windows MSVC 2010 x64
  else ifeq ($(platform), windows_msvc2010_x64)
  	CC  = cl.exe
-@@ -396,7 +410,7 @@ LIBRETRO_DIR := ./libretro
+@@ -396,7 +416,7 @@ LIBRETRO_DIR := ./libretro
  ifeq ($(DEBUG), 1)
  DEFINES += -O0 -g
  else ifneq (,$(findstring msvc,$(platform)))

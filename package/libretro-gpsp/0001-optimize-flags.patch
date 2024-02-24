@@ -1,8 +1,16 @@
 diff --git a/Makefile b/Makefile
-index 5a3bab7..fda6869 100644
+index 5a3bab75..f67efe1e 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -482,11 +482,22 @@ else ifeq ($(platform), miyoo)
+@@ -2,6 +2,7 @@ DEBUG=0
+ FRONTEND_SUPPORTS_RGB565=1
+ FORCE_32BIT_ARCH=0
+ MMAP_JIT_CACHE=0
++PROFILE ?= 0
+ 
+ UNAME=$(shell uname -a)
+ 
+@@ -482,11 +483,26 @@ else ifeq ($(platform), miyoo)
  	CXX = /opt/miyoo/usr/bin/arm-linux-g++
  	AR = /opt/miyoo/usr/bin/arm-linux-ar
  	SHARED := -shared -nostdlib -Wl,--version-script=link.T
@@ -16,10 +24,14 @@ index 5a3bab7..fda6869 100644
 +	-flto=4 -fwhole-program -fuse-linker-plugin \
 +	-fdata-sections -ffunction-sections -Wl,--gc-sections \
 +	-fno-stack-protector -fno-ident -fomit-frame-pointer \
-+	-fprofile-use \
 +	-fno-unroll-loops \
-+	-fbranch-probabilities -Wno-error=coverage-mismatch \
 +	-marm
++ifeq ($(PROFILE), YES)
++	CFLAGS += -fprofile-generate=$(HOMEPATH)/profile # rm path if you want dir structure intact at runtime
++	LDFLAGS += -lgcov
++else ifeq ($(PROFILE), APPLY)
++        CFLAGS += -fprofile-use -fbranch-probabilities -Wno-error=coverage-mismatch
++endif
 +	ASFLAGS += $(CFLAGS)
 +	ARCH = arm
 +	MMAP_JIT_CACHE = 1

@@ -1,0 +1,44 @@
+diff --git a/Makefile.libretro b/Makefile.libretro
+index 1169d892..6ea2dfd6 100644
+--- a/Makefile.libretro
++++ b/Makefile.libretro
+@@ -4,6 +4,7 @@ DEBUG ?= 0
+ WANT_ZLIB ?= 1
+ HAVE_CHD ?= 1
+ USE_LIBRETRO_VFS ?= 0
++PROFILE ?= 0
+ 
+ # Dynarec options: lightrec, ari64
+ DYNAREC ?= lightrec
+@@ -532,13 +533,29 @@ else ifneq (,$(findstring armv,$(platform)))
+ 
+ else ifeq ($(platform), miyoo)
+ 	TARGET := $(TARGET_NAME)_libretro.so
+-	fpic := -fPIC
+-	CFLAGS += -mcpu=arm926ej-s -fsingle-precision-constant
++	fpic := -fno-PIC
++	CFLAGS += -mcpu=arm926ej-s -fsingle-precision-constant -Ofast -fdata-sections -ffunction-sections -fsingle-precision-constant
+ 	CFLAGS += -DGPU_UNAI_USE_INT_DIV_MULTINV -D_MIYOO
++	CFLAGS += -flto=auto -fno-common -fno-ipa-cp -fno-caller-saves -fno-regmove -finline-limit=42 \
++	-fuse-linker-plugin \
++	-fno-stack-protector -fno-ident -fomit-frame-pointer \
++	-fno-unroll-loops -ffast-math \
++	-marm
++	CXXFLAGS += $(CFLAGS)
++	CPPFLAGS += $(CFLAGS)
++	ASFLAGS += $(CFLAGS)
++	THREAD_RENDERING := 1
+ 	ARCH = arm
+ 	BUILTIN_GPU = unai_old
+ 	DYNAREC = ari64
+ 	HAVE_NEON = 0
++	BASE_ADDR_DYNAMIC := 1
++ifeq ($(PROFILE), YES)
++	CFLAGS += -fprofile-generate=$(HOMEPATH)/profile # rm path if you want dir structure intact at runtime
++	LDFLAGS += -lgcov
++else ifeq ($(PROFILE), APPLY)
++	CFLAGS += -fprofile-use -fbranch-probabilities -Wno-error=coverage-mismatch
++endif
+ 
+ # Emscripten
+ else ifeq ($(platform), emscripten)
