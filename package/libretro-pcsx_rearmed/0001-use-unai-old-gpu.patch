@@ -37,38 +37,18 @@ index 4786a922..e27ec29b 100644
  endif
  
 diff --git a/Makefile.libretro b/Makefile.libretro
-index 1169d892..144601b3 100644
+index 1169d892..9df8fe28 100644
 --- a/Makefile.libretro
 +++ b/Makefile.libretro
-@@ -532,13 +532,25 @@ else ifneq (,$(findstring armv,$(platform)))
- 
- else ifeq ($(platform), miyoo)
- 	TARGET := $(TARGET_NAME)_libretro.so
--	fpic := -fPIC
--	CFLAGS += -mcpu=arm926ej-s -fsingle-precision-constant
-+	fpic := -fno-PIC
-+	CFLAGS += -mcpu=arm926ej-s -fsingle-precision-constant -Ofast -fdata-sections -ffunction-sections -fsingle-precision-constant
+@@ -536,7 +536,7 @@ else ifeq ($(platform), miyoo)
+ 	CFLAGS += -mcpu=arm926ej-s -fsingle-precision-constant
  	CFLAGS += -DGPU_UNAI_USE_INT_DIV_MULTINV -D_MIYOO
-+	CFLAGS += -flto=auto -fno-common -fno-ipa-cp -fno-caller-saves -fno-regmove -finline-limit=42 \
-+	-fuse-linker-plugin \
-+	-fno-stack-protector -fno-ident -fomit-frame-pointer \
-+	-fprofile-use -fprofile-dir=$(BASE_DIR)/../board/miyoo/profile/libretro-pcsx_rearmed/profile \
-+	-fno-unroll-loops -ffast-math \
-+	-fbranch-probabilities -Wno-error=coverage-mismatch \
-+	-marm
-+	CXXFLAGS += $(CFLAGS)
-+	CPPFLAGS += $(CFLAGS)
-+	ASFLAGS += $(CFLAGS)
-+	THREAD_RENDERING := 1
  	ARCH = arm
 -	BUILTIN_GPU = unai
 +	BUILTIN_GPU = unai_old
  	DYNAREC = ari64
  	HAVE_NEON = 0
-+	BASE_ADDR_DYNAMIC := 1
  
- # Emscripten
- else ifeq ($(platform), emscripten)
 diff --git a/plugins/gpu_unai_old/Makefile b/plugins/gpu_unai_old/Makefile
 new file mode 100644
 index 00000000..1f4b8bdb
