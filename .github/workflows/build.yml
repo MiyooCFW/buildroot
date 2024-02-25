@@ -49,9 +49,10 @@ jobs:
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         sudo apt update && sudo apt install -y gsfonts
         make miyoo_uclibc_defconfig
+        CPU_N=$(getconf _NPROCESSORS_ONLN)
         set -o pipefail
         if ! ( \
-        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" APPEND_VERSION="-Dev_build" 2>&1 \
+        make -j $CPU_N sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" APPEND_VERSION="-Dev_build" 2>&1 \
         | tee build.log \
         | grep ">>>" \
         ); then tail -n100 build.log && exit 1
@@ -133,9 +134,10 @@ jobs:
         #apt update && apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion
         sudo apt update && sudo apt install -y gsfonts
         make miyoo_musl_defconfig
+        CPU_N=$(getconf _NPROCESSORS_ONLN)
         set -o pipefail
         if ! ( \
-        make sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" APPEND_VERSION="-Dev_build" 2>&1 \
+        make -j $CPU_N sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" APPEND_VERSION="-Dev_build" 2>&1 \
         | tee build.log \
         | grep ">>>" \
         ); then tail -n100 build.log && exit 1
@@ -209,9 +211,10 @@ jobs:
       run: |
         cd ${{ inputs.submodule || '.' }}
         make miyoo_uclibc_static_defconfig
+        CPU_N=$(getconf _NPROCESSORS_ONLN)
         set -o pipefail
         if ! ( \
-        make sdk 2>&1 \
+        make -j $CPU_N sdk 2>&1 \
         | tee build.log \
         | grep ">>>" \
         ); then tail -n100 build.log && exit 1
@@ -261,9 +264,10 @@ jobs:
       run: |
         cd ${{ inputs.submodule || '.' }}
         make miyoo_musl_static_defconfig
+        CPU_N=$(getconf _NPROCESSORS_ONLN)
         set -o pipefail
         if ! ( \
-        make sdk 2>&1 \
+        make -j $CPU_N sdk 2>&1 \
         | tee build.log \
         | grep ">>>" \
         ); then tail -n100 build.log && exit 1
