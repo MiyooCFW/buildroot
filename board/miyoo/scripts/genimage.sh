@@ -7,13 +7,25 @@ LIBC=${4}
 STARTDIR=$(pwd)
 SELFDIR=$(dirname $(realpath ${0}))
 
+# BR2 Version is tracked by git
+## DO NOT add messages to tags, or BR2_HASH will output tag-commit instead
+BR2_HASH=$(echo $BR2_VERSION_FULL | sed 's/^[-]g//' | sed 's/-.*//') # also remove "-dirty" bit
+if (test "$CFW_HASH" == "$BR2_HASH" || test -z "$CFW_HASH"); then
+	CFW_TYPE="buildroot_dist"
+	CFW_HASH="$BR2_HASH"
+	CFW_VERSION="BR2=${BR2_HASH}"
+else
+	CFW_TYPE="cfw"
+	CFW_VERSION="CFW=${CFW_HASH}"
+fi
+
 # Generate CFW release tag, status and append iteration count
 if test $(git tag | wc -l) -ne 0; then
 	GIT_TAG="$(git describe --tags --abbrev=0)"
 	CFW_RELEASE="$(echo ${GIT_TAG} | sed 's/-.*//')"
 	STATUS="$(echo ${GIT_TAG} | sed 's/^[^-]*-//' | tr '[:lower:]' '[:upper:]' | tr '-' 'v')"
 	ITERATION_VERSION="$(git rev-list --count ${GIT_TAG}..HEAD)"
-	if test $ITERATION_VERSION -eq 0 || test -n "$CFW_ITERATION" && test $CFW_ITERATION -eq 0; then
+	if test $ITERATION_VERSION -eq 0 || test "$CFW_TYPE" == "cfw" && test -n "$CFW_ITERATION" && test $CFW_ITERATION -eq 0; then
 		APPEND_VERSION=""
 		if test "$STATUS" == "$CFW_RELEASE"; then STATUS="STABLE"; fi
 	else
@@ -23,24 +35,13 @@ if test $(git tag | wc -l) -ne 0; then
 		elif [ "$STATUS" == "BETA" ]; then
 			STATUS="${STATUS}v2"
 		fi
-		if (test "$CFW_ITERATION" != "$ITERATION_VERSION" && test -n "$CFW_ITERATION"); then ITERATION_VERSION="${CFW_ITERATION}"; fi
+		if test "$CFW_TYPE" == "cfw"; then ITERATION_VERSION="${CFW_ITERATION}"; fi
 		if test "$STATUS" == "$CFW_RELEASE"; then STATUS="BETA"; fi
 		APPEND_VERSION="${APPEND_VERSION}-n${ITERATION_VERSION}"
 	fi
 else
 	CFW_RELEASE="0.0.0"
 	STATUS="UNKNOWN"
-fi
-
-# BR2 Version is tracked by git
-BR2_HASH=$(echo $BR2_VERSION_FULL | sed 's/^[-]g//')
-if (test "$CFW_HASH" == "$BR2_HASH" || test -z "$CFW_HASH"); then
-	CFW_TYPE="buildroot_dist"
-	CFW_HASH="$BR2_HASH"
-	CFW_VERSION="BR2=${BR2_HASH}"
-else
-	CFW_TYPE="cfw"
-	CFW_VERSION="CFW=${CFW_HASH}"
 fi
 
 export IMAGE_NAME="${BR2_VENDOR}-${CFW_TYPE}-${CFW_RELEASE}${CFW_HASH}_${LIBC}-${STATUS}${APPEND_VERSION}.img"

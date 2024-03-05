@@ -79,7 +79,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: build image (uClibc)
-        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-*.img
+        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-*.img
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
         
     - uses: actions/upload-artifact@v3
@@ -168,7 +168,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: build image (musl)
-        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-cfw-*.img
+        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-*.img
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
 
     - uses: actions/upload-artifact@v3
