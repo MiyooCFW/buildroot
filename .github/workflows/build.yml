@@ -40,10 +40,13 @@ jobs:
         restore-keys: |
           ${{ inputs.submodule }}-uclibc-ccache-
     
-    - name: generate cfw hash
+    - name: generate cfw hash & iteration count
       run: |
         git config --global --add safe.directory /__w/buildroot/buildroot 
-        echo "cfwsha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        echo "cfw_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        if test $(git tag | wc -l) -ne 0; then \
+        echo "cfw_iteration=$(git rev-list --count $(git describe --tags --abbrev=0)..HEAD)" >> $GITHUB_OUTPUT; \
+        fi
       id: cfwsha
     
     - name: build
@@ -54,7 +57,7 @@ jobs:
         CPU_N=$(getconf _NPROCESSORS_ONLN)
         set -o pipefail
         if ! ( \
-        make -j $CPU_N sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" APPEND_VERSION="-Dev_build" 2>&1 \
+        make -j $CPU_N sdk CFW_HASH="${{ steps.cfwsha.outputs.cfw_sha }}" CFW_ITERATION="${{ steps.cfwsha.outputs.cfw_iteration }}" APPEND_VERSION="-Dev_build" 2>&1 \
         | tee build.log \
         | grep ">>>" \
         ); then tail -n100 build.log && exit 1
@@ -126,10 +129,13 @@ jobs:
         restore-keys: |
           ${{ inputs.submodule }}-musl-ccache-
 
-    - name: generate cfw hash
+    - name: generate cfw hash & iteration count
       run: |
         git config --global --add safe.directory /__w/buildroot/buildroot 
-        echo "cfwsha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        echo "cfw_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        if test $(git tag | wc -l) -ne 0; then \
+        echo "cfw_iteration=$(git rev-list --count $(git describe --tags --abbrev=0)..HEAD)" >> $GITHUB_OUTPUT; \
+        fi
       id: cfwsha
 
     - name: build
@@ -140,7 +146,7 @@ jobs:
         CPU_N=$(getconf _NPROCESSORS_ONLN)
         set -o pipefail
         if ! ( \
-        make -j $CPU_N sdk CFW_HASH="${{ steps.cfwsha.outputs.cfwsha }}" APPEND_VERSION="-Dev_build" 2>&1 \
+        make -j $CPU_N sdk CFW_HASH="${{ steps.cfwsha.outputs.cfw_sha }}" CFW_ITERATION="${{ steps.cfwsha.outputs.cfw_iteration }}" APPEND_VERSION="-Dev_build" 2>&1 \
         | tee build.log \
         | grep ">>>" \
         ); then tail -n100 build.log && exit 1
