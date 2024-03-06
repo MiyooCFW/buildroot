@@ -40,7 +40,10 @@ if test -n "$GIT_TAG"; then
 		elif test -n "$STATUS" ; then
 			STATUS="${STATUS}v2"
 		fi
-		if test "$STATUS" == "$CFW_RELEASE"; then STATUS="BETA"; fi
+		if test "$STATUS" == "$CFW_RELEASE"; then
+			STATUS="BETA"
+			CFW_RELEASE="$(echo ${CFW_RELEASE} | sed 's/[0-9]$//')$(echo ${CFW_RELEASE} | grep -oE '[0-9]+$' | expr $(cat -) + 1)"
+		fi
 		APPEND_VERSION="${APPEND_VERSION}-n${ITERATION_VERSION}"
 	fi
 else
