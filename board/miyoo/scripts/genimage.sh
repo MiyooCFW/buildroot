@@ -15,7 +15,7 @@ fi
 
 BR2_HASH="$(git rev-parse --short HEAD)" # not using print-version from BR2_VERSION_FULL
 if (test "$CFW_HASH" == "$BR2_HASH" || test -z "$CFW_HASH"); then
-	CFW_TYPE="buildroot_dist"
+	CFW_TYPE="br2_dist"
 	CFW_HASH="$BR2_HASH"
 	CFW_VERSION="BR2=${BR2_HASH}"
 	GIT_TAG="$BR2_TAG"
