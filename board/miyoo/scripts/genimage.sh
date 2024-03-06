@@ -10,11 +10,10 @@ SELFDIR=$(dirname $(realpath ${0}))
 # Generate CFW release tag, status and append iteration count
 if test $(git tag | wc -l) -ne 0; then
 	BR2_TAG="$(git describe --tags --abbrev=0)"
-	ITERATION_VERSION="$(git rev-list --count ${BR2_TAG}..HEAD)"
+	BR2_ITERATION="$(git rev-list --count ${BR2_TAG}..HEAD)"
 fi
 
-## DO NOT add messages to tags, or BR2_HASH will output tag-commit instead
-BR2_HASH=$(echo $BR2_VERSION_FULL | sed 's/^[-]g//' | sed 's/-.*//') # rm git tracking and "-dirty" bit
+BR2_HASH="$(git rev-parse --short HEAD)" # not using print-version from BR2_VERSION_FULL
 if (test "$CFW_HASH" == "$BR2_HASH" || test -z "$CFW_HASH"); then
 	CFW_TYPE="buildroot_dist"
 	CFW_HASH="$BR2_HASH"
@@ -38,7 +37,7 @@ if test -n "$GIT_TAG"; then
 		if [[ "$(echo ${STATUS} | sed 's/^[^-]*v//')" =~ ^-?[0-9]+$ ]]; then
 			APPEND_VERSION="v$(echo ${STATUS} | sed 's/^[^-]*v//' | expr $(cat -) + 1)${APPEND_VERSION}"
 			STATUS="$(echo ${STATUS} | sed 's/v.*//')"
-		elif [ "$STATUS" == "BETA" ]; then
+		elif test -n "$STATUS" ; then
 			STATUS="${STATUS}v2"
 		fi
 		if test "$STATUS" == "$CFW_RELEASE"; then STATUS="BETA"; fi
@@ -49,7 +48,7 @@ else
 	STATUS="UNKNOWN"
 fi
 
-export IMAGE_NAME="${BR2_VENDOR}-${CFW_TYPE}-${CFW_RELEASE}${CFW_HASH}_${LIBC}-${STATUS}${APPEND_VERSION}.img"
+export IMAGE_NAME="${BR2_VENDOR}-${CFW_TYPE}-${CFW_RELEASE}-${CFW_HASH}_${LIBC}-${STATUS}${APPEND_VERSION}.img"
 
 # Relocate board files for genimage-sdcard config to read (see last cmd)
 cp -r board/miyoo/boot "${BINARIES_DIR}"
