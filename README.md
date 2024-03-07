@@ -5,7 +5,7 @@ Opensource development package for Miyoo handhelds
 
 ### Install necessary packages
 ``` shell
-sudo apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion python3
+sudo apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion python3 mercurial imagemagick btrfs-progs
 ```
 
 ### Download BSP

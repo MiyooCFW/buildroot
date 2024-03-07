@@ -58,7 +58,9 @@ jobs:
         CPU_N=$(getconf _NPROCESSORS_ONLN)
         set -o pipefail
         if ! ( \
-        make -j $CPU_N sdk CFW_HASH="${{ steps.cfwsha.outputs.cfw_sha }}" CFW_TAG="${{ steps.cfwsha.outputs.cfw_tag }}" CFW_ITERATION="${{ steps.cfwsha.outputs.cfw_iteration }}" APPEND_VERSION="-Dev_build" 2>&1 \
+        make -j $CPU_N sdk \
+        CFW_HASH="${{ steps.cfwsha.outputs.cfw_sha }}" CFW_TAG="${{ steps.cfwsha.outputs.cfw_tag }}" CFW_ITERATION="${{ steps.cfwsha.outputs.cfw_iteration }}" \
+        APPEND_VERSION="-Dev_build$(echo ${{ github.ref_name != 'master' && github.ref_name || '' }} | sed 's/\//-/g' | sed '/./ s/^/-/')" 2>&1 \
         | tee build.log \
         | grep ">>>" \
         ); then tail -n100 build.log && exit 1
@@ -148,7 +150,9 @@ jobs:
         CPU_N=$(getconf _NPROCESSORS_ONLN)
         set -o pipefail
         if ! ( \
-        make -j $CPU_N sdk CFW_HASH="${{ steps.cfwsha.outputs.cfw_sha }}" CFW_TAG="${{ steps.cfwsha.outputs.cfw_tag }}" CFW_ITERATION="${{ steps.cfwsha.outputs.cfw_iteration }}" APPEND_VERSION="-Dev_build" 2>&1 \
+        make -j $CPU_N sdk \
+        CFW_HASH="${{ steps.cfwsha.outputs.cfw_sha }}" CFW_TAG="${{ steps.cfwsha.outputs.cfw_tag }}" CFW_ITERATION="${{ steps.cfwsha.outputs.cfw_iteration }}" \
+        APPEND_VERSION="-Dev_build$(echo ${{ github.ref_name != 'master' && github.ref_name || '' }} | sed 's/\//-/g' | sed '/./ s/^/-/')" 2>&1 \
         | tee build.log \
         | grep ">>>" \
         ); then tail -n100 build.log && exit 1
