@@ -2219,6 +2219,7 @@ menu "Miscellaneous"
 	source "package/fbcat/Config.in"
 	source "package/st-sdl/Config.in"
 	source "package/commander/Config.in"
+	source "package/sdlbook/Config.in"
 
 endmenu
 
