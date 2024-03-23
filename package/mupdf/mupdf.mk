@@ -59,6 +59,10 @@ MUPDF_MAKE_OPTS = \
 	HAVE_OBJCOPY=no \
 	prefix="/usr"
 
+ifeq ($(BR2_SHARED_LIBS),y)
+MUPDF_MAKE_OPTS += shared=yes
+endif
+
 ifeq ($(BR2_PACKAGE_LIBFREEGLUT),y)
 MUPDF_DEPENDENCIES += libfreeglut
 else
