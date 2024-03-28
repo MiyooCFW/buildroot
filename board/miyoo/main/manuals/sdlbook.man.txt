@@ -1,0 +1,15 @@
+SDLbook hotkeys:
+-----------------------
+A = accept
+B = cancel
+UP = scroll up
+DOWN = scroll down
+L2/R2+UP = scroll fast upwards
+L2/R2+DOWN = scroll fast downwards
+L1 = scroll one page up
+R1 = scroll one page down
+X = zoom in page
+Y = zoom out page
+SELECT = jump to inserted page number 
+RESET = quit app
+START = show HELP screen

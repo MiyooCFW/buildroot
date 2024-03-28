@@ -1,0 +1,5 @@
+title=SDLbook
+description=DJVU/PDF/EPUB viewer & more
+exec=/usr/bin/sdlbook
+manual=/mnt/manuals/sdlbook.man.txt
+selectordir=/mnt/books

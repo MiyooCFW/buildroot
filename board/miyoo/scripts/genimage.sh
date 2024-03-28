@@ -63,6 +63,8 @@ convert board/miyoo/miyoo-splash.png -pointsize 12 -fill white -annotate +10+230
 # Workaround for build apss and configs being placed in /usr/ after img generation (as we use MAIN)
 test -d "${BINARIES_DIR}/gmenu2x" && cp -r "${BINARIES_DIR}/gmenu2x/" "${BINARIES_DIR}/main/"
 test -d "${BINARIES_DIR}/emus" && cp -r "${BINARIES_DIR}/emus/" "${BINARIES_DIR}/main/"
+test -d "${BINARIES_DIR}/apps" && cp -r "${BINARIES_DIR}/apps/" "${BINARIES_DIR}/main/"
+test -d "${BINARIES_DIR}/games" && cp -r "${BINARIES_DIR}/games/" "${BINARIES_DIR}/main/"
 if test -d "${BINARIES_DIR}/retroarch"; then
 	rsync -avzh "${BINARIES_DIR}/retroarch/" "${BINARIES_DIR}/main/.retroarch/"
 	## Generate list of cores to be used
