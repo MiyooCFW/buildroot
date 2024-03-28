@@ -14,14 +14,7 @@ SDLBOOK_DEPENDENCIES = \
 	tiff
 
 define SDLBOOK_BUILD_CMDS
-	$(MAKE) CC="$(TARGET_CC)" \
-	CFLAGS="-Ofast -ffast-math -mcpu=arm926ej-s -marm -fdata-sections -ffunction-sections -fsingle-precision-constant -flto \
-			-fdata-sections -ffunction-sections -Wl,--gc-sections \
-			-fno-stack-protector -fno-ident -fomit-frame-pointer \
-			-falign-functions=1 -falign-jumps=1 -falign-loops=1 \
-			-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-unroll-loops \
-			-fmerge-all-constants -fno-math-errno" \
-	-C $(@D)
+	$(MAKE) CC="$(TARGET_CC)" CFLAGS="-DMIYOO -Ofast -DRENDER_ONEPAGE" -C $(@D)
 endef
 
 define SDLBOOK_INSTALL_TARGET_CMDS
