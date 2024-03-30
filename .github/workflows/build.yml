@@ -17,7 +17,7 @@ jobs:
       FORCE_UNSAFE_CONFIGURE: 1
     steps:
     - name: Maximize build space
-      uses: easimon/maximize-build-space@v8
+      uses: easimon/maximize-build-space@v10
       with:
         overprovision-lvm: true
         remove-dotnet: true
@@ -26,14 +26,14 @@ jobs:
         remove-codeql: true
         remove-docker-images: true
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - if: inputs.submodule
       run: git submodule update --init -- ${{ inputs.submodule }}
   
     - name: retrieve ccache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.buildroot-ccache
         key: ${{ inputs.submodule }}-uclibc-ccache-${{ github.sha }}
@@ -68,7 +68,7 @@ jobs:
  
     - name: Archive build logs (uClibc)
       if: success() || failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-logs (uClibc)
         path: ${{ inputs.submodule || '.' }}/build.log
@@ -79,25 +79,25 @@ jobs:
         sudo apt update && sudo apt install -y python3-matplotlib python3-numpy
         make graph-build
       
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: build image (uClibc)
         path: ${{ inputs.submodule || '.' }}/output/images/miyoo-*.img
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
         
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: SDK (uClibc)
         path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-uclibcgnueabi_sdk-buildroot.tar.gz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`    
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: build-graphs (uClibc)
         path: ${{ inputs.submodule || '.' }}/output/graphs/
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: rootfs (uClibc)
         path: ${{ inputs.submodule || '.' }}/output/images/rootfs.btrfs
@@ -109,7 +109,7 @@ jobs:
       FORCE_UNSAFE_CONFIGURE: 1
     steps:
     - name: Maximize build space
-      uses: easimon/maximize-build-space@v8
+      uses: easimon/maximize-build-space@v10
       with:
         overprovision-lvm: true
         remove-dotnet: true
@@ -118,14 +118,14 @@ jobs:
         remove-codeql: true
         remove-docker-images: true
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - if: inputs.submodule
       run: git submodule update --init -- ${{ inputs.submodule }}
 
     - name: retrieve ccache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.buildroot-ccache
         key: ${{ inputs.submodule }}-musl-ccache-${{ github.sha }}
@@ -160,7 +160,7 @@ jobs:
  
     - name: Archive build logs (musl)
       if: success() || failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-logs (musl)
         path: ${{ inputs.submodule || '.' }}/build.log
@@ -171,25 +171,25 @@ jobs:
         sudo apt update && sudo apt install -y python3-matplotlib python3-numpy
         make graph-build
       
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: build image (musl)
         path: ${{ inputs.submodule || '.' }}/output/images/miyoo-*.img
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: SDK (musl)
         path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-musleabi_sdk-buildroot.tar.gz
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: build-graphs (musl)
         path: ${{ inputs.submodule || '.' }}/output/graphs/
         if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn` 
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: rootfs (musl)
         path: ${{ inputs.submodule || '.' }}/output/images/rootfs.btrfs
@@ -201,7 +201,7 @@ jobs:
       FORCE_UNSAFE_CONFIGURE: 1
     steps:
     - name: Maximize build space
-      uses: easimon/maximize-build-space@v8
+      uses: easimon/maximize-build-space@v10
       with:
         overprovision-lvm: true
         remove-dotnet: true
@@ -210,12 +210,12 @@ jobs:
         remove-codeql: true
         remove-docker-images: true
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - if: inputs.submodule
       run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}
 
     - name: retrieve ccache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.buildroot-ccache
         key: ${{ inputs.submodule }}uclibc-static-ccache-${{ github.sha }}
@@ -237,12 +237,12 @@ jobs:
  
     - name: Archive build logs (uClibc static)
       if: success() || failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-logs (uClibc static)
         path: ${{ inputs.submodule || '.' }}/build.log
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: SDK (uClibc static)
         path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-uclibcgnueabi_sdk-buildroot.tar.gz
@@ -254,7 +254,7 @@ jobs:
       FORCE_UNSAFE_CONFIGURE: 1
     steps:
     - name: Maximize build space
-      uses: easimon/maximize-build-space@v8
+      uses: easimon/maximize-build-space@v10
       with:
         overprovision-lvm: true
         remove-dotnet: true
@@ -263,12 +263,12 @@ jobs:
         remove-codeql: true
         remove-docker-images: true
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - if: inputs.submodule
       run: git submodule update --init --depth 1 -- ${{ inputs.submodule }}
 
     - name: retrieve ccache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.buildroot-ccache
         key: ${{ inputs.submodule }}musl-static-ccache-${{ github.sha }}
@@ -290,13 +290,13 @@ jobs:
  
     - name: Archive build logs (musl static)
       if: success() || failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-logs (musl static)
         path: ${{ inputs.submodule || '.' }}/build.log
 
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: SDK (musl static)
         path: ${{ inputs.submodule || '.' }}/output/images/arm-miyoo-linux-musleabi_sdk-buildroot.tar.gz
