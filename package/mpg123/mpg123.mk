@@ -81,4 +81,7 @@ else
 MPG123_CONF_OPTS += --enable-modules
 endif
 
+# the LFS wrappers brake mpg123_seek on ARM 32bit
+MPG123_CONF_OPTS += --disable-lfs-alias
+
 $(eval $(autotools-package))
