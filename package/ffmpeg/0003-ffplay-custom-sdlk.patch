@@ -1,7 +1,7 @@
 diff --git a/ffplay.c b/ffplay.c
-index f28e0877..b08d7598 100644
+index f28e087..a2647f8 100644
 --- a/ffplay.c
-+++ b/root/ffplay.c
++++ b/ffplay.c
 @@ -3367,25 +3367,31 @@ static void event_loop(VideoState *cur_stream)
                  do_exit(cur_stream);
                  break;
@@ -34,3 +34,61 @@ index f28e0877..b08d7598 100644
                  step_to_next_frame(cur_stream);
                  break;
              case SDLK_a:
+@@ -3415,14 +3421,14 @@ static void event_loop(VideoState *cur_stream)
+                 toggle_audio_display(cur_stream);
+ #endif
+                 break;
+-            case SDLK_PAGEUP:
++            case SDLK_PAGEDOWN:
+                 if (cur_stream->ic->nb_chapters <= 1) {
+                     incr = 600.0;
+                     goto do_seek;
+                 }
+                 seek_chapter(cur_stream, 1);
+                 break;
+-            case SDLK_PAGEDOWN:
++            case SDLK_PAGEUP:
+                 if (cur_stream->ic->nb_chapters <= 1) {
+                     incr = -600.0;
+                     goto do_seek;
+@@ -3727,23 +3733,23 @@ void show_help_default(const char *opt, const char *arg)
+     show_help_children(avfilter_get_class(), AV_OPT_FLAG_FILTERING_PARAM);
+ #endif
+     printf("\nWhile playing:\n"
+-           "q, ESC              quit\n"
+-           "f                   toggle full screen\n"
+-           "p, SPC              pause\n"
+-           "m                   toggle mute\n"
+-           "9, 0                decrease and increase volume respectively\n"
+-           "/, *                decrease and increase volume respectively\n"
+-           "a                   cycle audio channel in the current program\n"
+-           "v                   cycle video channel\n"
+-           "t                   cycle subtitle channel in the current program\n"
+-           "c                   cycle program\n"
+-           "w                   cycle video filters or show modes\n"
+-           "s                   activate frame-step mode\n"
+-           "left/right          seek backward/forward 10 seconds\n"
+-           "down/up             seek backward/forward 1 minute\n"
+-           "page down/page up   seek backward/forward 10 minutes\n"
+-           "right mouse click   seek to percentage in file corresponding to fraction of width\n"
+-           "left double-click   toggle full screen\n"
++           "q, ESC (SELECT)            quit\n"
++           "f (X)                      toggle full screen\n"
++           "p, SPC (Y), RTN (START)    pause\n"
++           "m, LCTRL (B)               toggle mute\n"
++           "9/0, RALT/RSHIFT (L3/R3)   decrease and increase volume respectively\n"
++           "/, *                       decrease and increase volume respectively\n"
++           "a                          cycle audio channel in the current program\n"
++           "v                          cycle video channel\n"
++           "t                          cycle subtitle channel in the current program\n"
++           "c                          cycle program\n"
++           "w                          cycle video filters or show modes\n"
++           "s, LALT (A)                activate frame-step mode\n"
++           "left/right                 seek backward/forward 10 seconds\n"
++           "down/up                    seek backward/forward 1 minute\n"
++           "page up/page down (L2/R2)  seek backward/forward 10 minutes\n"
++           "right mouse click          seek to percentage in file corresponding to fraction of width\n"
++           "left double-click          toggle full screen\n"
+            );
+ }
+ 
