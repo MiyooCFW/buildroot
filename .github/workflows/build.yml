@@ -53,7 +53,7 @@ jobs:
     - name: build
       run: |
         cd ${{ inputs.submodule || '.' }}
-        sudo apt update && sudo apt install -y gsfonts
+        sudo apt-get update && sudo apt-get install -y gsfonts
         make miyoo_uclibc_defconfig
         CPU_N=$(getconf _NPROCESSORS_ONLN)
         set -o pipefail
@@ -76,7 +76,7 @@ jobs:
     - name: generate-graphs
       run: |
         cd ${{ inputs.submodule || '.' }}
-        sudo apt update && sudo apt install -y python3-matplotlib python3-numpy
+        sudo apt-get update && sudo apt-get install -y python3-matplotlib python3-numpy
         make graph-build
       
     - uses: actions/upload-artifact@v4
@@ -145,7 +145,7 @@ jobs:
     - name: build
       run: |
         cd ${{ inputs.submodule || '.' }}
-        sudo apt update && sudo apt install -y gsfonts
+        sudo apt-get update && sudo apt-get install -y gsfonts
         make miyoo_musl_defconfig
         CPU_N=$(getconf _NPROCESSORS_ONLN)
         set -o pipefail
@@ -168,7 +168,7 @@ jobs:
     - name: generate-graphs
       run: |
         cd ${{ inputs.submodule || '.' }}
-        sudo apt update && sudo apt install -y python3-matplotlib python3-numpy
+        sudo apt-get update && sudo apt-get install -y python3-matplotlib python3-numpy
         make graph-build
       
     - uses: actions/upload-artifact@v4
