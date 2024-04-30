@@ -1,0 +1,27 @@
+From e6260642c7a7228ab928a22608cb9914b2748402 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Tue, 30 Apr 2024 20:41:24 +0200
+Subject: [PATCH 7/7] supress min scale by max renderer pages' dimension
+
+---
+ sdlbook.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/sdlbook.c b/sdlbook.c
+index 5d939e8..7829239 100644
+--- a/sdlbook.c
++++ b/sdlbook.c
+@@ -537,7 +537,9 @@ static int change_page(int incr) {
+ 
+ static int change_scale(int incr) {
+ 	int need_redraw;
+-	if (config_data.scale + incr <= 999 && config_data.scale + incr > 0)
++	if (ezsdl_get_height() > get_page_bottom()*2)
++		config_data.scale += incr > 0 ? incr : 0;
++	else if (config_data.scale + incr <= 999 && config_data.scale + incr > 0)
+ 		config_data.scale += incr;
+ 	else return 0;
+ 	swap_image(prep_pages(&need_redraw));
+-- 
+2.34.1
+

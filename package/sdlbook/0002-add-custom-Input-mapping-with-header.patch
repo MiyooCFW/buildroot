@@ -1,7 +1,7 @@
 From 4126f952f021b7e8fca7880e072092fcb3812f29 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Sat, 23 Mar 2024 16:30:20 +0100
-Subject: [PATCH 2/3] add custom Input mapping with header
+Subject: [PATCH 2/7] add custom Input mapping with header
 
 ---
  inputmap.h | 40 ++++++++++++++++++++++++++++++
@@ -249,5 +249,5 @@ index d608aba..79b77f3 100644
  						default:
  							break;
 -- 
-2.43.0.windows.1
+2.34.1
 

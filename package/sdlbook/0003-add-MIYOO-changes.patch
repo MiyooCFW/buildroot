@@ -1,7 +1,7 @@
-From c3a54f6c7b5088731fc6026d2b6a48833e4cd1b3 Mon Sep 17 00:00:00 2001
+From 1decdb74c622f2c00e9b37bf4165f2a6e5bcdec3 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Sun, 24 Mar 2024 15:12:08 +0100
-Subject: [PATCH 3/3] add MIYOO changes
+Subject: [PATCH 3/7] add MIYOO changes
 
 make CC=${CROSS_COMPILE}gcc CFLAGS="-DMIYOO -Ofast"
 ---
@@ -65,22 +65,22 @@ index 0210a24..a34978f 100644
  
  #endif
 diff --git a/sdlbook.c b/sdlbook.c
-index 79b77f3..64327a1 100644
+index 79b77f3..584f02d 100644
 --- a/sdlbook.c
 +++ b/sdlbook.c
 @@ -117,9 +117,15 @@ static void read_write_config(int doread) {
  		cfg_close(config);
  	}
  	if(doread) {
-+		#ifdef MIYOO
++#ifdef MIYOO
 +		if(!config_data.w) config_data.w = 320;
 +		if(!config_data.h) config_data.h = 240;
 +		if(!config_data.scale) config_data.scale = 80;
-+		#else
++#else
  		if(!config_data.w) config_data.w = 640;
  		if(!config_data.h) config_data.h = 480;
  		if(!config_data.scale) config_data.scale = 100;
-+		#endif
++#endif
  	}
  }
  
@@ -143,5 +143,5 @@ index 79b77f3..64327a1 100644
  	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
  #endif
 -- 
-2.43.0.windows.1
+2.34.1
 
