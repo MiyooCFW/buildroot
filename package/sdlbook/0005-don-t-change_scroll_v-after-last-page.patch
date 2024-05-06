@@ -1,0 +1,30 @@
+From fa6e1a82caa29f95761b7c4a902cc56f3d4bcd76 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sat, 27 Apr 2024 17:12:45 +0200
+Subject: [PATCH 5/7] don't change_scroll_v after last page
+
+Update sdlbook.c
+
+Update sdlbook.c
+
+Update sdlbook.c
+---
+ sdlbook.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/sdlbook.c b/sdlbook.c
+index f11cc30..535a194 100644
+--- a/sdlbook.c
++++ b/sdlbook.c
+@@ -537,6 +537,8 @@ static int change_scroll_v(int incr) {
+ 			need_redraw = change_page(-1);
+ 			scroll_line_v = MAX(scroll_line_v + incr + (int)page_dims.h, 0);
+ 		}
++	} else if(scroll_line_v + incr > page_dims.h/2 && curr_page >= page_count-1) {
++		scroll_line_v = (int)page_dims.h/2;
+ 	} else if(scroll_line_v + incr > page_dims.h) {
+ 		scroll_line_v = scroll_line_v + incr - (int)page_dims.h;
+ 		need_redraw = change_page(+1);
+-- 
+2.34.1
+
