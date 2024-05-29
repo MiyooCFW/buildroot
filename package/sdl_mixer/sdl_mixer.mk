@@ -8,7 +8,7 @@
 # Since then, there have been many bugfixes on master.
 #
 # This commit points to the SDL-1.2 branch from 15 Mar 2021.
-SDL_MIXER_VERSION = d1725fcb7c4e987aeb7ecdc94cb8b6375b702170
+SDL_MIXER_VERSION = ed76d39cda0735d26c14a3e4f4da996e420f6478
 SDL_MIXER_SITE = $(call github,libsdl-org,SDL_mixer,$(SDL_MIXER_VERSION))
 SDL_MIXER_LICENSE = Zlib
 SDL_MIXER_LICENSE_FILES = COPYING
@@ -24,7 +24,6 @@ SDL_MIXER_AUTORECONF = YES
 
 SDL_MIXER_CONF_OPTS = \
 	--with-sdl-prefix=$(STAGING_DIR)/usr \
-	--disable-music-mod \
 	--disable-music-mp3 \
 	--disable-music-flac # configure script fails when cross compiling
 
@@ -54,11 +53,15 @@ else
 SDL_MIXER_CONF_OPTS += --disable-music-mp3-mad-gpl
 endif
 
+ifeq ($(BR2_PACKAGE_LIBMIKMOD),y)
+SDL_MIXER_DEPENDENCIES += host-pkgconf libmikmod
+SDL_MIXER_CONF_OPTS += LIBMIKMOD_CONFIG=$(STAGING_DIR)/usr/bin/libmikmod-config
+else
+SDL_MIXER_CONF_OPTS += --disable-music-mod
 ifeq ($(BR2_PACKAGE_LIBMODPLUG),y)
 SDL_MIXER_CONF_OPTS += --enable-music-mod-modplug
 SDL_MIXER_DEPENDENCIES += host-pkgconf libmodplug
-else
-SDL_MIXER_CONF_OPTS += --disable-music-mod-modplug
+endif
 endif
 
 ifeq ($(BR2_PACKAGE_TREMOR),y)
