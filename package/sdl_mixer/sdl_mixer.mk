@@ -13,19 +13,22 @@ SDL_MIXER_SITE = $(call github,libsdl-org,SDL_mixer,$(SDL_MIXER_VERSION))
 SDL_MIXER_LICENSE = Zlib
 SDL_MIXER_LICENSE_FILES = COPYING
 
-# Package does not build in parallel due to improper make rules
-SDL_MIXER_MAKE = $(MAKE1)
-
 SDL_MIXER_INSTALL_STAGING = YES
-SDL_MIXER_DEPENDENCIES = sdl
+SDL_MIXER_DEPENDENCIES = host-pkgconf sdl
 
-# We're patching configure.in, so we need to autoreconf
-SDL_MIXER_AUTORECONF = YES
+SDL_MIXER_CONF_OPTS = --with-sdl-prefix=$(STAGING_DIR)/usr
 
-SDL_MIXER_CONF_OPTS = \
-	--with-sdl-prefix=$(STAGING_DIR)/usr \
-	--disable-music-mp3 \
-	--disable-music-flac # configure script fails when cross compiling
+ifeq ($(BR2_PACKAGE_MPG123),y)
+SDL_MIXER_DEPENDENCIES += mpg123
+else
+SDL_MIXER_CONF_OPTS += --disable-music-mp3
+endif
+
+ifeq ($(BR2_PACKAGE_FLAC),y)
+SDL_MIXER_DEPENDENCIES += flac
+else
+SDL_MIXER_CONF_OPTS += --disable-music-flac
+endif
 
 ifeq ($(BR2_PACKAGE_FLUIDSYNTH),y)
 SDL_MIXER_DEPENDENCIES += fluidsynth
@@ -54,13 +57,13 @@ SDL_MIXER_CONF_OPTS += --disable-music-mp3-mad-gpl
 endif
 
 ifeq ($(BR2_PACKAGE_LIBMIKMOD),y)
-SDL_MIXER_DEPENDENCIES += host-pkgconf libmikmod
+SDL_MIXER_DEPENDENCIES += libmikmod
 SDL_MIXER_CONF_OPTS += LIBMIKMOD_CONFIG=$(STAGING_DIR)/usr/bin/libmikmod-config
 else
 SDL_MIXER_CONF_OPTS += --disable-music-mod
 ifeq ($(BR2_PACKAGE_LIBMODPLUG),y)
 SDL_MIXER_CONF_OPTS += --enable-music-mod-modplug
-SDL_MIXER_DEPENDENCIES += host-pkgconf libmodplug
+SDL_MIXER_DEPENDENCIES += libmodplug
 endif
 endif
 
