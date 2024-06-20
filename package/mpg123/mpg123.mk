@@ -22,8 +22,8 @@ endif
 ifeq ($(BR2_arm),y)
 # the LFS wrappers brake mpg123_seek on ARM 32bit
 MPG123_CONF_OPTS += --disable-lfs-alias
-# also overwrite cflags to not pass -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64' macros
-MPG123_CONF_ENV += CPPFLAGS=" " CFLAGS=" "
+# Force "largefile_sensitive" in case offset bit is not defined in libc headers e.g 'musl' or can't be detected otherwise
+MPG123_CONF_OPTS += ac_cv_sys_file_offset_bits=64
 ifeq ($(or $(BR2_ARM_CPU_HAS_NEON),$(BR2_ARM_CPU_HAS_VFPV2)),y)
 MPG123_CPU = arm_fpu
 else
