@@ -77,4 +77,14 @@ else
 SDL_MIXER_CONF_OPTS += --disable-music-ogg
 endif
 
+define SDL_MIXER_INSTALL_BIN
+	$(TARGET_STRIP) --strip-unneeded \
+		$(@D)/build/playmus \
+		$(@D)/build/playwave
+	$(INSTALL) -D -m 0755 $(@D)/build/playmus $(TARGET_DIR)/usr/bin
+	$(INSTALL) -D -m 0755 $(@D)/build/playwave $(TARGET_DIR)/usr/bin
+endef
+
+SDL_MIXER_POST_INSTALL_TARGET_HOOKS += SDL_MIXER_INSTALL_BIN
+
 $(eval $(autotools-package))
