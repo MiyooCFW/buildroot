@@ -20,10 +20,6 @@ MPG123_CPU = aarch64
 endif
 
 ifeq ($(BR2_arm),y)
-# the LFS wrappers brake mpg123_seek on ARM 32bit
-MPG123_CONF_OPTS += --disable-lfs-alias
-# also overwrite cflags to not pass -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64' macros
-MPG123_CONF_ENV += CPPFLAGS=" " CFLAGS=" "
 ifeq ($(or $(BR2_ARM_CPU_HAS_NEON),$(BR2_ARM_CPU_HAS_VFPV2)),y)
 MPG123_CPU = arm_fpu
 else
