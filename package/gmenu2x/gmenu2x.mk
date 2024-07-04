@@ -7,6 +7,7 @@
 GMENU2X_VERSION = origin/master
 GMENU2X_SITE_METHOD = git
 GMENU2X_SITE = https://github.com/MiyooCFW/gmenu2x.git
+GMENU2X_INSTALL_STAGING = YES
 GMENU2X_DEPENDENCIES = sdl sdl_image sdl_mixer sdl_sound sdl_ttf
 
 GMENU2X_BUILDTIME = \"$(shell date +%F\ %H:%M)\"
@@ -21,6 +22,11 @@ endif
 
 define GMENU2X_BUILD_CMDS
 	$(MAKE) GMENU2X_HASH="$(GMENU2X_HASH)" CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" STRIP="$(TARGET_STRIP)" LD="$(TARGET_LD)" -C $(@D) -f Makefile.miyoo dist
+endef
+
+# Install GMenu2X PacKaGer to staging for development
+define GMENU2X_INSTALL_STAGING_CMDS
+	$(INSTALL) -D -m 0755 $(@D)/tools/gm2xpkg.sh $(STAGING_DIR)/usr/bin/gm2xpkg
 endef
 
 define GMENU2X_INSTALL_TARGET_CMDS
