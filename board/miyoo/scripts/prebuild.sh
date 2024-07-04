@@ -5,10 +5,10 @@ ROOTFS_PATH="${TARGET_DIR}"
 mkdir -p ${ROOTFS_PATH}/var/lib/opkg/info
 VAR_OPKG="${ROOTFS_PATH}/var/lib/opkg"
 
-# make -s printvars VARS=PACKAGES
+# make -s printvars VARS=PACKAGES_TARGET
 PKGS_ARRAY=("${@:5}")
 PKGS="${PKGS_ARRAY[*]}"
-echo "Current configuration suggest to install following pkgs to TARGET:" && echo "${PKGS}" | sed -E 's/(^|[[:space:]])host-[^[:space:]]+/\1/g' | sed 's/[[:space:]]\{2,\}/ /g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+echo "Current configuration suggest to install following pkgs to TARGET:" && echo "${PKGS}"
 
 for i in "${!PKGS_ARRAY[@]}"; do
 	echo -e \
@@ -20,4 +20,3 @@ Architecture: arm\n" >> ${VAR_OPKG}/status
 done
 
 sleep 2
-
