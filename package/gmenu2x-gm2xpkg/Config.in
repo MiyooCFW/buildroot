@@ -1,0 +1,5 @@
+config BR2_PACKAGE_GMENU2X_GM2XPKG
+	bool "gmenu2x-gm2xpkg"
+	help
+	  This is a GMenu2X PacKaGer aka "gm2xpkg" released under the GNU GPL license v2.
+	  Designed to archive/package your apps for further distribution, supports dir/zip/ipk formats.
