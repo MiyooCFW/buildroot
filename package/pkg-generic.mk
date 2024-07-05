@@ -1211,6 +1211,12 @@ $(eval $(call check-deprecated-variable,$(2)_KCONFIG_OPT,$(2)_KCONFIG_OPTS))
 ifneq ($$(call qstrip,$$($(2)_SOURCE)),)
 PACKAGES_TARGET += $(1)
 PACKAGES_VERSION += $($(3)_VERSION)
+PACKAGES_PKGDIR += $(pkgdir)
+ifeq ($($(2)_LICENSE),)
+PACKAGES_LICENSE += Unknown
+else
+PACKAGES_LICENSE += $(subst $(space),_,$($(2)_LICENSE))
+endif
 endif
 
 PACKAGES += $(1)
