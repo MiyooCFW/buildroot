@@ -1210,6 +1210,7 @@ $(eval $(call check-deprecated-variable,$(2)_KCONFIG_OPT,$(2)_KCONFIG_OPTS))
 # Packages without a source assumed to be only needed for BR2 HOST build process
 ifneq ($$(call qstrip,$$($(2)_SOURCE)),)
 PACKAGES_TARGET += $(1)
+PACKAGES_VERSION += $($(3)_VERSION)
 endif
 
 PACKAGES += $(1)
