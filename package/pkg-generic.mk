@@ -1207,6 +1207,18 @@ $(eval $(call check-deprecated-variable,$(2)_BUILD_OPT,$(2)_BUILD_OPTS))
 $(eval $(call check-deprecated-variable,$(2)_GETTEXTIZE_OPT,$(2)_GETTEXTIZE_OPTS))
 $(eval $(call check-deprecated-variable,$(2)_KCONFIG_OPT,$(2)_KCONFIG_OPTS))
 
+# Packages without a source assumed to be only needed for BR2 HOST build process
+ifneq ($$(call qstrip,$$($(2)_SOURCE)),)
+PACKAGES_TARGET += $(1)
+PACKAGES_VERSION += $($(3)_VERSION)
+PACKAGES_PKGDIR += $(pkgdir)
+ifeq ($($(2)_LICENSE),)
+PACKAGES_LICENSE += Unknown
+else
+PACKAGES_LICENSE += $(subst $(space),_,$($(2)_LICENSE))
+endif
+endif
+
 PACKAGES += $(1)
 
 ifneq ($$($(2)_PERMISSIONS),)
