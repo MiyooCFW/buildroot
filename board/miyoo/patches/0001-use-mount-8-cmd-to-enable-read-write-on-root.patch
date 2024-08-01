@@ -1,0 +1,46 @@
+From 0a6e768f91622c3455c8c4b0eda584331c18e1e0 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Fri, 12 Jan 2024 21:18:42 +0100
+Subject: [PATCH] use mount(8) cmd to enable read-write on root
+
+Signed-off-by: Apaczer <94932128+Apaczer@users.noreply.github.com>
+---
+ src/opkg.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/src/opkg.c b/src/opkg.c
+index 7510fe8..aa5e0f2 100644
+--- a/src/opkg.c
++++ b/src/opkg.c
+@@ -400,6 +400,7 @@ int main(int argc, char *argv[])
+ {
+     int opts, err = -1;
+     char *cmd_name = NULL;
++    char *cmd_mount = NULL;
+     opkg_cmd_t *cmd;
+     int nocheckfordirorfile;
+     int noreadfeedsfile;
+@@ -470,8 +471,20 @@ int main(int argc, char *argv[])
+         usage();
+     }
+ 
++    cmd_mount = "mount -o remount,rw / /";
++    if (system(cmd_mount) == -1) {
++        opkg_perror(ERROR, "Can not mount root partition in RW mode");
++        return -1;
++    }
++
+     err = opkg_cmd_exec(cmd, argc - opts, (const char **)(argv + opts));
+ 
++    cmd_mount = "mount -o remount,ro / /";
++    if (system(cmd_mount) == -1) {
++        opkg_perror(ERROR, "Can not mount root partition in RDONLY mode");
++        return -1;
++    }
++
+     opkg_download_cleanup();
+  err1:
+     opkg_conf_deinit();
+-- 
+2.45.2.windows.1
+
