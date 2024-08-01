@@ -2,6 +2,7 @@ BR2_arm=y
 BR2_SVN="svn"
 BR2_CPAN_MIRROR="http://cpan.metacpan.org"
 BR2_CCACHE=y
+BR2_GLOBAL_PATCH_DIR="board/miyoo/patches"
 BR2_PER_PACKAGE_DIRECTORIES=y
 BR2_RELRO_NONE=y
 BR2_TOOLCHAIN_BUILDROOT_VENDOR="miyoo"
