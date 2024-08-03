@@ -89,6 +89,6 @@ fi
 # Generate MAIN BTRFS partition
 image="${BINARIES_DIR}/main.img"
 label="MAIN"
-sudo mkfs.btrfs -r "${BINARIES_DIR}/main/" --shrink -v -f -L ${label} ${image}
+mkfs.btrfs -r "${BINARIES_DIR}/main/" --shrink -v -f -L ${label} ${image}
 
 support/scripts/genimage.sh ${1} -c board/miyoo/genimage-sdcard.cfg
