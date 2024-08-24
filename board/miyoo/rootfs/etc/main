@@ -26,9 +26,29 @@ fi
 # load kernel modules
 
 # load usb gadget
-modprobe g_ffs idVendor=0x1fc9 idProduct=0x0146 iSerialNumber="01234567" iProduct="Miyoo CFW 2.0" iManufacturer="Miyoo Handheld" functions=mtp  >> "${LOGS}" 2>&1
-mkdir /dev/ffs-mtp && mount -t functionfs mtp /dev/ffs-mtp  >> "${LOGS}" 2>&1
+mount none /sys/kernel/config -t configfs
+mkdir /sys/kernel/config/usb_gadget/g2
+cd /sys/kernel/config/usb_gadget/g2
+mkdir configs/c.1
+mkdir functions/ffs.mtp
+mkdir strings/0x409
+mkdir configs/c.1/strings/0x409
+
+echo 0x0100 > idProduct
+echo 0x1D6B > idVendor
+
+echo "Miyoo Handheld" > strings/0x409/manufacturer
+echo "Miyoo CFW 2.0" > strings/0x409/product
+
+echo "Conf 1" > configs/c.1/strings/0x409/configuration
+echo 120 > configs/c.1/MaxPower
+ln -s functions/ffs.mtp configs/c.1
+mkdir /dev/ffs-mtp
+mount -t functionfs mtp /dev/ffs-mtp
 umtprd >> "${LOGS}" 2>&1 &
+sleep 1
+ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
+
 
 # Load the expected one screen driver from here with modprobe 
 ## automatically from rootfs/lib/modules/VERSION
