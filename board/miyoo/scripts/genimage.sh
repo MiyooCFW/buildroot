@@ -9,7 +9,7 @@ SELFDIR=$(dirname $(realpath ${0}))
 
 # Generate CFW release tag, status and append iteration count
 if test $(git tag | wc -l) -ne 0; then
-	BR2_TAG="$(git describe --tags --abbrev=0)"
+	BR2_TAG="$(git describe --tags --always --abbrev=0)"
 	BR2_ITERATION="$(git rev-list --count ${BR2_TAG}..HEAD)"
 fi
 
