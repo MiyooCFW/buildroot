@@ -1,5 +1,0 @@
-title=GAMEBOY
-description=Gambatte Emulator (New)
-exec=/mnt/emus/gambatte/gambatte
-selectordir=/mnt/roms/GB
-selectorelement=30

@@ -1,5 +1,0 @@
-title=NES
-description=Fceux Emulator
-exec=/mnt/emus/fceux/fceux
-selectordir=/mnt/roms/NES
-selectorelement=16
