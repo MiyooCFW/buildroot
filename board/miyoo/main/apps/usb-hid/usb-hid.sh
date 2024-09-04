@@ -7,6 +7,7 @@ st_exec_func(){
 }
 	echo peripheral > /sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode
 	killall umtprd
+	/mnt/apps/usb-mtd/remove.sh g2
 	modprobe -r g_serial
 	mount none /sys/kernel/config -t configfs
 	gadget-hid

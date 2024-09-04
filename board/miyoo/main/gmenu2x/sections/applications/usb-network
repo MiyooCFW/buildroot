@@ -1,0 +1,3 @@
+title=usb-network
+description=IP:169.254.147.2
+exec=/mnt/apps/usb-network/usb-network.sh
