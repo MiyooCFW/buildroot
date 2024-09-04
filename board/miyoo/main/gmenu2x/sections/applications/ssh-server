@@ -1,0 +1,3 @@
+title=SSH server
+description=dropbear SSH server
+exec=/mnt/apps/ssh-server/ssh-server.sh
