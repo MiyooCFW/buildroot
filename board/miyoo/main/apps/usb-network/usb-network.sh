@@ -1,4 +1,5 @@
 #!/bin/busybox sh
+st -k -e "/bin/sh" "-c" "echo -e \"Starting USB network, please wait...\"; sleep 2"
 
 MAC_HOST="12:34:56:78:9a:bd"
 MAC_DEV="12:34:56:78:9a:bc"
@@ -42,10 +43,13 @@ ln -s functions/rndis.usb0 configs/c.1
 ln -s configs/c.1 os_desc
 sleep 1
 
-ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
-sleep 5
-echo "" > UDC
+#ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
+#sleep 5
+#echo "" > UDC
+
 echo "0x00" > bDeviceClass
 ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
-ifconfig usb0 up 169.254.147.2
 
+ifconfig usb0 up 192.168.137.1
+sleep 10
+/etc/init.d/S80dhcp-server restart

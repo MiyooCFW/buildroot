@@ -1,0 +1,3 @@
+title=Show IP addr
+description=Show IP address of handheld
+exec=/mnt/apps/showip/showip.sh
