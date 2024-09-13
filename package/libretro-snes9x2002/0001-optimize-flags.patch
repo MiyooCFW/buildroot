@@ -1,5 +1,5 @@
 diff --git a/Makefile b/Makefile
-index b6af83f..127c61d 100644
+index b6af83f..e1f7423 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -1,7 +1,8 @@
@@ -63,7 +63,7 @@ index b6af83f..127c61d 100644
     SHARED := -shared -Wl,--version-script=libretro/link.T -Wl,--no-undefined
     CFLAGS += -std=c99 -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
     CFLAGS += -fno-builtin -fno-exceptions
-@@ -250,14 +251,33 @@ else ifeq ($(platform), miyoo)
+@@ -250,14 +251,25 @@ else ifeq ($(platform), miyoo)
     CC = /opt/miyoo/usr/bin/arm-linux-gcc
     CXX = /opt/miyoo/usr/bin/arm-linux-g++
     AR = /opt/miyoo/usr/bin/arm-linux-ar
@@ -76,15 +76,7 @@ index b6af83f..127c61d 100644
 -   CFLAGS += -fomit-frame-pointer -ffast-math -fno-unroll-loops -flto -mcpu=arm926ej-s
 -   CFLAGS += -DFAST_ALIGNED_LSB_WORD_ACCESS
 -
-+   CFLAGS += -fomit-frame-pointer -ffast-math -flto -mcpu=arm926ej-s \
-+	-Ofast -msoft-float -finline-limit=42 -fno-unroll-loops \
-+	-fno-ipa-cp -fno-common -fno-stack-protector -fno-guess-branch-probability \
-+	-fno-caller-saves -fno-regmove -flto=4 -fwhole-program -fuse-linker-plugin \
-+	-fdata-sections -ffunction-sections -Wl,--gc-sections \
-+	-fno-stack-protector -fno-ident -fomit-frame-pointer \
-+	-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-unroll-loops \
-+	-fmerge-all-constants -fno-math-errno \
-+	-marm -fno-gcse
++   CFLAGS +=  -mcpu=arm926ej-s -mtune=arm926ej-s -g -D__MIYOO__ -O3 -fno-inline -finline-limit=42 -fno-unroll-loops -fno-ipa-cp -ffast-math -fno-common -fno-stack-protector -fno-caller-saves -fno-regmove 
 +ifeq ($(PROFILE), YES)
 +   CFLAGS += -fprofile-generate=$(HOMEPATH)/profile # rm path if you want dir structure intact at runtime
 +   LDFLAGS += -lgcov
@@ -101,7 +93,7 @@ index b6af83f..127c61d 100644
  # Windows MSVC 2010 x64
  else ifeq ($(platform), windows_msvc2010_x64)
  	CC  = cl.exe
-@@ -396,7 +416,7 @@ LIBRETRO_DIR := ./libretro
+@@ -396,7 +408,7 @@ LIBRETRO_DIR := ./libretro
  ifeq ($(DEBUG), 1)
  DEFINES += -O0 -g
  else ifneq (,$(findstring msvc,$(platform)))
@@ -110,6 +102,37 @@ index b6af83f..127c61d 100644
  else
  DEFINES += -O3 -DNDEBUG=1
  endif
+diff --git a/Makefile.common b/Makefile.common
+index 5bde095..3f3dcf0 100644
+--- a/Makefile.common
++++ b/Makefile.common
+@@ -76,10 +76,7 @@ DEFINES += -DASMCPU
+ endif
+ 
+ 
+-DEFINES += -DARM_ASM
+-DEFINES += -DRIGHTSHIFT_IS_SAR
+-DEFINES += -finline -fsigned-char
+-DEFINES += -ffast-math -fstrict-aliasing
++DEFINES += -DARM_ASM -DUSE_OLD_COLOUR_OPS
+ 
+ else
+ SOURCES += $(CORE_DIR)/ppu_.c
+@@ -108,13 +105,7 @@ else ifeq ($(NO_GCC), 1)
+ WARNINGS_DEFINES =
+ CODE_DEFINES     =
+ else
+-WARNINGS_DEFINES = -Wall \
+-						 -W \
+-						 -Wno-unused-parameter \
+-						 -Wno-parentheses \
+-						 -Wno-write-strings \
+-						 -Wno-comment
+-CODE_DEFINES = -fomit-frame-pointer
++WARNINGS_DEFINES = 
+ endif
+ endif
+ 
 diff --git a/libretro/libretro_core_options.h b/libretro/libretro_core_options.h
 index ad03eae..6876868 100644
 --- a/libretro/libretro_core_options.h
