@@ -1,0 +1,4 @@
+config BR2_PACKAGE_IPK_DRPOCKETSNES
+    bool "DrPocketSNES IPK"
+    help
+      SNES emulator optimized for ARM

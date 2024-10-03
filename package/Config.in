@@ -373,6 +373,13 @@ menu "Games"
 	source "package/supertux/Config.in"
 	source "package/supertuxkart/Config.in"
 	source "package/xorcurses/Config.in"
+	source "package/ipk-drpocketsnes/Config.in"
+	source "package/ipk-fceux/Config.in"
+	source "package/ipk-gngeo/Config.in"
+	source "package/ipk-gpsp/Config.in"
+	source "package/ipk-race/Config.in"
+	source "package/ipk-pcsx_rearmed/Config.in"
+	source "package/ipk-gambatte/Config.in"
 endmenu
 
 menu "Graphic libraries and applications (graphic/text)"

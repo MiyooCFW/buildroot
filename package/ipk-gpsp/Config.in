@@ -1,0 +1,4 @@
+config BR2_PACKAGE_IPK_GPSP
+    bool "gpSP IPK"
+    help
+      An enhanced version of gpSP for low-level ARM devices.
