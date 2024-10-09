@@ -1,4 +1,4 @@
 title=FTP server
 description=pure-ftpd server
 exec=/usr/sbin/pure-ftpd
-params=-B
+params=-B -H
