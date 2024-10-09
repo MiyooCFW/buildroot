@@ -1,0 +1,4 @@
+config BR2_PACKAGE_IPK_GAMBATTE
+    bool "Gambatte-dms IPK"
+    help
+      Gameboy emulator for handheld devices, using a modified Gambatte core (based on r572).

@@ -1,0 +1,4 @@
+config BR2_PACKAGE_IPK_FCEUX
+    bool "FCEUX IPK"
+    help
+      FCEUX is a cross platform, NTSC and PAL Famicom/NES and Dendy emulator

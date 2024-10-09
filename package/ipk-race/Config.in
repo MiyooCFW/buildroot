@@ -1,0 +1,4 @@
+config BR2_PACKAGE_IPK_RACE
+    bool "RACE IPK"
+    help
+      Neo Geo Pocket and NGP Color emulator

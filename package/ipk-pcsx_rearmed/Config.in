@@ -1,0 +1,4 @@
+config BR2_PACKAGE_IPK_PCSX_REARMED
+    bool "PCSX_REARMED IPK"
+    help
+      PCSX-ReARMed - yet another PCSX fork
