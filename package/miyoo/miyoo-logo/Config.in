@@ -1,6 +1,6 @@
 config BR2_PACKAGE_MIYOO_LOGO
 	bool "miyoo-logo"
-	depends on BR2_PACKAGE_SDL
-	depends on BR2_PACKAGE_MPG123
+	select BR2_PACKAGE_SDL
+	select BR2_PACKAGE_MPG123
 	help
 	  miyoo_logo

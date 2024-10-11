@@ -1,0 +1,19 @@
+source "package/miyoo/gmenu2x/Config.in"
+source "package/miyoo/gmenu2x-gm2xpkg/Config.in"
+source "package/miyoo/miyoo-daemon/Config.in"
+source "package/miyoo/miyoo-logo/Config.in"
+source "package/miyoo/miyoo-ctl/Config.in"
+
+menu "IPKs"
+	source "package/miyoo/ipk-drpocketsnes/Config.in"
+	source "package/miyoo/ipk-fceux/Config.in"
+	source "package/miyoo/ipk-gngeo/Config.in"
+	source "package/miyoo/ipk-gpsp/Config.in"
+	source "package/miyoo/ipk-race/Config.in"
+	source "package/miyoo/ipk-pcsx_rearmed/Config.in"
+	source "package/miyoo/ipk-gambatte/Config.in"
+endmenu
+
+menu "RetroArch"
+	source "package/miyoo/retroarch/Config.in"
+endmenu
