@@ -1,8 +1,10 @@
-source "package/miyoo/gmenu2x/Config.in"
-source "package/miyoo/gmenu2x-gm2xpkg/Config.in"
-source "package/miyoo/miyoo-daemon/Config.in"
-source "package/miyoo/miyoo-logo/Config.in"
-source "package/miyoo/miyoo-ctl/Config.in"
+menu "System"
+	source "package/miyoo/gmenu2x/Config.in"
+	source "package/miyoo/gmenu2x-gm2xpkg/Config.in"
+	source "package/miyoo/miyoo-daemon/Config.in"
+	source "package/miyoo/miyoo-logo/Config.in"
+	source "package/miyoo/miyoo-ctl/Config.in"
+endmenu
 
 menu "IPKs"
 	source "package/miyoo/ipk-drpocketsnes/Config.in"
@@ -16,4 +18,11 @@ endmenu
 
 menu "RetroArch"
 	source "package/miyoo/retroarch/Config.in"
+endmenu
+
+menu "Apps"
+	source "package/miyoo/st-sdl/Config.in"
+	source "package/miyoo/commander/Config.in"
+	source "package/miyoo/sdlbook/Config.in"
+	source "package/miyoo/joymap/Config.in"
 endmenu
