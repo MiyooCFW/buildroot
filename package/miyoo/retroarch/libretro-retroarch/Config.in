@@ -1,6 +1,6 @@
-config BR2_PACKAGE_RETROARCH
-    bool "retroarch"
-    depends on !BR2_STATIC_LIBS
+config BR2_PACKAGE_LIBRETRO_RETROARCH
+    bool "libretro-retroarch"
+    depends on BR2_PACKAGE_RETROARCH
     select BR2_PACKAGE_LIBRETRO_DATABASE
     select BR2_PACKAGE_LIBRETRO_ASSETS
     help
@@ -12,3 +12,4 @@ config BR2_PACKAGE_RETROARCH
       We refer to these as "libretro cores".
 
       https://github.com/libretro/RetroArch
+
