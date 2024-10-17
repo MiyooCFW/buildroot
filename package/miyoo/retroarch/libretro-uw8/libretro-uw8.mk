@@ -8,7 +8,7 @@ LIBRETRO_UW8_VERSION = 2dced6e1b990222033e269d5fb269b2e2f9ee543
 LIBRETRO_UW8_SITE = https://github.com/libretro/uw8-libretro.git
 LIBRETRO_UW8_SITE_METHOD=git
 LIBRETRO_UW8_GIT_SUBMODULES=y
-LIBRETRO_UW8_LICENSE = UNLICENSE
+LIBRETRO_UW8_LICENSE = Unlicense
 LIBRETRO_UW8_LICENSE_FILES = UNLICENSE
 
 define LIBRETRO_UW8_BUILD_CMDS
@@ -20,7 +20,7 @@ define LIBRETRO_UW8_BUILD_CMDS
 endef
 
 define LIBRETRO_UW8_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/uw8_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/uw8_libretro.so
 endef

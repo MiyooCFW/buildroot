@@ -18,7 +18,7 @@ define LIBRETRO_MEDNAFEN_WSWAN_BUILD_CMDS
 endef
 
 define LIBRETRO_MEDNAFEN_WSWAN_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/mednafen_wswan_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/mednafen_wswan_libretro.so
 endef

@@ -7,6 +7,7 @@
 LIBRETRO_STELLA2014_VERSION = 8ab051edd4816f33a5631d230d54059eeed52c5f
 LIBRETRO_STELLA2014_SITE = $(call github,libretro,stella2014-libretro,$(LIBRETRO_STELLA2014_VERSION))
 LIBRETRO_STELLA2014_LICENSE = GPL-2.0
+LIBRETRO_STELLA2014_LICENSE_FILES = stella/license.txt
 
 LIBRETRO_STELLA2014_PLATFORM=$(RETROARCH_LIBRETRO_BOARD)
 
@@ -20,7 +21,7 @@ define LIBRETRO_STELLA2014_BUILD_CMDS
 endef
 
 define LIBRETRO_STELLA2014_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/stella2014_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/stella2014_libretro.so
 endef

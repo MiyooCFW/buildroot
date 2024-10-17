@@ -2,4 +2,3 @@ config BR2_PACKAGE_ST_SDL
 	bool "st-sdl"
 	help
 	  Simple SDL terminal
-

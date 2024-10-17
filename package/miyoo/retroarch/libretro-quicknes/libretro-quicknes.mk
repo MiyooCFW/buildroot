@@ -20,7 +20,7 @@ define LIBRETRO_QUICKNES_BUILD_CMDS
 endef
 
 define LIBRETRO_QUICKNES_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/quicknes_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/quicknes_libretro.so
 endef

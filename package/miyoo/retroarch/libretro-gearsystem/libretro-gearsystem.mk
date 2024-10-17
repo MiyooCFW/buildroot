@@ -21,7 +21,7 @@ define LIBRETRO_GEARSYSTEM_BUILD_CMDS
 endef
 
 define LIBRETRO_GEARSYSTEM_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/platforms/libretro/gearsystem_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/gearsystem_libretro.so
 endef

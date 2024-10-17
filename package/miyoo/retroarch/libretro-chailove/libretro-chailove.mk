@@ -20,7 +20,7 @@ define LIBRETRO_CHAILOVE_BUILD_CMDS
 endef
 
 define LIBRETRO_CHAILOVE_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/chailove_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/chailove_libretro.so
 endef

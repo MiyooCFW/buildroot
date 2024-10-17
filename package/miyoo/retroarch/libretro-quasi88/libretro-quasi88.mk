@@ -20,7 +20,7 @@ define LIBRETRO_QUASI88_BUILD_CMDS
 endef
 
 define LIBRETRO_QUASI88_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/quasi88_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/quasi88_libretro.so
 endef

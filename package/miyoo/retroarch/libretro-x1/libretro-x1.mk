@@ -6,7 +6,7 @@
 
 LIBRETRO_X1_VERSION = 04b3c90af710b66b31df3c9621fa8da13b24e123
 LIBRETRO_X1_SITE = $(call github,libretro,xmil-libretro,$(LIBRETRO_X1_VERSION))
-LIBRETRO_X1_LICENSE = UNLICENSE
+LIBRETRO_X1_LICENSE = BSD-3-Clause
 LIBRETRO_X1_LICENSE_FILES = LICENSE
 
 define LIBRETRO_X1_BUILD_CMDS
@@ -18,7 +18,7 @@ define LIBRETRO_X1_BUILD_CMDS
 endef
 
 define LIBRETRO_X1_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/libretro/x1_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/x1_libretro.so
 endef

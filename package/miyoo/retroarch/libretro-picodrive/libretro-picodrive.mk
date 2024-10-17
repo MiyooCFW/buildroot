@@ -26,7 +26,7 @@ define LIBRETRO_PICODRIVE_BUILD_CMDS
 endef
 
 define LIBRETRO_PICODRIVE_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/picodrive_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/picodrive_libretro.so
 endef

@@ -19,7 +19,7 @@ define LIBRETRO_TYRQUAKE_BUILD_CMDS
 endef
 
 define LIBRETRO_TYRQUAKE_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/tyrquake_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/tyrquake_libretro.so
 endef

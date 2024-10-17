@@ -5,7 +5,7 @@
 ################################################################################
 
 LIBRETRO_RETRO8_VERSION = bc388ec7d217a08265d116aaa74afc0ca3f204f5
-LIBRETRO_RETRO8_SITE = $(call gitlab,recalbox,packages/libretro/libretro-retro8,$(LIBRETRO_RETRO8_VERSION))
+LIBRETRO_RETRO8_SITE = $(call github,libretro,retro8,$(LIBRETRO_RETRO8_VERSION))
 LIBRETRO_RETRO8_LICENSE = GPL-3.0
 LIBRETRO_RETRO8_LICENSE_FILES = LICENSE
 
@@ -19,7 +19,7 @@ define LIBRETRO_RETRO8_BUILD_CMDS
 endef
 
 define LIBRETRO_RETRO8_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/retro8_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/retro8_libretro.so
 endef

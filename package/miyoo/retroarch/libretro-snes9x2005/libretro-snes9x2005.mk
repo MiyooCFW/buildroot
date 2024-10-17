@@ -21,7 +21,7 @@ define LIBRETRO_SNES9X2005_BUILD_CMDS
 endef
 
 define LIBRETRO_SNES9X2005_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/snes9x2005_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/snes9x2005_libretro.so
 endef

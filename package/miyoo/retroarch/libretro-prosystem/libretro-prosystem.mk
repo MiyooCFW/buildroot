@@ -20,7 +20,7 @@ define LIBRETRO_PROSYSTEM_BUILD_CMDS
 endef
 
 define LIBRETRO_PROSYSTEM_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/prosystem_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/prosystem_libretro.so
 endef

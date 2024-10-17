@@ -7,6 +7,7 @@
 LIBRETRO_TIC80_VERSION = bd6ce86174fc7c9d7d3a86263acf3a7de1b62c11
 LIBRETRO_TIC80_SITE = https://github.com/libretro/TIC-80.git
 LIBRETRO_TIC80_LICENSE = MIT
+LIBRETRO_TIC80_LICENSE_FILES = LICENSE
 LIBRETRO_TIC80_SITE_METHOD=git
 LIBRETRO_TIC80_GIT_SUBMODULES=y
 
@@ -18,7 +19,7 @@ LIBRETRO_TIC80_CONF_OPTS=-S $(@D)/core -DBUILD_SDL=OFF \
 			-DBUILD_PRO=TRUE
 
 define LIBRETRO_TIC80_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	mkdir -p $(TARGET_DIR)/usr/lib/libretro
 	$(INSTALL) -D $(@D)/lib/tic80_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/tic80_libretro.so

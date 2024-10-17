@@ -28,7 +28,7 @@ define LIBRETRO_PCSX_REARMED_BUILD_CMDS
 endef
 
 define LIBRETRO_PCSX_REARMED_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/pcsx_rearmed_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/pcsx_rearmed_libretro.so
 endef

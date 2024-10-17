@@ -20,7 +20,7 @@ define LIBRETRO_VAPORSPEC_BUILD_CMDS
 endef
 
 define LIBRETRO_VAPORSPEC_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/machine/vaporspec_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/vaporspec_libretro.so
 endef

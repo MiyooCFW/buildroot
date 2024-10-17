@@ -20,7 +20,7 @@ define LIBRETRO_VECX_BUILD_CMDS
 endef
 
 define LIBRETRO_VECX_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/vecx_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/vecx_libretro.so
 endef

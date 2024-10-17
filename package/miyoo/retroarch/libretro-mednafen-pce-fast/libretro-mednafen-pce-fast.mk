@@ -18,7 +18,7 @@ define LIBRETRO_MEDNAFEN_PCE_FAST_BUILD_CMDS
 endef
 
 define LIBRETRO_MEDNAFEN_PCE_FAST_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/mednafen_pce_fast_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/mednafen_pce_fast_libretro.so
 endef

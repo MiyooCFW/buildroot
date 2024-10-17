@@ -18,7 +18,7 @@ define LIBRETRO_VEMULATOR_BUILD_CMDS
 endef
 
 define LIBRETRO_VEMULATOR_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/vemulator_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/vemulator_libretro.so
 endef
