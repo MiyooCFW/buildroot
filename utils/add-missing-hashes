@@ -29,6 +29,12 @@ get_pkgs() {
        'to_entries[] | select(.value.downloads[0].source == $file) | .key | strings' "$1"
 }
 
+# get source file for package
+# get_pkg_source <json> <package>
+get_pkg_source() {
+    jq --arg pkg "$2" -r '.[$pkg].downloads[0].source' "$1"
+}
+
 # get download dir for package
 # get_pkg_dl_dir <json> <package>
 get_pkg_dl_dir() {
@@ -50,7 +56,7 @@ command -v jq >/dev/null || die 'Script needs jq'
 
 message Collecting data
 
-eval "$(make -s VARS='TOPDIR DL_DIR BR_NO_CHECK_HASH_FOR BR2_GLOBAL_PATCH_DIR' QUOTED_VARS=YES printvars)"
+eval "$(make -s VARS='PACKAGES_PKGDIR PACKAGES_TARGET TOPDIR DL_DIR BR_NO_CHECK_HASH_FOR BR2_GLOBAL_PATCH_DIR' QUOTED_VARS=YES printvars)"
 # global patch dir may already have quotes
 BR2_GLOBAL_PATCH_DIR=$(echo "$BR2_GLOBAL_PATCH_DIR" | tr -d '"')
 
@@ -82,19 +88,28 @@ trap 'rm -f "$JSON"' EXIT
 JSON=$(mktemp)
 make show-info > "$JSON"
 
-# ensure files have been downloaded, but without checking
-make BR2_DOWNLOAD_FORCE_CHECK_HASHES= source
-
 message Updating hashes
-
-for file in $BR_NO_CHECK_HASH_FOR; do
-    for pkg in $(get_pkgs "$JSON" "$file"); do
-        HASHFILE="$BR2_GLOBAL_PATCH_DIR/$pkg/$pkg.hash"
-        PKG_DL_DIR=$(get_pkg_dl_dir "$JSON" "$pkg")
-        message "Adding hash for $file to $HASHFILE"
-        mkdir -p "${HASHFILE%/*}"
-        gen_hash "$DL_DIR/$PKG_DL_DIR" "$file" > "$HASHFILE"
-    done
+pkgs_array=($PACKAGES_TARGET)
+pkgsdir_array=($PACKAGES_PKGDIR)
+for ((i=0; i<${#pkgs_array[@]}; i++)); do
+	pkg=${pkgs_array[$i]}
+    	pkgdir=${pkgsdir_array[$i]}
+	echo "Current pkg is $pkg"
+	file_source=$(get_pkg_source "$JSON" "$pkg")
+	echo "File source $file_source"
+	HASHFILE="$TOPDIR/${pkgdir}${pkg}.hash"
+       	echo "Pkg BR2 directory $pkgdir" 
+       	PKG_DL_DIR=$(get_pkg_dl_dir "$JSON" "$pkg")
+	echo "Pkg DL directory $PKG_DL_DIR"
+	if test -e "$HASHFILE"; then
+		message "WARNING: The hash already exist at $HASHFILE"
+		echo -e "Not overwriting...\n"
+	else
+		message "Adding hash for $pkg to $HASHFILE"
+		mkdir -p "${HASHFILE%/*}"
+       		gen_hash "$DL_DIR/$PKG_DL_DIR" "$file_source" > "$HASHFILE"
+		echo "Done"
+	fi
 done
 
 message Verifying hashes
