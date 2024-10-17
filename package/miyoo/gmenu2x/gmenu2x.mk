@@ -8,6 +8,8 @@ GMENU2X_VERSION = origin/master
 GMENU2X_SITE_METHOD = git
 GMENU2X_SITE = https://github.com/MiyooCFW/gmenu2x.git
 GMENU2X_DEPENDENCIES = sdl sdl_image sdl_mixer sdl_sound sdl_ttf
+GMENU2X_LICENSE = GPL-2.0, Custom (fonts and skins)
+GMENU2X_LICENSE_FILES = COPYING
 
 GMENU2X_BUILDTIME = \"$(shell date +%F\ %H:%M)\"
 GMENU2X_BUILDROOT_HASH = $(shell git rev-parse --short HEAD)
