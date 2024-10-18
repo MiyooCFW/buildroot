@@ -92,24 +92,29 @@ message Updating hashes
 pkgs_array=($PACKAGES_TARGET)
 pkgsdir_array=($PACKAGES_PKGDIR)
 for ((i=0; i<${#pkgs_array[@]}; i++)); do
-	pkg=${pkgs_array[$i]}
-    	pkgdir=${pkgsdir_array[$i]}
-	echo "Current pkg is $pkg"
-	file_source=$(get_pkg_source "$JSON" "$pkg")
-	echo "File source $file_source"
-	HASHFILE="$TOPDIR/${pkgdir}${pkg}.hash"
-       	echo "Pkg BR2 directory $pkgdir" 
-       	PKG_DL_DIR=$(get_pkg_dl_dir "$JSON" "$pkg")
-	echo "Pkg DL directory $PKG_DL_DIR"
-	if test -e "$HASHFILE"; then
-		message "WARNING: The hash already exist at $HASHFILE"
-		echo -e "Not overwriting...\n"
-	else
-		message "Adding hash for $pkg to $HASHFILE"
-		mkdir -p "${HASHFILE%/*}"
-       		gen_hash "$DL_DIR/$PKG_DL_DIR" "$file_source" > "$HASHFILE"
-		echo "Done"
-	fi
+    pkg=${pkgs_array[$i]}
+    pkgdir=${pkgsdir_array[$i]}
+    test "x${DEBUG}" = "xyes" &&\
+     echo "Current pkg is $pkg"
+    file_source=$(get_pkg_source "$JSON" "$pkg")
+    test "x${DEBUG}" = "xyes" &&\
+     echo "File source $file_source"
+    HASHFILE="$TOPDIR/${pkgdir}${pkg}.hash"
+    test "x${DEBUG}" = "xyes" &&\
+     echo "Pkg BR2 directory $pkgdir" 
+    PKG_DL_DIR=$(get_pkg_dl_dir "$JSON" "$pkg")
+    test "x${DEBUG}" = "xyes" &&\
+     echo "Pkg DL directory $PKG_DL_DIR"
+    if test -e "$HASHFILE"; then
+        test "x${DEBUG}" = "xyes" &&\
+         message "WARNING: The hash already exist at $HASHFILE" &&\
+         echo -e "Not overwriting...\n"
+    else
+        message "Adding hash for $pkg to $HASHFILE"
+        mkdir -p "${HASHFILE%/*}"
+            gen_hash "$DL_DIR/$PKG_DL_DIR" "$file_source" > "$HASHFILE"
+        echo -e "Done.\n"
+    fi
 done
 
 message Verifying hashes
