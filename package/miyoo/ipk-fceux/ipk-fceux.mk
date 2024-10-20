@@ -3,7 +3,7 @@ IPK_FCEUX_SITE = https://github.com/Apaczer/fceux-for-miyoo/releases/download/$(
 IPK_FCEUX_SOURCE = fceux.ipk
 IPK_FCEUX_INSTALL_TARGET = YES
 IPK_FCEUX_LICENSE = GPL-2.0
-IPK_FCEUX_LICENSE_FILES = COPYING
+#IPK_FCEUX_LICENSE_FILES = COPYING
 
 define IPK_FCEUX_EXTRACT_CMDS
 	cd $(@D) && ar x $(DL_DIR)/ipk-fceux/$(IPK_FCEUX_SOURCE)
