@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+set -e
+
+# Add hash files for packages wiht missing ones (from .config)
+#
+# Run in a configured Buildroot directory, E.G.
+# make foo_defconfig; ./utils/add-missing-hashes
+
+# print BR-style message
+# message <info message>
+message() {
+    tput smso 2>/dev/null
+    echo "$*"
+    tput rmso 2>/dev/null
+}
+
+# print error message and exit
+# die <error message>
+die() {
+    echo "Error: $*" >&2
+    exit 1
+}
+
+# get package(s) for download file, if any
+# get_pkgs <json> <file>
+get_pkgs() {
+    jq --arg file "$2" -r \
+       'to_entries[] | select(.value.downloads[0].source == $file) | .key | strings' "$1"
+}
+
+# get source file for package
+# get_pkg_source <json> <package>
+get_pkg_source() {
+    jq --arg pkg "$2" -r '.[$pkg].downloads[0].source' "$1"
+}
+
+# get download dir for package
+# get_pkg_dl_dir <json> <package>
+get_pkg_dl_dir() {
+    jq --arg pkg "$2" -r '.[$pkg].dl_dir | strings' "$1"
+}
+
+# generate hash file for download file
+# gen_hash <dir> <file>
+gen_hash() {
+    (
+        cd "$1" && printf '# Locally calculated\nsha256  ' && sha256sum "$2"
+    )
+}
+
+command -v jq >/dev/null || die 'Script needs jq'
+
+[ -e .config ] || \
+  die "No .config found, please run this in a configured Buildroot (O=) directory"
+
+message Collecting data
+
+eval "$(make -s VARS='PACKAGES_PKGDIR PACKAGES_TARGET TOPDIR DL_DIR BR_NO_CHECK_HASH_FOR BR2_GLOBAL_PATCH_DIR' QUOTED_VARS=YES printvars)"
+# global patch dir may already have quotes
+BR2_GLOBAL_PATCH_DIR=$(echo "$BR2_GLOBAL_PATCH_DIR" | tr -d '"')
+
+[ -n "$BR2_GLOBAL_PATCH_DIR" ] || die "No BR2_GLOBAL_PATCH_DIR defined, nothing to do"
+[ -n "$BR_NO_CHECK_HASH_FOR" ] || die "No packages without hashes found, nothing to do"
+
+[ -d "$TOPDIR" ] || die "TOPDIR ($TOPDIR) does not look correct"
+[ -d "$DL_DIR" ] || die "DL_DIR ($DL_DIR) does not look correct"
+
+# patch dir may contain multiple dirs, use the last one
+# shellcheck disable=SC2086 # we need the word splitting
+set -- $BR2_GLOBAL_PATCH_DIR
+if [ $# -gt 1 ]; then
+    BR2_GLOBAL_PATCH_DIR="${!#}";
+    message BR2_GLOBAL_PATCH_DIR contains multiple directories, using "$BR2_GLOBAL_PATCH_DIR"
+fi
+
+# patch dir may be relative to TOPDIR
+case "$BR2_GLOBAL_PATCH_DIR" in
+    /*) ;;
+    *) BR2_GLOBAL_PATCH_DIR="$TOPDIR/$BR2_GLOBAL_PATCH_DIR"
+       ;;
+esac
+
+[ -d "$BR2_GLOBAL_PATCH_DIR" ] \
+  || die "BR2_GLOBAL_PATCH_DIR ($BR2_GLOBAL_PATCH_DIR) does not look correct"
+
+trap 'rm -f "$JSON"' EXIT
+JSON=$(mktemp)
+make show-info > "$JSON"
+
+message Updating hashes
+pkgs_array=($PACKAGES_TARGET)
+pkgsdir_array=($PACKAGES_PKGDIR)
+for ((i=0; i<${#pkgs_array[@]}; i++)); do
+    pkg=${pkgs_array[$i]}
+    pkgdir=${pkgsdir_array[$i]}
+    test "x${DEBUG}" = "xyes" &&\
+     echo "Current pkg is $pkg"
+    file_source=$(get_pkg_source "$JSON" "$pkg")
+    test "x${DEBUG}" = "xyes" &&\
+     echo "File source $file_source"
+    HASHFILE="$TOPDIR/${pkgdir}${pkg}.hash"
+    test "x${DEBUG}" = "xyes" &&\
+     echo "Pkg BR2 directory $pkgdir" 
+    PKG_DL_DIR=$(get_pkg_dl_dir "$JSON" "$pkg")
+    test "x${DEBUG}" = "xyes" &&\
+     echo "Pkg DL directory $PKG_DL_DIR"
+    if test -e "$HASHFILE"; then
+        test "x${DEBUG}" = "xyes" &&\
+         message "WARNING: The hash already exist at $HASHFILE" &&\
+         echo -e "Not overwriting...\n"
+    else
+        message "Adding hash for $pkg to $HASHFILE"
+        echo "Downloading source for $pkg..."
+        if test "x${DEBUG}" = "xyes"; then
+            make ${pkg}-source
+        else
+            make ${pkg}-source > /dev/null 2>&1
+        fi
+        mkdir -p "${HASHFILE%/*}"
+        gen_hash "$DL_DIR/$PKG_DL_DIR" "$file_source" > "$HASHFILE"
+        echo -e "Done.\n"
+    fi
+done
+
+message Verifying hashes
+
+make clean
+make BR2_DOWNLOAD_FORCE_CHECK_HASHES=y source
