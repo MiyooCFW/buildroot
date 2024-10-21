@@ -6,7 +6,7 @@
 
 # Commit of 2023/08/23
 LIBRETRO_GEARCOLECO_VERSION = cc7c19c776a12d149c2c935e2198ddad15f22f54
-LIBRETRO_GEARCOLECO_SITE = $(call gitlab,recalbox,packages/libretro/Gearcoleco,$(LIBRETRO_GEARCOLECO_VERSION))
+LIBRETRO_GEARCOLECO_SITE = $(call github,drhelius,Gearcoleco,$(LIBRETRO_GEARCOLECO_VERSION))
 LIBRETRO_GEARCOLECO_LICENSE = GPL-3.0
 LIBRETRO_GEARCOLECO_LICENSE_FILES = LICENSE
 LIBRETRO_GEARCOLECO_NON_COMMERCIAL = NO
@@ -21,7 +21,7 @@ define LIBRETRO_GEARCOLECO_BUILD_CMDS
 endef
 
 define LIBRETRO_GEARCOLECO_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/platforms/libretro/gearcoleco_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/gearcoleco_libretro.so
 endef

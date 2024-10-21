@@ -20,7 +20,7 @@ define LIBRETRO_RACE_BUILD_CMDS
 endef
 
 define LIBRETRO_RACE_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/race_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/race_libretro.so
 endef

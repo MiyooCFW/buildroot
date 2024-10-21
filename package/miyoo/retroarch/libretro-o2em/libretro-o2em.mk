@@ -7,7 +7,7 @@
 # Commit of 2023/10/19
 LIBRETRO_O2EM_VERSION = 44fe5f306033242f7d74144105e19a7d4939477e
 LIBRETRO_O2EM_SITE = $(call github,libretro,libretro-o2em,$(LIBRETRO_O2EM_VERSION))
-LIBRETRO_O2EM_LICENSE = ARTISTIC
+LIBRETRO_O2EM_LICENSE = Artistic-2.0
 LIBRETRO_O2EM_LICENSE_FILES = COPYING
 
 define LIBRETRO_O2EM_BUILD_CMDS
@@ -20,7 +20,7 @@ define LIBRETRO_O2EM_BUILD_CMDS
 endef
 
 define LIBRETRO_O2EM_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/o2em_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/o2em_libretro.so
 endef

@@ -1,7 +1,14 @@
-# linuxjoymap release 0.5.5
-JOYMAP_VERSION = 705bf560ae926a367f00adf9723581313c4e2c7c
-JOYMAP_SITE_METHOD = git
-JOYMAP_SITE = https://git.code.sf.net/p/linuxjoymap/git
+################################################################################
+#
+# linuxjoymap
+#
+################################################################################
+
+JOYMAP_VERSION = 0.5.5
+JOYMAP_SOURCE = joymap-$(JOYMAP_VERSION).tar.gz
+JOYMAP_SITE = http://downloads.sourceforge.net/project/linuxjoymap
+JOYMAP_LICENSE = GPL-2.0
+JOYMAP_LICENSE_FILES = COPYING
 
 define JOYMAP_BUILD_CMDS
 	$(MAKE) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" LD="$(TARGET_LD)" -C $(@D)

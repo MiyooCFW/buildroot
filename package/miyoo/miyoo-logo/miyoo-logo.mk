@@ -2,6 +2,9 @@ MIYOO_LOGO_VERSION = origin/master
 MIYOO_LOGO_SITE_METHOD = git
 MIYOO_LOGO_SITE = https://github.com/MiyooCFW/logo.git
 MIYOO_LOGO_DEPENDENCIES = sdl sdl_image sdl_mixer sdl_sound sdl_ttf mpg123
+MIYOO_LOGO_LICENSE = GPL-3.0
+MIYOO_LOGO_LICENSE_FILES = LICENSE
+
 define MIYOO_LOGO_BUILD_CMDS
 	$(MAKE) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" LD="$(TARGET_LD)" -C $(@D) -f Makefile.miyoo
 endef

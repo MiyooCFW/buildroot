@@ -7,7 +7,9 @@
 # Commit of 2022/04/05
 LIBRETRO_REMINISCENCE_VERSION = c2624c7565bbae441835db80f24902fc40f83dd1
 LIBRETRO_REMINISCENCE_SITE = $(call github,libretro,REminiscence,$(LIBRETRO_REMINISCENCE_VERSION))
-LIBRETRO_REMINISCENCE_LICENSE = GPL-3.0
+LIBRETRO_REMINISCENCE_LICENSE = Copyright
+# The Copyright license is written over source code files e.g.:
+LIBRETRO_REMINISCENCE_LICENSE_FILES = src/game.cpp
 
 define LIBRETRO_REMINISCENCE_BUILD_CMDS
 	$(SED) "s|-O2|-O3|g" $(@D)/Makefile
@@ -19,7 +21,7 @@ define LIBRETRO_REMINISCENCE_BUILD_CMDS
 endef
 
 define LIBRETRO_REMINISCENCE_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/reminiscence_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/reminiscence_libretro.so
 endef

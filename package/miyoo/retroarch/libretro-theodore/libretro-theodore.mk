@@ -20,7 +20,7 @@ define LIBRETRO_THEODORE_BUILD_CMDS
 endef
 
 define LIBRETRO_THEODORE_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/theodore_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/theodore_libretro.so
 endef

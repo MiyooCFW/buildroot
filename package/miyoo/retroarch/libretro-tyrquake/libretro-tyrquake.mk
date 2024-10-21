@@ -7,7 +7,7 @@
 LIBRETRO_TYRQUAKE_VERSION = df0d3afb623b143beb76a5b1adf2d377953bfdf2
 LIBRETRO_TYRQUAKE_SITE = $(call github,libretro,tyrquake,$(LIBRETRO_TYRQUAKE_VERSION))
 LIBRETRO_TYRQUAKE_LICENSE = GPL-2.0
-LIBRETRO_TYRQUAKE_LICENSE_FILES = gnu.txt
+LIBRETRO_TYRQUAKE_LICENSE_FILES = LICENSE.txt
 
 define LIBRETRO_TYRQUAKE_BUILD_CMDS
 	$(SED) "s|-O2|-O3|g" $(@D)/Makefile
@@ -19,7 +19,7 @@ define LIBRETRO_TYRQUAKE_BUILD_CMDS
 endef
 
 define LIBRETRO_TYRQUAKE_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/tyrquake_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/tyrquake_libretro.so
 endef

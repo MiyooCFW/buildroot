@@ -8,7 +8,8 @@
 LIBRETRO_MINIVMAC_VERSION = 45edc82baae906b90b67cce66761557923a6ba75
 LIBRETRO_MINIVMAC_SITE = https://github.com/libretro/libretro-minivmac.git
 LIBRETRO_MINIVMAC_SITE_METHOD = git
-LIBRETRO_MINIVMAC_LICENSE = GPL-1.0
+LIBRETRO_MINIVMAC_LICENSE = GPL-2.0
+LIBRETRO_MINIVMAC_LICENSE_FILES = minivmac/COPYING.txt
 LIBRETRO_MINIVMAC_GIT_SUBMODULES=y
 
 define LIBRETRO_MINIVMAC_BUILD_CMDS
@@ -21,7 +22,7 @@ define LIBRETRO_MINIVMAC_BUILD_CMDS
 endef
 
 define LIBRETRO_MINIVMAC_INSTALL_TARGET_CMDS
-    mkdir -p "${BINARIES_DIR}/retroarch/cores"
+	mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/minivmac_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/minivmac_libretro.so
 endef
