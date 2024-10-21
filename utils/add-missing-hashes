@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-# Add hash files for packages with custom versions for
-# BR2_DOWNLOAD_FORCE_CHECK_HASHES=y
+# Add hash files for packages wiht missing ones (from .config)
 #
 # Run in a configured Buildroot directory, E.G.
-# make foo_defconfig; ./utils/add-custom-hashes
+# make foo_defconfig; ./utils/add-missing-hashes
 
 # print BR-style message
 # message <info message>
@@ -111,8 +110,14 @@ for ((i=0; i<${#pkgs_array[@]}; i++)); do
          echo -e "Not overwriting...\n"
     else
         message "Adding hash for $pkg to $HASHFILE"
+        echo "Downloading source for $pkg..."
+        if test "x${DEBUG}" = "xyes"; then
+            make ${pkg}-source
+        else
+            make ${pkg}-source > /dev/null 2>&1
+        fi
         mkdir -p "${HASHFILE%/*}"
-            gen_hash "$DL_DIR/$PKG_DL_DIR" "$file_source" > "$HASHFILE"
+        gen_hash "$DL_DIR/$PKG_DL_DIR" "$file_source" > "$HASHFILE"
         echo -e "Done.\n"
     fi
 done
