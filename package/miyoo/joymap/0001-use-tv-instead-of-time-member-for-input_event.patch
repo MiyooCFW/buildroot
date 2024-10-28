@@ -1,0 +1,127 @@
+From 11ef6a05adf55fded350d46ff6ad771b626c0c30 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Mon, 28 Oct 2024 22:21:09 +0100
+Subject: [PATCH 1/2] use tv instead of time member for input_event
+
+---
+ devices.c | 48 ++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 40 insertions(+), 8 deletions(-)
+
+diff --git a/devices.c b/devices.c
+index 63cb104..00f3710 100644
+--- a/devices.c
++++ b/devices.c
+@@ -13,6 +13,14 @@
+ #include "program.h"
+ #include "mapper.h"
+ 
++#ifndef input_event_sec
++#define input_event_sec time.tv_sec
++#endif
++
++#ifndef input_event_usec
++#define input_event_usec time.tv_usec
++#endif
++
+ #define NUM_JOYSTICKS 10
+ #define INTERVAL      50
+ #define ABS_UL        1 + ABS_MAX / ULONG_BITS
+@@ -343,7 +351,10 @@ void unregister_devices();
+ 
+ void press_key(int code, int value) {
+     struct input_event event;
+-    gettimeofday(&event.time, NULL);
++    struct timeval tv;   
++    gettimeofday(&tv, NULL);
++    event.input_event_sec = tv.tv_sec;
++    event.input_event_usec = tv.tv_usec;    
+     event.type=EV_KEY;
+     event.code=code;
+     event.value=value;
+@@ -363,7 +374,10 @@ void release_keys(void) {
+ 
+ void press_mouse_button(int code, int value) {
+     struct input_event event;
+-    gettimeofday(&event.time, NULL);
++    struct timeval tv;   
++    gettimeofday(&tv, NULL);
++    event.input_event_sec = tv.tv_sec;
++    event.input_event_usec = tv.tv_usec;    
+     event.type=EV_KEY;
+     event.code=code;
+     event.value=value;
+@@ -401,7 +415,10 @@ void move_mouse_wheel(int rdw) {
+ 
+ void send_move_mouse_x(int dx) {
+     struct input_event event;
+-    gettimeofday(&event.time, NULL);
++    struct timeval tv;   
++    gettimeofday(&tv, NULL);
++    event.input_event_sec = tv.tv_sec;
++    event.input_event_usec = tv.tv_usec;
+     event.type=EV_REL;
+     event.code=REL_X;
+     event.value=dx;
+@@ -414,7 +431,10 @@ void send_move_mouse_x(int dx) {
+ 
+ void send_move_mouse_wheel(int dwheel) {
+     struct input_event event;
+-    gettimeofday(&event.time, NULL);
++    struct timeval tv;   
++    gettimeofday(&tv, NULL);
++    event.input_event_sec = tv.tv_sec;
++    event.input_event_usec = tv.tv_usec;
+     event.type=EV_REL;
+     event.code=REL_WHEEL;
+     event.value=dwheel;
+@@ -427,7 +447,10 @@ void send_move_mouse_wheel(int dwheel) {
+ 
+ void send_move_mouse_y(int dy) {
+     struct input_event event;
+-    gettimeofday(&event.time, NULL);
++    struct timeval tv;   
++    gettimeofday(&tv, NULL);
++    event.input_event_sec = tv.tv_sec;
++    event.input_event_usec = tv.tv_usec;
+     event.type=EV_REL;
+     event.code=REL_Y;
+     event.value=dy;
+@@ -500,7 +523,10 @@ void release_mouse_buttons(void) {
+ 
+ void press_joy_button(int j, int code, int value) {
+     struct input_event event;
+-    gettimeofday(&event.time, NULL);
++    struct timeval tv;   
++    gettimeofday(&tv, NULL);
++    event.input_event_sec = tv.tv_sec;
++    event.input_event_usec = tv.tv_usec;    
+     if (j==255) {
+         event.type=EV_KEY;
+         event.code=code;
+@@ -564,7 +590,10 @@ int calibrate(int j, int v) {
+ 
+ void set_joy_axis(int j, int axis, int value) {
+     struct input_event event;
+-    gettimeofday(&event.time, NULL);
++    struct timeval tv;   
++    gettimeofday(&tv, NULL);
++    event.input_event_sec = tv.tv_sec;
++    event.input_event_usec = tv.tv_usec;    
+     value = rescale(value);
+     if (j==255) {
+         event.type=EV_ABS;
+@@ -590,7 +619,10 @@ void set_joy_axis(int j, int axis, int value) {
+ 
+ void set_joy_ff_status(int j, int effect, int value) {
+     struct input_event event;
+-    gettimeofday(&event.time, NULL);
++    struct timeval tv;   
++    gettimeofday(&tv, NULL);
++    event.input_event_sec = tv.tv_sec;
++    event.input_event_usec = tv.tv_usec;    
+     event.type=EV_FF_STATUS;
+     event.code=effect;
+     event.value=value;
+-- 
+2.45.2.windows.1
+

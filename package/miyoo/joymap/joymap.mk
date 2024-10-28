@@ -4,14 +4,14 @@
 #
 ################################################################################
 
-JOYMAP_VERSION = 0.5.5
+JOYMAP_VERSION = 0.5.8
 JOYMAP_SOURCE = joymap-$(JOYMAP_VERSION).tar.gz
 JOYMAP_SITE = http://downloads.sourceforge.net/project/linuxjoymap
 JOYMAP_LICENSE = GPL-2.0
 JOYMAP_LICENSE_FILES = COPYING
 
 define JOYMAP_BUILD_CMDS
-	$(MAKE) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" LD="$(TARGET_LD)" -C $(@D)
+	$(MAKE) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" LD="$(TARGET_LD)" -C $(@D) loadmap
 	"$(TARGET_CC)" $(@D)/tools/input_info.c -o $(@D)/tools/input_info
 endef
 

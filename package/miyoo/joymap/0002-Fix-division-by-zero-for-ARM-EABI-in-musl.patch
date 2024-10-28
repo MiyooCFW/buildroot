@@ -1,0 +1,32 @@
+From bac06cd0d1a0438cccf0db1f35b29dfc70f52bbd Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Mon, 28 Oct 2024 23:39:40 +0100
+Subject: [PATCH 2/2] Fix division-by-zero for ARM EABI in musl
+
+---
+ tools/input_info.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/tools/input_info.c b/tools/input_info.c
+index 11211c4..6dac8d2 100644
+--- a/tools/input_info.c
++++ b/tools/input_info.c
+@@ -11,6 +11,15 @@
+ #define ULONG_BITS (8 * sizeof (unsigned long))
+ #endif
+ 
++int __aeabi_idiv0(int return_value)
++{
++    return 0;
++}   
++long long __aeabi_ldiv0(long long return_value)
++{
++    return 0;
++}
++
+ int has_bit(unsigned long data[], const size_t bit) {
+     return !!(data[bit / ULONG_BITS] & (1uL << (bit % ULONG_BITS)));
+ }
+-- 
+2.45.2.windows.1
+
