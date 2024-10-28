@@ -6,12 +6,12 @@ LIBRETRO_RETROARCH_LICENSE_FILES = COPYING
 LIBRETRO_RETROARCH_DEPENDENCIES = host-pkgconf sdl sdl_image sdl_mixer sdl_sound sdl_ttf freetype
 RETROARCH_LIBRETRO_PLATFORM = miyoo
 
-define RETROARCH_BUILD_CMDS
+define LIBRETRO_RETROARCH_BUILD_CMDS
 	$(MAKE) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" -C $(@D) -f Makefile.miyoo
 	$(TARGET_STRIP) --strip-unneeded $(@D)/retroarch
 endef
 
-define RETROARCH_INSTALL_TARGET_CMDS
+define LIBRETRO_RETROARCH_INSTALL_TARGET_CMDS
 	mkdir -p "${BINARIES_DIR}/emus/retroarch"
 	$(INSTALL) -D -m 0755 $(@D)/retroarch "${BINARIES_DIR}/emus/retroarch"
 	mkdir -p "${BINARIES_DIR}/retroarch/filters/audio"
