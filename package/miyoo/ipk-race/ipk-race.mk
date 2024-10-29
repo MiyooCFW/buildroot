@@ -6,12 +6,12 @@ IPK_RACE_LICENSE = GPL-2.0
 #IPK_RACE_LICENSE_FILES = License.txt
 
 define IPK_RACE_EXTRACT_CMDS
-	cd $(@D) && ar x $(DL_DIR)/ipk-race/$(IPK_RACE_SOURCE)
+    cd $(@D) && cp $(DL_DIR)/ipk-race/$(IPK_RACE_SOURCE) .
 endef
 
 define IPK_RACE_INSTALL_TARGET_CMDS
-	mkdir -p $(BINARIES_DIR)/main
-	tar -xzf $(@D)/data.tar.gz --strip-components=2 -C $(BINARIES_DIR)/main
+	mkdir -p $(BINARIES_DIR)/main/ipk
+	$(INSTALL) -D -m 0666 $(@D)/$(IPK_RACE_SOURCE) $(BINARIES_DIR)/main/ipk
 endef
 
 $(eval $(generic-package))

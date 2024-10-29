@@ -6,12 +6,12 @@ IPK_DRPOCKETSNES_LICENSE = Custom
 #IPK_DRPOCKETSNES_LICENSE_FILES = COPYRIGHT
 
 define IPK_DRPOCKETSNES_EXTRACT_CMDS
-	cd $(@D) && ar x $(DL_DIR)/ipk-drpocketsnes/$(IPK_DRPOCKETSNES_SOURCE)
+    cd $(@D) && cp $(DL_DIR)/ipk-drpocketsnes/$(IPK_DRPOCKETSNES_SOURCE) .
 endef
 
 define IPK_DRPOCKETSNES_INSTALL_TARGET_CMDS
-	mkdir -p $(BINARIES_DIR)/main
-	tar -xzf $(@D)/data.tar.gz --strip-components=2 -C $(BINARIES_DIR)/main
+	mkdir -p $(BINARIES_DIR)/main/ipk
+	$(INSTALL) -D -m 0666 $(@D)/$(IPK_DRPOCKETSNES_SOURCE) $(BINARIES_DIR)/main/ipk
 endef
 
 $(eval $(generic-package))
