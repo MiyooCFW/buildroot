@@ -10,8 +10,8 @@ define IPK_DRPOCKETSNES_EXTRACT_CMDS
 endef
 
 define IPK_DRPOCKETSNES_INSTALL_TARGET_CMDS
-	mkdir -p $(BINARIES_DIR)/main/ipk
-	$(INSTALL) -D -m 0666 $(@D)/$(IPK_DRPOCKETSNES_SOURCE) $(BINARIES_DIR)/main/ipk
+	mkdir -p $(BINARIES_DIR)/main/pkgs
+	$(INSTALL) -D -m 0666 $(@D)/$(IPK_DRPOCKETSNES_SOURCE) $(BINARIES_DIR)/main/pkgs
 endef
 
 $(eval $(generic-package))

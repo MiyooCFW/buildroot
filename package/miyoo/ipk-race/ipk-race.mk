@@ -10,8 +10,8 @@ define IPK_RACE_EXTRACT_CMDS
 endef
 
 define IPK_RACE_INSTALL_TARGET_CMDS
-	mkdir -p $(BINARIES_DIR)/main/ipk
-	$(INSTALL) -D -m 0666 $(@D)/$(IPK_RACE_SOURCE) $(BINARIES_DIR)/main/ipk
+	mkdir -p $(BINARIES_DIR)/main/pkgs
+	$(INSTALL) -D -m 0666 $(@D)/$(IPK_RACE_SOURCE) $(BINARIES_DIR)/main/pkgs
 endef
 
 $(eval $(generic-package))
