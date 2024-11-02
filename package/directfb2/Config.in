@@ -1,0 +1,23 @@
+config BR2_PACKAGE_DIRECTFB2
+	bool "directfb2"
+	depends on !BR2_PACKAGE_DIRECTFB
+	select BR2_PACKAGE_FLUX
+	help
+	  DirectFB2 is a fork of DirectFB.
+
+config BR2_PACKAGE_DIRECTFB2_MULTI
+	bool "enable multiple application support"
+	depends on BR2_PACKAGE_DIRECTFB2
+
+config BR2_PACKAGE_DIRECTFB2_MULTI_KERNEL
+	bool "Enable Linux fusion device support for multi application"
+	select BR2_PACKAGE_DIRECTFB2_MULTI
+
+config BR2_PACKAGE_DIRECTFB2_DRMKMS
+	bool "DRM/KMS backend"
+	depends on BR2_PACKAGE_DIRECTFB2
+	select BR2_PACKAGE_LIBDRM
+
+config BR2_PACKAGE_DIRECTFB2_FBDEV
+	bool "fbdev backend"
+	depends on BR2_PACKAGE_DIRECTFB2

@@ -18,6 +18,13 @@ config BR2_PACKAGE_SDL2_DIRECTFB
 comment "DirectFB video driver needs directfb"
 	depends on !BR2_PACKAGE_DIRECTFB
 
+config BR2_PACKAGE_SDL2_DIRECTFB2
+	bool "SDL2: DirectFB2 video driver"
+	depends on BR2_PACKAGE_DIRECTFB2
+
+comment "SDL2: DirectFB2 video driver needs directfb2"
+	depends on !BR2_PACKAGE_DIRECTFB2
+
 config BR2_PACKAGE_SDL2_X11
 	bool "X11 video driver"
 	depends on BR2_PACKAGE_XORG7
