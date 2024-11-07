@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
+if ! test -z "${1}"; then
+    pkg="${1}"
+    ONEPKG="yes"
+fi
 # Add hash files for packages wiht missing ones (from .config)
 #
 # Run in a configured Buildroot directory, E.G.
@@ -91,8 +95,17 @@ message Updating hashes
 pkgs_array=($PACKAGES_TARGET)
 pkgsdir_array=($PACKAGES_PKGDIR)
 for ((i=0; i<${#pkgs_array[@]}; i++)); do
-    pkg=${pkgs_array[$i]}
-    pkgdir=${pkgsdir_array[$i]}
+    if test "x${ONEPKG}" != "xyes"; then
+        pkg=${pkgs_array[$i]}
+        pkgdir=${pkgsdir_array[$i]}
+    else
+        for i in "${!pkgsdir_array[@]}"; do
+            if [[ "${pkgsdir_array[$i]}" == */"$pkg"/ ]]; then
+                pkgdir=${pkgsdir_array[$i]}
+                break
+            fi
+        done
+    fi
     test "x${DEBUG}" = "xyes" &&\
      echo "Current pkg is $pkg"
     file_source=$(get_pkg_source "$JSON" "$pkg")
@@ -120,9 +133,15 @@ for ((i=0; i<${#pkgs_array[@]}; i++)); do
         gen_hash "$DL_DIR/$PKG_DL_DIR" "$file_source" > "$HASHFILE"
         echo -e "Done.\n"
     fi
+    test "x${ONEPKG}" == "xyes" && break
 done
 
 message Verifying hashes
 
-make clean
-make BR2_DOWNLOAD_FORCE_CHECK_HASHES=y source
+if test "x${ONEPKG}" != "xyes"; then
+    make clean
+    make BR2_DOWNLOAD_FORCE_CHECK_HASHES=y source
+else
+    make ${pkg}-dirclean
+    make BR2_DOWNLOAD_FORCE_CHECK_HASHES=y ${pkg}-source
+fi
