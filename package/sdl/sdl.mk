@@ -38,10 +38,12 @@ endif
 
 ifeq ($(BR2_PACKAGE_SDL_DIRECTFB),y)
 SDL_DEPENDENCIES += directfb
-SDL_CONF_OPTS += --enable-video-directfb=yes
-SDL_CONF_ENV = ac_cv_path_DIRECTFBCONFIG=$(STAGING_DIR)/usr/bin/directfb-config
-else
-SDL_CONF_OPTS += --enable-video-directfb=no
+SDL_CONF_OPTS += --enable-video-directfb
+endif
+
+ifeq ($(BR2_PACKAGE_SDL_DIRECTFB2),y)
+SDL_DEPENDENCIES += directfb2
+SDL_CONF_OPTS += --enable-video-directfb
 endif
 
 ifeq ($(BR2_PACKAGE_SDL_X11),y)
