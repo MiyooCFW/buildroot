@@ -6,12 +6,12 @@ IPK_GPSP_LICENSE = GPL-2.0
 #IPK_GPSP_LICENSE_FILES = COPYING.DOC
 
 define IPK_GPSP_EXTRACT_CMDS
-	cd $(@D) && ar x $(DL_DIR)/ipk-gpsp/$(IPK_GPSP_SOURCE)
+    cd $(@D) && cp $(DL_DIR)/ipk-gpsp/$(IPK_GPSP_SOURCE) .
 endef
 
 define IPK_GPSP_INSTALL_TARGET_CMDS
-	mkdir -p $(BINARIES_DIR)/main
-	tar -xzf $(@D)/data.tar.gz --strip-components=2 -C $(BINARIES_DIR)/main
+	mkdir -p $(BINARIES_DIR)/main/pkgs
+	$(INSTALL) -D -m 0666 $(@D)/$(IPK_GPSP_SOURCE) $(BINARIES_DIR)/main/pkgs
 endef
 
 $(eval $(generic-package))

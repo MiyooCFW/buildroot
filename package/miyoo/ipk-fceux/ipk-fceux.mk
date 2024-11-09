@@ -6,12 +6,12 @@ IPK_FCEUX_LICENSE = GPL-2.0
 #IPK_FCEUX_LICENSE_FILES = COPYING
 
 define IPK_FCEUX_EXTRACT_CMDS
-	cd $(@D) && ar x $(DL_DIR)/ipk-fceux/$(IPK_FCEUX_SOURCE)
+    cd $(@D) && cp $(DL_DIR)/ipk-fceux/$(IPK_FCEUX_SOURCE) .
 endef
 
 define IPK_FCEUX_INSTALL_TARGET_CMDS
-	mkdir -p $(BINARIES_DIR)/main
-	tar -xzf $(@D)/data.tar.gz --strip-components=2 -C $(BINARIES_DIR)/main
+	mkdir -p $(BINARIES_DIR)/main/pkgs
+	$(INSTALL) -D -m 0666 $(@D)/$(IPK_FCEUX_SOURCE) $(BINARIES_DIR)/main/pkgs
 endef
 
 $(eval $(generic-package))
