@@ -1,0 +1,83 @@
+diff --git a/src/video/directfb/SDL_DirectFB_render.c b/src/video/directfb/SDL_DirectFB_render.c
+index 257e950..5e4aa3f 100644
+--- a/src/video/directfb/SDL_DirectFB_render.c
++++ b/src/video/directfb/SDL_DirectFB_render.c
+@@ -414,7 +414,20 @@ DirectFB_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
+ 
+     }
+ #if (DFB_VERSION_ATLEAST(1,2,0))
+-    data->render_options = DSRO_NONE;
++	switch (texture->scaleMode) {
++		case SDL_ScaleModeNearest:
++			data->render_options = DSRO_NONE;
++			break;
++		case SDL_ScaleModeLinear:
++			data->render_options = DSRO_SMOOTH_UPSCALE | DSRO_SMOOTH_DOWNSCALE;
++			break;
++		case SDL_ScaleModeBest:
++			data->render_options =
++					DSRO_SMOOTH_UPSCALE | DSRO_SMOOTH_DOWNSCALE | DSRO_ANTIALIAS;
++			break;
++		default:
++			data->render_options = DSRO_NONE;
++	}
+ #endif
+     if (texture->access == SDL_TEXTUREACCESS_STREAMING) {
+         /* 3 plane YUVs return 1 bpp, but we need more space for other planes */
+@@ -435,35 +448,30 @@ DirectFB_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
+     return -1;
+ }
+ 
+-#if 0
+-static int
+-DirectFB_SetTextureScaleMode(SDL_Renderer * renderer, SDL_Texture * texture)
++static void
++DirectFB_SetTextureScaleMode(SDL_Renderer * renderer, SDL_Texture * texture, SDL_ScaleMode scaleMode)
+ {
+ #if (DFB_VERSION_ATLEAST(1,2,0))
+ 
+     DirectFB_TextureData *data = (DirectFB_TextureData *) texture->driverdata;
+ 
+-    switch (texture->scaleMode) {
+-    case SDL_SCALEMODE_NONE:
+-    case SDL_SCALEMODE_FAST:
++    switch (scaleMode) {
++    case SDL_ScaleModeNearest:
+         data->render_options = DSRO_NONE;
+         break;
+-    case SDL_SCALEMODE_SLOW:
++    case SDL_ScaleModeLinear:
+         data->render_options = DSRO_SMOOTH_UPSCALE | DSRO_SMOOTH_DOWNSCALE;
+         break;
+-    case SDL_SCALEMODE_BEST:
++    case SDL_ScaleModeBest:
+         data->render_options =
+             DSRO_SMOOTH_UPSCALE | DSRO_SMOOTH_DOWNSCALE | DSRO_ANTIALIAS;
+         break;
+     default:
+         data->render_options = DSRO_NONE;
+-        texture->scaleMode = SDL_SCALEMODE_NONE;
+-        return SDL_Unsupported();
++        texture->scaleMode = SDL_ScaleModeNearest;
+     }
+ #endif
+-    return 0;
+ }
+-#endif
+ 
+ static int
+ DirectFB_UpdateTexture(SDL_Renderer * renderer, SDL_Texture * texture,
+@@ -573,11 +581,12 @@ DirectFB_UnlockTexture(SDL_Renderer * renderer, SDL_Texture * texture)
+         texturedata->pixels = NULL;
+     }
+ }
+-
++#if 0
+ static void
+ DirectFB_SetTextureScaleMode()
+ {
+ }
++#endif
+ 
+ #if 0
+ static void
