@@ -1,0 +1,60 @@
+From 3b5366a8ff954159a18af6512c90a2e1bd9389b9 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Thu, 21 Nov 2024 22:24:14 +0100
+Subject: [PATCH 1/2] SDL_DirectFB_events: always focus on SDL_Window
+
+with mouse & keyboard respectivly
+---
+ src/video/directfb/SDL_DirectFB_events.c | 29 +++++-------------------
+ 1 file changed, 6 insertions(+), 23 deletions(-)
+
+diff --git a/src/video/directfb/SDL_DirectFB_events.c b/src/video/directfb/SDL_DirectFB_events.c
+index e6ca47ad3..6b211eb88 100644
+--- a/src/video/directfb/SDL_DirectFB_events.c
++++ b/src/video/directfb/SDL_DirectFB_events.c
+@@ -178,6 +178,12 @@ ProcessWindowEvent(_THIS, SDL_Window *sdlwin, DFBWindowEvent * evt)
+     SDL_Keysym keysym;
+     Uint32 unicode;
+     char text[SDL_TEXTINPUTEVENT_TEXT_SIZE];
++    FocusAllMice(_this, sdlwin);
++    SDL_SendWindowEvent(sdlwin, SDL_WINDOWEVENT_ENTER, 0, 0);
++    DirectFB_SetContext(_this, sdlwin);
++    FocusAllKeyboards(_this, sdlwin);
++    SDL_SendWindowEvent(sdlwin, SDL_WINDOWEVENT_FOCUS_GAINED,
++                        0, 0);
+ 
+     if (evt->clazz == DFEC_WINDOW) {
+         switch (evt->type) {
+@@ -274,29 +280,6 @@ ProcessWindowEvent(_THIS, SDL_Window *sdlwin, DFBWindowEvent * evt)
+         case DWET_CLOSE:
+             SDL_SendWindowEvent(sdlwin, SDL_WINDOWEVENT_CLOSE, 0, 0);
+             break;
+-        case DWET_GOTFOCUS:
+-            DirectFB_SetContext(_this, sdlwin);
+-            FocusAllKeyboards(_this, sdlwin);
+-            SDL_SendWindowEvent(sdlwin, SDL_WINDOWEVENT_FOCUS_GAINED,
+-                                0, 0);
+-            break;
+-        case DWET_LOSTFOCUS:
+-            SDL_SendWindowEvent(sdlwin, SDL_WINDOWEVENT_FOCUS_LOST, 0, 0);
+-            FocusAllKeyboards(_this, 0);
+-            break;
+-        case DWET_ENTER:
+-            /* SDL_DirectFB_ReshowCursor(_this, 0); */
+-            FocusAllMice(_this, sdlwin);
+-            /* FIXME: when do we really enter ? */
+-            if (ClientXY(windata, &evt->x, &evt->y))
+-                MotionAllMice(_this, evt->x, evt->y);
+-            SDL_SendWindowEvent(sdlwin, SDL_WINDOWEVENT_ENTER, 0, 0);
+-            break;
+-        case DWET_LEAVE:
+-            SDL_SendWindowEvent(sdlwin, SDL_WINDOWEVENT_LEAVE, 0, 0);
+-            FocusAllMice(_this, 0);
+-            /* SDL_DirectFB_ReshowCursor(_this, 1); */
+-            break;
+         default:
+             ;
+         }
+-- 
+2.45.2.windows.1
+
