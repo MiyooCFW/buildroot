@@ -1,5 +1,6 @@
 #!/bin/bash
 
+exec > /dev/tty1 2>&1
 export TERM=linux
 WARN="
 MiyooCFW team is not responsible for any issues \
