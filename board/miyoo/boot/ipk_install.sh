@@ -31,7 +31,7 @@ if [[ ${#package_list[@]} -eq 0 ]]; then
 fi
 
 dialog --backtitle "MiyooCFW 2.0" --timeout 10 --title "IPK package manager" --colors --no-shadow --msgbox "\nSelect pkg with \Zb\Z3Y\Zn button on the list." 8 28
-until selected_packages=$(dialog --backtitle "MiyooCFW 2.0" --title "IPK package manager" --colors --no-shadow --help-button --help-label "Info" --help-status --checklist "Press \Zb\Z3Y\Zn to select standalone App packages (non RetroArch) to install:" 20 60 15 "${package_list[@]}" 3>&1 1>&2 2>&3); do
+until selected_packages=$(dialog --backtitle "MiyooCFW 2.0" --title "IPK package manager" --colors --no-shadow --help-button --help-label "Info" --help-status --checklist "Press \Zb\Z3Y\Zn to select standalone Apps (packages) to install:" 20 60 15 "${package_list[@]}" 3>&1 1>&2 2>&3); do
     case $? in
 	(1) btn=Cancel && break;;
 	(2)
