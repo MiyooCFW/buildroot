@@ -555,6 +555,7 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 	partx -u /dev/mmcblk0  | tee -a ${LOG}
 	mount /dev/mmcblk0p4 ${HOME} | tee -a ${LOG}
 	btrfs filesystem resize max ${HOME} | tee -a ${LOG}
+	partprobe
 	RESIZE_COMMENCED=true
 fi
 
@@ -587,8 +588,8 @@ if ( $RESIZE_COMMENCED ); then
 fi
 
 # Reboot device if CONSOLE_VARIANT was overwritten from $CHOICE so that it could be applied in u-boot by readID 
-## or resizing BTRFS partition has completed / found firstboot custom script
-if ($CONSOLE_OVERWRITE || $RESIZE_COMMENCED || test -r "${BASEDIR}/firstboot.custom.sh"); then
+## or found firstboot custom script
+if ($CONSOLE_OVERWRITE || test -r "${BASEDIR}/firstboot.custom.sh"); then
 	safe_reboot_func
 else
 #just grep logs from temp directory before continuing
