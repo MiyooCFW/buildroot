@@ -1,0 +1,3 @@
+title=IPK installer
+description=IPK package installer
+exec=/boot/ipk_install.sh
