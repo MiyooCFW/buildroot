@@ -23,10 +23,10 @@ index 2880af10ad..b343697d2d 100644
  DEF_FLAGS += -std=gnu99 -D_GNU_SOURCE
  LIBS := -ldl -lz -lrt -pthread -lasound
 diff --git a/config.def.h b/config.def.h
-index 73d09d3b6b..6795278dc7 100644
+index 0eea764ee3..8a8d35789a 100644
 --- a/config.def.h
 +++ b/config.def.h
-@@ -1546,8 +1546,10 @@
+@@ -1605,8 +1605,10 @@
  #define DEFAULT_INPUT_DESCRIPTOR_LABEL_SHOW true
  #define DEFAULT_INPUT_DESCRIPTOR_HIDE_UNBOUND false
  
@@ -250,10 +250,10 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
 diff --git a/configuration.c b/configuration.c
-index 01f3229baf..9b0eca87e5 100644
+index b8f947273e..84ab3480fc 100644
 --- a/configuration.c
 +++ b/configuration.c
-@@ -621,13 +621,13 @@ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SWITCH;
+@@ -631,13 +631,13 @@ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SWITCH;
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WII;
  #elif defined(WIIU)
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WIIU;
@@ -269,7 +269,7 @@ index 01f3229baf..9b0eca87e5 100644
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_LINUXRAW;
  #elif defined(HAVE_WAYLAND)
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WAYLAND;
-@@ -635,7 +635,7 @@ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WAYLAND;
+@@ -645,7 +645,7 @@ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WAYLAND;
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_COCOA;
  #elif defined(__QNX__)
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_QNX;
@@ -278,7 +278,7 @@ index 01f3229baf..9b0eca87e5 100644
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SDL;
  #elif defined(HAVE_SDL2)
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SDL2;
-@@ -669,17 +669,17 @@ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_PSP;
+@@ -679,19 +679,19 @@ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_PSP;
  static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_CTR;
  #elif defined(SWITCH)
  static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_SWITCH;
@@ -294,11 +294,10 @@ index 01f3229baf..9b0eca87e5 100644
  static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_LINUXRAW;
  #elif defined(ANDROID)
  static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_ANDROID;
+ #elif defined(HAVE_MFI)
+ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_MFI;
 -#elif defined(HAVE_SDL) || defined(HAVE_SDL2)
 +#elif defined(HAVE_SDL) || defined(HAVE_SDL2) || defined(MIYOO)
  static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_SDL;
  #elif defined(DJGPP)
  static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_DOS;
--- 
-2.43.0.windows.1
-
