@@ -1,0 +1,60 @@
+From f8be41d773280e0e316ce69de4bf90b9ad636e57 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sun, 24 Nov 2024 21:44:03 +0100
+Subject: [PATCH 2/2] SDL_mouse: block relative mouse mv beyond screen res
+
+---
+ src/events/SDL_mouse.c | 30 ++++++++++++++++++++++++++----
+ 1 file changed, 26 insertions(+), 4 deletions(-)
+
+diff --git a/src/events/SDL_mouse.c b/src/events/SDL_mouse.c
+index 259ee9f20..d86f43e95 100644
+--- a/src/events/SDL_mouse.c
++++ b/src/events/SDL_mouse.c
+@@ -401,8 +401,8 @@ SDL_PrivateSendMouseMotion(SDL_Window * window, SDL_MouseID mouseID, int relativ
+         mouse->x = x;
+         mouse->y = y;
+     } else {
+-        mouse->x += xrel;
+-        mouse->y += yrel;
++        mouse->x = mouse->last_x + xrel;
++        mouse->y = mouse->last_y + yrel;
+     }
+ 
+     /* make sure that the pointers find themselves inside the windows,
+@@ -473,8 +473,30 @@ SDL_PrivateSendMouseMotion(SDL_Window * window, SDL_MouseID mouseID, int relativ
+         posted = (SDL_PushEvent(&event) > 0);
+     }
+     if (relative) {
+-        mouse->last_x = mouse->x;
+-        mouse->last_y = mouse->y;
++        int screen_width = 0;
++        int screen_height = 0;
++
++        SDL_DisplayMode displayMode;
++        if ((SDL_GetCurrentDisplayMode(0, &displayMode) == 0)) {
++            screen_width = displayMode.w;
++            screen_height = displayMode.h;
++            --screen_width;
++            --screen_height;
++
++            if (mouse->x > screen_width) {
++                mouse->last_x = screen_width;
++            } else if (mouse->x < 0) {
++                mouse->last_x = 0;
++            } else
++                mouse->last_x = mouse->x;
++
++            if (mouse->y > screen_height) {
++                mouse->last_y = screen_height;
++            } else if (mouse->y < 0) {
++                mouse->last_y = 0;
++            } else
++                mouse->last_y = mouse->y;
++        }
+     } else {
+         /* Use unclamped values if we're getting events outside the window */
+         mouse->last_x = x;
+-- 
+2.45.2.windows.1
+
