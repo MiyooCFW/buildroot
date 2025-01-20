@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-# Commit of 2023/06/22
-LIBRETRO_MAME2003_VERSION = 105ca02fb85e92b9dd5d6ee43f7152d1199eb149
+# Commit of Dec 10, 2024
+LIBRETRO_MAME2003_VERSION = b6c6d52d8d630d1a172b6b771443dcbbdb45b76d
 LIBRETRO_MAME2003_SITE = $(call github,libretro,mame2003-libretro,$(LIBRETRO_MAME2003_VERSION))
 LIBRETRO_MAME2003_LICENSE = MAME
 LIBRETRO_MAME2003_LICENSE_FILES = LICENSE.md
