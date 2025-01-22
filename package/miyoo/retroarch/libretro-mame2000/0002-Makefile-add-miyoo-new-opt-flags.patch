@@ -1,0 +1,46 @@
+From 5d2c4b5731e646bc1c13a4ec9ebb87d21c411908 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Wed, 22 Jan 2025 19:24:38 +0100
+Subject: [PATCH 2/3] Makefile: add miyoo new opt flags
+
+don't use LTO due to buggy uClibc build and bad opt. in musl
+---
+ Makefile | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 1c63c18..d349bf4 100644
+--- a/Makefile
++++ b/Makefile
+@@ -327,12 +327,12 @@ else ifeq ($(platform), miyoo)
+    TARGET := $(TARGET_NAME)_libretro.so
+    CC = /opt/miyoo/usr/bin/arm-linux-gcc
+    AR = /opt/miyoo/usr/bin/arm-linux-ar
+-   fpic := -fPIC
++   fpic := -fno-PIC
+    SHARED := -shared -Wl,--version-script=link.T -Wl,-no-undefined
+    
+    DISABLE_ERROR_LOGGING := 1
+-   CFLAGS += -fomit-frame-pointer -ffast-math -march=armv5te -mtune=arm926ej-s
+-  	ARM = 1
++   CFLAGS += -fomit-frame-pointer -ffast-math -mcpu=arm926ej-s -fdata-sections -ffunction-sections -fsingle-precision-constant
++   ARM = 1
+    USE_CYCLONE = 1
+    USE_DRZ80 = 1
+ 
+@@ -524,8 +524,12 @@ endif
+ ifeq ($(DEBUG), 1)
+ CFLAGS += -O0 -g
+ else
++ifeq ($(platform), miyoo)
++CFLAGS += -Ofast -DNDEBUG
++else
+ CFLAGS += -O2 -DNDEBUG
+ endif
++endif
+ 
+ # compiler, linker and utilities
+ RM = rm -f
+-- 
+2.45.2.windows.1
+
