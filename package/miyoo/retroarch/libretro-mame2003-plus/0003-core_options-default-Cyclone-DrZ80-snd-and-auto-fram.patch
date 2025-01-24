@@ -1,0 +1,53 @@
+From b59d9aaa7651d0ec82b4ea31abc641ed0704272b Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sun, 19 Jan 2025 22:20:51 +0100
+Subject: [PATCH 3/3] core_options: default "Cyclone+DrZ80(snd)" and "auto"
+ frameskip
+
+---
+ src/mame2003/core_options.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/mame2003/core_options.c b/src/mame2003/core_options.c
+index fdeb2466..38424ad1 100644
+--- a/src/mame2003/core_options.c
++++ b/src/mame2003/core_options.c
+@@ -635,7 +635,7 @@ static struct retro_core_option_v2_definition option_def_frameskip = {
+       { "auto_max",        "auto max"        },
+       { NULL, NULL },
+    },
+-   "disabled"
++   "auto"
+ };
+ 
+ static struct retro_core_option_v2_definition option_def_core_sys_subfolder = {
+@@ -759,7 +759,7 @@ static struct retro_core_option_v2_definition option_def_cyclone_mode = {
+    NULL,
+    NULL,
+    {
+-      { "default",            NULL },
++      { "available",          NULL },
+       { "disabled",           NULL },
+       { "Cyclone",            NULL },
+       { "DrZ80",              NULL },
+@@ -768,7 +768,7 @@ static struct retro_core_option_v2_definition option_def_cyclone_mode = {
+       { "Cyclone+DrZ80(snd)", NULL },
+       { NULL, NULL },
+    },
+-   "default"
++   "Cyclone+DrZ80(snd)"
+ };
+ 
+ static struct retro_core_option_v2_definition option_def_override_ad_stick = {
+@@ -1270,7 +1270,7 @@ void update_variables(bool first_time)
+ 
+ #if (HAS_CYCLONE || HAS_DRZ80)
+         case OPT_CYCLONE_MODE:
+-          if(strcmp(var.value, "default") == 0)
++          if(strcmp(var.value, "available") == 0)
+             options.cyclone_mode = 6;
+           else if(strcmp(var.value, "Cyclone") == 0)
+             options.cyclone_mode = 1;
+-- 
+2.45.2.windows.1
+

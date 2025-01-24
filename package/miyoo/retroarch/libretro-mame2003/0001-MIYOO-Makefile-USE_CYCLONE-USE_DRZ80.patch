@@ -1,0 +1,33 @@
+From 1fb6c36d34ba49b56e80eaec7020abf165a79914 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Mon, 20 Jan 2025 20:27:08 +0100
+Subject: [PATCH 1/2] (MIYOO) Makefile: USE_CYCLONE & USE_DRZ80
+
+also `-fno-PIC`
+---
+ Makefile | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 53680b6..c6bb102 100644
+--- a/Makefile
++++ b/Makefile
+@@ -519,11 +519,14 @@ else ifeq ($(platform), miyoo)
+ 	CC = /opt/miyoo/usr/bin/arm-linux-gcc
+ 	CXX = /opt/miyoo/usr/bin/arm-linux-g++
+ 	AR = /opt/miyoo/usr/bin/arm-linux-ar
+-	fpic := -fPIC
++	fpic := -fno-PIC
+ 	LDFLAGS += -shared -Wl,--version-script=link.T -Wl,-no-undefined
+ 	PLATCFLAGS := -DNO_UNALIGNED_ACCESS
+ 	PLATCFLAGS += -fomit-frame-pointer -march=armv5te -mtune=arm926ej-s -ffast-math
+ 	CXXFLAGS += -fno-rtti -fno-exceptions
++	ARM = 1
++	USE_CYCLONE := 1
++	USE_DRZ80 := 1
+ 
+ # Emscripten
+ else ifeq ($(platform), emscripten)
+-- 
+2.45.2.windows.1
+
