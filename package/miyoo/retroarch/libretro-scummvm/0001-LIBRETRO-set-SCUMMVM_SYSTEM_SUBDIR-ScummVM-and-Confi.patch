@@ -1,0 +1,89 @@
+From e3102dc802761bdab21cfe27017f6b2e70f1c611 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Thu, 30 Jan 2025 20:21:30 +0100
+Subject: [PATCH] LIBRETRO: set SCUMMVM_SYSTEM_SUBDIR=ScummVM and
+ ConfigFile=ScummVM.ini
+
+to not interfere with legacy version small capped dir
+---
+ backends/platform/libretro/Makefile.common           | 2 +-
+ backends/platform/libretro/README.md                 | 2 +-
+ backends/platform/libretro/src/libretro-core.cpp     | 4 ++--
+ backends/platform/libretro/src/libretro-os-utils.cpp | 6 +++---
+ 4 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/backends/platform/libretro/Makefile.common b/backends/platform/libretro/Makefile.common
+index 5d093ec15b2..01f2ef19ec2 100644
+--- a/backends/platform/libretro/Makefile.common
++++ b/backends/platform/libretro/Makefile.common
+@@ -88,7 +88,7 @@ CORE_NAME = "ScummVM"
+ # Pipe separated allowed file extensions that core can handle
+ CORE_EXTENSIONS = "scummvm"
+ # Subdirs for datafiles bundle
+-SCUMMVM_SYSTEM_SUBDIR  := scummvm
++SCUMMVM_SYSTEM_SUBDIR  := ScummVM
+ SCUMMVM_EXTRA_SUBDIR   := extra
+ SCUMMVM_THEME_SUBDIR   := theme
+ 
+diff --git a/backends/platform/libretro/README.md b/backends/platform/libretro/README.md
+index 8cb5a3cf123..6786c305bad 100644
+--- a/backends/platform/libretro/README.md
++++ b/backends/platform/libretro/README.md
+@@ -32,7 +32,7 @@ Core will be built for all available android targets by default
+ 
+ ### Data files and themes
+ [Data files](https://wiki.scummvm.org/index.php/Datafiles) required for certain games and core functions (e.g. virtual keyboard) and default [ScummVM GUI themes](https://wiki.scummvm.org/index.php/GUI_Themes) are bundled during the build process in `scummvm.zip` file. Libretro core info file is created during build as well.
+-Extract `scummvm.zip` and select relevant paths in ScummVM GUI (or modify `scummvm.ini` accordingly) to load properly needed data files/themes in the core.
++Extract `scummvm.zip` and select relevant paths in ScummVM GUI (or modify `ScummVM.ini` accordingly) to load properly needed data files/themes in the core.
+ 
+ Note that both datafiles and themes included in `scummvm.zip` need to be consistent with ScummVM version in use, hence need to be generally rebuilt and replaced for each new version.
+ 
+diff --git a/backends/platform/libretro/src/libretro-core.cpp b/backends/platform/libretro/src/libretro-core.cpp
+index 5b11d73fa04..d3ff14b97f9 100644
+--- a/backends/platform/libretro/src/libretro-core.cpp
++++ b/backends/platform/libretro/src/libretro-core.cpp
+@@ -984,14 +984,14 @@ bool retro_load_game(const struct retro_game_info *game) {
+ 			break;
+ 		case TEST_GAME_OK_TARGET_FOUND:
+ 			sprintf(buffer, "%s", target_id);
+-			retro_log_cb(RETRO_LOG_DEBUG, "[scummvm] launch via target id and scummvm.ini\n");
++			retro_log_cb(RETRO_LOG_DEBUG, "[scummvm] launch via target id and ScummVM.ini\n");
+ 			break;
+ 		case TEST_GAME_OK_ID_AUTODETECTED:
+ 			sprintf(buffer, "-p \"%s\" --auto-detect", parent_dir.getPath().toString().c_str());
+ 			retro_log_cb(RETRO_LOG_DEBUG, "[scummvm] launch via autodetect\n");
+ 			break;
+ 		case TEST_GAME_KO_MULTIPLE_RESULTS:
+-			retro_log_cb(RETRO_LOG_WARN, "[scummvm] Multiple targets found for '%s' in scummvm.ini\n", target_id);
++			retro_log_cb(RETRO_LOG_WARN, "[scummvm] Multiple targets found for '%s' in ScummVM.ini\n", target_id);
+ 			retro_osd_notification("Multiple targets found");
+ 			break;
+ 		case TEST_GAME_KO_NOT_FOUND:
+diff --git a/backends/platform/libretro/src/libretro-os-utils.cpp b/backends/platform/libretro/src/libretro-os-utils.cpp
+index 726397ca297..6962ed94de4 100644
+--- a/backends/platform/libretro/src/libretro-os-utils.cpp
++++ b/backends/platform/libretro/src/libretro-os-utils.cpp
+@@ -63,9 +63,9 @@ void OSystem_libretro::getTimeAndDate(TimeDate &t, bool skipRecord) const {
+ 
+ Common::Path OSystem_libretro::getDefaultConfigFileName() {
+ 	if (s_systemDir.empty())
+-		return Common::Path("scummvm.ini");
++		return Common::Path("ScummVM.ini");
+ 	else
+-		return Common::Path(s_systemDir).appendComponent("scummvm.ini");
++		return Common::Path(s_systemDir).appendComponent("ScummVM.ini");
+ }
+ 
+ void OSystem_libretro::logMessage(LogMessageType::Type type, const char *message) {
+@@ -242,7 +242,7 @@ static const char *const helpTabs[] = {
+ 	    "\n"
+ 	    "  - **game ID**: this is a unique identifier for any game supported by ScummVM. In this case hook files must be placed inside each game folder, and there is no need to add the game from within ScummVM. Game will be launched with default ScummVM options.\n"
+ 	    "\n"
+-	    "  - **target**: this is the game identifier from ScummVM configuration file (e.g. 'scummvm.ini'). In this case the game must be added from ScummVM GUI first, and the hook files can be placed anywhere, as the path for the game files is already part of the target configuration. The game will be launched with the options set in ScummVM\n"
++	    "  - **target**: this is the game identifier from ScummVM configuration file (e.g. 'ScummVM.ini'). In this case the game must be added from ScummVM GUI first, and the hook files can be placed anywhere, as the path for the game files is already part of the target configuration. The game will be launched with the options set in ScummVM\n"
+ 	    "\n"
+ 	    "## Creating ScummVM core playlist\n"
+ 	    "ScummVM core playlist can be created in the following ways:\n"
+-- 
+2.45.2.windows.1
+

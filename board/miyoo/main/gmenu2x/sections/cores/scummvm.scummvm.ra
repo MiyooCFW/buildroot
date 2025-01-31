@@ -1,4 +1,3 @@
 title=scummvm
 description=scummvm libretro core
 exec=/mnt/emus/retroarch/scummvm.sh
-selectordir=/mnt

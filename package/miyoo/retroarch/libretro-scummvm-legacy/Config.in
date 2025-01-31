@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_SCUMMVM_LEGACY
+	bool "libretro-scummvm-legacy"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro SCUMMVM emulator - legacy version.
+
+	  http://www.libretro.com
