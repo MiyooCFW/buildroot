@@ -1,0 +1,108 @@
+From 2e9a8372dd69af7346ce92f1fafea9008e4073af Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Wed, 5 Feb 2025 14:28:31 +0100
+Subject: [PATCH 3/3] LIBRETRO: add "Audio stutter reduction" option
+
+via: https://github.com/StupidHoroscope/libretro-scummvm-miyoo-backend/commit/6c3954f916bf430e7756afd8ca74618d48b56744
+---
+ backends/platform/libretro/libretro.cpp       | 33 +++++++++++++++++--
+ .../platform/libretro/libretro_core_options.h | 11 +++++++
+ 2 files changed, 41 insertions(+), 3 deletions(-)
+
+diff --git a/backends/platform/libretro/libretro.cpp b/backends/platform/libretro/libretro.cpp
+index 3a5bf84b4bc..76e3cc01144 100644
+--- a/backends/platform/libretro/libretro.cpp
++++ b/backends/platform/libretro/libretro.cpp
+@@ -55,6 +55,10 @@ static bool analog_response_is_quadratic = false;
+ static float mouse_speed = 1.0f;
+ 
+ static bool speed_hack_is_enabled = false;
++static bool audio_stutter_reduction = false;
++
++static size_t audio_buffer_length = 0;
++static uint32* audio_buffer = NULL;
+ 
+ char cmd_params[20][200];
+ char cmd_params_num;
+@@ -144,6 +148,11 @@ void retro_init (void)
+ 
+ void retro_deinit(void)
+ {
++   if (audio_buffer != NULL)
++   {
++      delete [] audio_buffer;
++      audio_buffer = NULL;
++   }
+ }
+ 
+ void parse_command_params(char* cmdline)
+@@ -258,6 +267,14 @@ static void update_variables(void)
+ 		if (strcmp(var.value, "enabled") == 0)
+ 			speed_hack_is_enabled = true;
+ 	}
++   var.key = "scummvm_audio_stutter_reduction";
++   var.value = NULL;
++   audio_stutter_reduction = true;
++	if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
++	{
++		if (strcmp(var.value, "disabled") == 0)
++			audio_stutter_reduction = false;
++	}
+ }
+ 
+ static int retro_device = RETRO_DEVICE_JOYPAD;
+@@ -463,8 +480,18 @@ void retro_run (void)
+       video_cb(screen.pixels, screen.w, screen.h, screen.pitch);
+ 
+       /* Upload audio */
+-      static uint32 buf[735];
+-      int count = ((Audio::MixerImpl*)g_system->getMixer())->mixCallback((byte*)buf, 735*4);
++   // HACK: Stutter reduction locks the framerate to a max of 50, but stops crackling audio in most games
++   int samples_per_frame = 44100u / (audio_stutter_reduction ? 50u : 60u); 
++   if (audio_buffer == NULL || samples_per_frame != audio_buffer_length)
++   {
++      if (audio_buffer != NULL)
++      {
++         delete [] audio_buffer;
++      }
++      audio_buffer_length = samples_per_frame;
++      audio_buffer = new uint32[audio_buffer_length];
++   }
++   int count = ((Audio::MixerImpl*)g_system->getMixer())->mixCallback((byte*)audio_buffer, audio_buffer_length*4);
+ #if defined(_3DS)
+       /* Hack: 3DS will produce static noise
+        * unless we manually send a zeroed
+@@ -478,7 +505,7 @@ void retro_run (void)
+       }
+       else
+ #endif
+-         audio_batch_cb((int16_t*)buf, count);
++         audio_batch_cb((int16_t*)audio_buffer, count);
+    }
+ 
+ #if defined(USE_LIBCO)
+diff --git a/backends/platform/libretro/libretro_core_options.h b/backends/platform/libretro/libretro_core_options.h
+index 0fbd01e86d8..4befb6aafac 100644
+--- a/backends/platform/libretro/libretro_core_options.h
++++ b/backends/platform/libretro/libretro_core_options.h
+@@ -138,6 +138,17 @@ struct retro_core_option_definition option_defs_us[] = {
+       "disabled"
+ #endif
+    },
++   {
++      "scummvm_audio_stutter_reduction",
++      "Audio stutter reduction",
++      "Reduces audio stutter on resource-intensive games, at the cost of a slightly reduced framerate",
++      {
++         { "disabled", NULL },
++         { "enabled",  NULL },
++         { NULL, NULL },
++      },
++      "enabled"
++   },
+    { NULL, NULL, NULL, {{0}}, NULL },
+ };
+ 
+-- 
+2.45.2.windows.1
+

@@ -1,0 +1,81 @@
+From 9af918e6c23832bfe6545f3d5db8fcc6d8130948 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sun, 9 Feb 2025 15:09:54 +0100
+Subject: [PATCH 2/3] LR-Makefile.common: mv useful engines to LITE type
+
+---
+ backends/platform/libretro/build/Makefile.common | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/backends/platform/libretro/build/Makefile.common b/backends/platform/libretro/build/Makefile.common
+index c683e2c7e59..dabbe1c38d0 100644
+--- a/backends/platform/libretro/build/Makefile.common
++++ b/backends/platform/libretro/build/Makefile.common
+@@ -9,6 +9,7 @@ LIBRETRO_COMM_DIR = $(LIBRETRO_DIR)/libretro-common
+ ENABLED=STATIC_PLUGIN
+ 
+ ifeq ($(NO_HIGH_DEF), 1)
++ENABLE_ACCESS = $(ENABLED)
+ ENABLE_AGI = $(ENABLED)
+ ENABLE_AGOS = $(ENABLED)
+ ENABLE_CINE = $(ENABLED)
+@@ -20,10 +21,12 @@ ENABLE_GOB = $(ENABLED)
+ ENABLE_HE = $(ENABLED)
+ ENABLE_IHNM = $(ENABLED)
+ ENABLE_KYRA = $(ENABLED)
++ENABLE_LAB = $(ENABLED)
+ ENABLE_LOL = $(ENABLED)
+ ENABLE_LURE = $(ENABLED)
+ ENABLE_MADE = $(ENABLED)
+ ENABLE_PARALLACTION = $(ENABLED)
++ENABLE_PLUMBERS = $(ENABLED)
+ ENABLE_QUEEN = $(ENABLED)
+ ENABLE_SAGA = $(ENABLED)
+ ENABLE_SCI = $(ENABLED)
+@@ -46,6 +49,7 @@ ENABLE_TSAGE = $(ENABLED)
+ ENABLE_VOYEUR = $(ENABLED)
+ ENABLE_XEEN = $(ENABLED)
+ else
++ENABLE_ACCESS = $(ENABLED)
+ ENABLE_AGI = $(ENABLED)
+ ENABLE_AGOS = $(ENABLED)
+ ENABLE_AGOS2 = $(ENABLED)
+@@ -59,11 +63,13 @@ ENABLE_GROOVIE = $(ENABLED)
+ ENABLE_HE = $(ENABLED)
+ ENABLE_IHNM = $(ENABLED)
+ ENABLE_KYRA = $(ENABLED)
++ENABLE_LAB = $(ENABLED)
+ ENABLE_LOL = $(ENABLED)
+ ENABLE_LURE = $(ENABLED)
+ ENABLE_MADE = $(ENABLED)
+ ENABLE_MORTEVIELLE = $(ENABLED)
+ ENABLE_PARALLACTION = $(ENABLED)
++ENABLE_PLUMBERS = $(ENABLED)
+ ENABLE_QUEEN = $(ENABLED)
+ ENABLE_SAGA = $(ENABLED)
+ ENABLE_SCI = $(ENABLED)
+@@ -80,7 +86,6 @@ ENABLE_TOUCHE = $(ENABLED)
+ ENABLE_TUCKER = $(ENABLED)
+ 
+ ifneq ($(LITE), 1)
+-ENABLE_ACCESS = $(ENABLED)
+ ENABLE_ADL = $(ENABLED)
+ ENABLE_BBVS = $(ENABLED)
+ ENABLE_BLADERUNNER = $(ENABLED)
+@@ -95,13 +100,11 @@ ENABLE_HDB = $(ENABLED)
+ ENABLE_HUGO = $(ENABLED)
+ ENABLE_HOPKINS = $(ENABLED)
+ ENABLE_ILLUSIONS = $(ENABLED)
+-ENABLE_LAB = $(ENABLED)
+ ENABLE_MADS = $(ENABLED)
+ ENABLE_MOHAWK = $(ENABLED)
+ ENABLE_MYST = $(ENABLED)
+ ENABLE_NEVERHOOD = $(ENABLED)
+ ENABLE_PEGASUS = $(ENABLED)
+-ENABLE_PLUMBERS = $(ENABLED)
+ ENABLE_PRINCE = $(ENABLED)
+ ENABLE_RIVEN = $(ENABLED)
+ ENABLE_SUPERNOVA = $(ENABLED)
+-- 
+2.45.2.windows.1
+
