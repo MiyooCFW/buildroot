@@ -1,0 +1,94 @@
+From 5a2e1d3ec02f976a446b94850fa3fcf260648f2b Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Mon, 3 Feb 2025 21:22:13 +0100
+Subject: [PATCH 3/4] LIBRETRO-Makefile: optimize by reducing engines count
+ (LITE)
+
+- discard HIGH_DEF engines from lite_engine.list  & inline with legacy (add ultima4)
+- add also -fno-PIC
+
+Update lite_engines.list
+---
+ backends/platform/libretro/Makefile          |  5 +++--
+ backends/platform/libretro/lite_engines.list | 22 +++++++++++++-------
+ 2 files changed, 18 insertions(+), 9 deletions(-)
+
+diff --git a/backends/platform/libretro/Makefile b/backends/platform/libretro/Makefile
+index af2063fef82..c66c6cccfa0 100644
+--- a/backends/platform/libretro/Makefile
++++ b/backends/platform/libretro/Makefile
+@@ -280,9 +280,9 @@ else ifeq ($(platform), miyoo)
+    LD = /opt/miyoo/usr/bin/arm-linux-g++
+    AR = /opt/miyoo/usr/bin/arm-linux-ar cru
+    RANLIB = /opt/miyoo/usr/bin/arm-linux-ranlib
+-   DEFINES += -DDINGUX -fomit-frame-pointer -ffast-math -march=armv5te -mtune=arm926ej-s -fPIC
++   DEFINES += -DDINGUX -fomit-frame-pointer -ffast-math -march=armv5te -mtune=arm926ej-s -fno-PIC
+    DEFINES += -ffunction-sections -fdata-sections -DDEFAULT_PERF_TUNER -DREDUCE_MEMORY_USAGE -DUNCACHED_PLUGINS
+-   LDFLAGS += -shared -Wl,--gc-sections -Wl,--version-script=$(ROOT_PATH)/link.T -fPIC
++   LDFLAGS += -shared -Wl,--gc-sections -Wl,--version-script=$(ROOT_PATH)/link.T -fno-PIC
+    USE_VORBIS = 0
+    USE_THEORADEC = 0
+    USE_TREMOR = 1
+@@ -290,6 +290,7 @@ else ifeq ($(platform), miyoo)
+    USE_CURL = 0
+    USE_MT32EMU = 0
+    USE_HIGHRES := 0
++   LITE := 1
+ 
+ # MIYOOMINI
+ else ifeq ($(platform), miyoomini)
+diff --git a/backends/platform/libretro/lite_engines.list b/backends/platform/libretro/lite_engines.list
+index bc681b60598..efb6d85f6e8 100644
+--- a/backends/platform/libretro/lite_engines.list
++++ b/backends/platform/libretro/lite_engines.list
+@@ -1,32 +1,40 @@
++access
+ agi
+ agos
+-agos2
+ cine
+ cruise
+ draci
+ drascula
+ eob
+ gob
+-groovie
+ he
+ ihnm
+ kyra
++lab
+ lol
+ lure
+ made
+-mortevielle
+ parallaction
++plumbers
+ queen
+ saga
+ sci
+-sci32
+ scumm
+ scumm_7_8
+ sherlock
+ sky
+-sword1
+-sword2
+ teenagent
+ tinsel
+-touche
+ tucker
++bbvs
++cge
++cge2
++dreamweb
++hugo
++illusions
++mads
++supernova
++tsage
++ultima4
++voyeur
++xeen
+-- 
+2.45.2.windows.1
+
