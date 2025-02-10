@@ -1,0 +1,49 @@
+From 8f24612c205b379a65467c55823341515a14e83f Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Tue, 4 Feb 2025 22:45:05 +0100
+Subject: [PATCH 4/4] LIBRETRO-core-options: cap frames=15Hz and
+ samprate=44,1kHz
+
+due to capped fps, increase also "Gamepad Cursor Speed"
+---
+ .../platform/libretro/include/libretro-core-options.h     | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/backends/platform/libretro/include/libretro-core-options.h b/backends/platform/libretro/include/libretro-core-options.h
+index 0c959b78da8..816883bc7c9 100644
+--- a/backends/platform/libretro/include/libretro-core-options.h
++++ b/backends/platform/libretro/include/libretro-core-options.h
+@@ -128,7 +128,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+ 			{"3.0", NULL},
+ 			{NULL, NULL},
+ 		},
+-		"1.0"
++		"2.5"
+ 	},
+ 	{
+ 		"scummvm_gamepad_cursor_acceleration_time",
+@@ -247,9 +247,11 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+ 			{ "50 Hz", NULL },
+ 			{ "30 Hz", NULL },
+ 			{ "25 Hz", NULL },
++			{ "15 Hz", NULL },
++			{ "10 Hz", NULL },
+ 			{ NULL, NULL },
+ 		},
+-		"disabled"
++		"15 Hz"
+ 	},
+ 	{
+ 		"scummvm_samplerate",
+@@ -263,7 +265,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+ 			{ "44100 Hz", NULL },
+ 			{ NULL, NULL },
+ 		},
+-		"48000 Hz"
++		"44100 Hz"
+ 	},
+ 	/* Button mappings */
+ 	{
+-- 
+2.45.2.windows.1
+

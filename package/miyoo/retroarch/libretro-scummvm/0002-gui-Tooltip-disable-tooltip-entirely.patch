@@ -1,0 +1,82 @@
+From a6eecfa329b7fa39707a208e7071cb7b37ccb53f Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Fri, 31 Jan 2025 21:09:07 +0100
+Subject: [PATCH 2/4] gui/Tooltip: disable tooltip entirely
+
+it is unreliable & slow
+---
+ gui/Tooltip.cpp | 55 -------------------------------------------------
+ 1 file changed, 55 deletions(-)
+
+diff --git a/gui/Tooltip.cpp b/gui/Tooltip.cpp
+index 23e5b5f7437..ef12c467dff 100644
+--- a/gui/Tooltip.cpp
++++ b/gui/Tooltip.cpp
+@@ -37,64 +37,9 @@ Tooltip::Tooltip() :
+ }
+ 
+ void Tooltip::setup(Dialog *parent, Widget *widget, int x, int y) {
+-	assert(widget->hasTooltip());
+-
+-	_parent = parent;
+-
+-	setMouseUpdatedOnFocus(false);
+-
+-	_maxWidth = g_gui.xmlEval()->getVar("Globals.Tooltip.MaxWidth", 100);
+-	_xdelta = g_gui.xmlEval()->getVar("Globals.Tooltip.XDelta", 0);
+-	_ydelta = g_gui.xmlEval()->getVar("Globals.Tooltip.YDelta", 0);
+-	_xpadding = g_gui.xmlEval()->getVar("Globals.Tooltip.XPadding", 2);
+-	_ypadding = g_gui.xmlEval()->getVar("Globals.Tooltip.YPadding", 2);
+-
+-	const Graphics::Font *tooltipFont = g_gui.theme()->getFont(ThemeEngine::kFontStyleTooltip);
+-
+-	_wrappedLines.clear();
+-	_w = tooltipFont->wordWrapText(widget->getTooltip(), _maxWidth - _xpadding * 2, _wrappedLines) + _xpadding * 2;
+-	_h = (tooltipFont->getFontHeight() + 2) * _wrappedLines.size() + _ypadding * 2;
+-
+-	_x = MIN<int16>(parent->_x + x + _xdelta + _xpadding, g_system->getOverlayWidth() - _w - _xpadding * 2);
+-	_y = MIN<int16>(parent->_y + y + _ydelta + _ypadding, g_system->getOverlayHeight() - _h - _ypadding * 2);
+-
+-	if (g_gui.useRTL())
+-		_x = g_system->getOverlayWidth() - _w - _x + g_gui.getOverlayOffset();
+-
+-	if (ConfMan.hasKey("tts_enabled", "scummvm") &&
+-			ConfMan.getBool("tts_enabled", "scummvm")) {
+-		Common::TextToSpeechManager *ttsMan = g_system->getTextToSpeechManager();
+-		if (ttsMan == nullptr)
+-			return;
+-		ttsMan->say(widget->getTooltip(), Common::TextToSpeechManager::QUEUE_NO_REPEAT);
+-	}
+ }
+ 
+ void Tooltip::drawDialog(DrawLayer layerToDraw) {
+-	int num = 0;
+-	int h = g_gui.theme()->getFontHeight(ThemeEngine::kFontStyleTooltip) + 2;
+-
+-	Dialog::drawDialog(layerToDraw);
+-
+-	int16 textX = g_gui.useRTL() ? _x - 1 - _xpadding : _x + 1 + _xpadding;
+-	int16 textY = _y + 1 + _ypadding;
+-
+-	Graphics::TextAlign textAlignment = g_gui.useRTL() ? Graphics::kTextAlignRight : Graphics::kTextAlignLeft;
+-
+-	for (Common::U32StringArray::const_iterator i = _wrappedLines.begin(); i != _wrappedLines.end(); ++i, ++num) {
+-		g_gui.theme()->drawText(
+-			Common::Rect(textX, textY + num * h, textX + _w, textY + (num + 1) * h),
+-			*i,
+-			ThemeEngine::kStateEnabled,
+-			textAlignment,
+-			ThemeEngine::kTextInversionNone,
+-			0,
+-			false,
+-			ThemeEngine::kFontStyleTooltip,
+-			ThemeEngine::kFontColorNormal,
+-			false
+-		);
+-	}
+ }
+ 
+ }
+-- 
+2.45.2.windows.1
+
