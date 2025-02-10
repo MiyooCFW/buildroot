@@ -1,23 +1,24 @@
-From 2e9a8372dd69af7346ce92f1fafea9008e4073af Mon Sep 17 00:00:00 2001
+From 3eb8564fd92ae2939275a40ea67c3475dadd431b Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
-Date: Wed, 5 Feb 2025 14:28:31 +0100
-Subject: [PATCH 3/3] LIBRETRO: add "Audio stutter reduction" option
+Date: Mon, 10 Feb 2025 21:28:33 +0100
+Subject: [PATCH 3/3] LIBRETRO: add "Framerate cap" option to reduce audio
+ stutter
 
-via: https://github.com/StupidHoroscope/libretro-scummvm-miyoo-backend/commit/6c3954f916bf430e7756afd8ca74618d48b56744
+via MM+ and: https://github.com/StupidHoroscope/libretro-scummvm-miyoo-backend/commit/6c3954f916bf430e7756afd8ca74618d48b56744
 ---
- backends/platform/libretro/libretro.cpp       | 33 +++++++++++++++++--
- .../platform/libretro/libretro_core_options.h | 11 +++++++
- 2 files changed, 41 insertions(+), 3 deletions(-)
+ backends/platform/libretro/libretro.cpp       | 32 +++++++++++++++++--
+ .../platform/libretro/libretro_core_options.h | 19 +++++++++++
+ 2 files changed, 48 insertions(+), 3 deletions(-)
 
 diff --git a/backends/platform/libretro/libretro.cpp b/backends/platform/libretro/libretro.cpp
-index 3a5bf84b4bc..76e3cc01144 100644
+index 3a5bf84b4bc..1668182774b 100644
 --- a/backends/platform/libretro/libretro.cpp
 +++ b/backends/platform/libretro/libretro.cpp
 @@ -55,6 +55,10 @@ static bool analog_response_is_quadratic = false;
  static float mouse_speed = 1.0f;
  
  static bool speed_hack_is_enabled = false;
-+static bool audio_stutter_reduction = false;
++static int cap_fps=50u;
 +
 +static size_t audio_buffer_length = 0;
 +static uint32* audio_buffer = NULL;
@@ -36,29 +37,28 @@ index 3a5bf84b4bc..76e3cc01144 100644
  }
  
  void parse_command_params(char* cmdline)
-@@ -258,6 +267,14 @@ static void update_variables(void)
+@@ -258,6 +267,13 @@ static void update_variables(void)
  		if (strcmp(var.value, "enabled") == 0)
  			speed_hack_is_enabled = true;
  	}
-+   var.key = "scummvm_audio_stutter_reduction";
++   var.key = "scummvm_audio_cap_fps";
 +   var.value = NULL;
-+   audio_stutter_reduction = true;
-+	if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-+	{
-+		if (strcmp(var.value, "disabled") == 0)
-+			audio_stutter_reduction = false;
++   cap_fps = 50u;
++   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
++   {
++      cap_fps = (int)atof(var.value);
 +	}
  }
  
  static int retro_device = RETRO_DEVICE_JOYPAD;
-@@ -463,8 +480,18 @@ void retro_run (void)
+@@ -463,8 +479,18 @@ void retro_run (void)
        video_cb(screen.pixels, screen.w, screen.h, screen.pitch);
  
        /* Upload audio */
 -      static uint32 buf[735];
 -      int count = ((Audio::MixerImpl*)g_system->getMixer())->mixCallback((byte*)buf, 735*4);
-+   // HACK: Stutter reduction locks the framerate to a max of 50, but stops crackling audio in most games
-+   int samples_per_frame = 44100u / (audio_stutter_reduction ? 50u : 60u); 
++   // HACK: Reduce audio buffer under-run by capping framerate to lower value.
++   int samples_per_frame = 44100u / (cap_fps);
 +   if (audio_buffer == NULL || samples_per_frame != audio_buffer_length)
 +   {
 +      if (audio_buffer != NULL)
@@ -72,7 +72,7 @@ index 3a5bf84b4bc..76e3cc01144 100644
  #if defined(_3DS)
        /* Hack: 3DS will produce static noise
         * unless we manually send a zeroed
-@@ -478,7 +505,7 @@ void retro_run (void)
+@@ -478,7 +504,7 @@ void retro_run (void)
        }
        else
  #endif
@@ -82,23 +82,31 @@ index 3a5bf84b4bc..76e3cc01144 100644
  
  #if defined(USE_LIBCO)
 diff --git a/backends/platform/libretro/libretro_core_options.h b/backends/platform/libretro/libretro_core_options.h
-index 0fbd01e86d8..4befb6aafac 100644
+index 0fbd01e86d8..a32c0e37529 100644
 --- a/backends/platform/libretro/libretro_core_options.h
 +++ b/backends/platform/libretro/libretro_core_options.h
-@@ -138,6 +138,17 @@ struct retro_core_option_definition option_defs_us[] = {
+@@ -138,6 +138,25 @@ struct retro_core_option_definition option_defs_us[] = {
        "disabled"
  #endif
     },
 +   {
-+      "scummvm_audio_stutter_reduction",
-+      "Audio stutter reduction",
-+      "Reduces audio stutter on resource-intensive games, at the cost of a slightly reduced framerate",
++      "scummvm_audio_cap_fps",
++      "Framerate cap",
++      "Lock max framerate on resource-intensive games, to reduce audio crackling",
 +      {
-+         { "disabled", NULL },
-+         { "enabled",  NULL },
++         { "15", NULL },
++         { "20", NULL },
++         { "25", NULL },
++         { "30", NULL },
++         { "35", NULL },
++         { "40", NULL },
++         { "45", NULL },
++         { "50", NULL },
++         { "55", NULL },
++         { "60", NULL },
 +         { NULL, NULL },
 +      },
-+      "enabled"
++      "50"
 +   },
     { NULL, NULL, NULL, {{0}}, NULL },
  };
