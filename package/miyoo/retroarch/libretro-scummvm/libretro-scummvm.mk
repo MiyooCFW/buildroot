@@ -22,6 +22,7 @@ define LIBRETRO_SCUMMVM_BUILD_CMDS
 		CXXFLAGS="$(TARGET_CXXFLAGS) $(LIBRETRO_SCUMMVM_LTO_CXXFLAGS) -ffat-lto-objects" \
 		LDFLAGS="$(TARGET_LDFLAGS) $(LIBRETRO_SCUMMVM_LTO_LDFLAGS) -ffat-lto-objects -shared -Wl,--no-undefined" \
 		$(MAKE) all TOOLSET="$(TARGET_CROSS)" -C $(@D)/backends/platform/libretro/ platform="$(RETROARCH_LIBRETRO_PLATFORM)"
+		$(TARGET_STRIP) --strip-unneeded $(@D)/backends/platform/libretro/scummvm_libretro.so
 endef
 
 define LIBRETRO_SCUMMVM_INSTALL_TARGET_CMDS
