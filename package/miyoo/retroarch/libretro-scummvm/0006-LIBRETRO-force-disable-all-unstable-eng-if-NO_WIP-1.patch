@@ -1,0 +1,26 @@
+From 3e4f8c0f3f3a97cdf9a5e298e8018536029a0c24 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Fri, 14 Feb 2025 14:54:36 +0100
+Subject: [PATCH 6/6] LIBRETRO: force "disable all unstable eng" if NO_WIP=1
+
+---
+ backends/platform/libretro/scripts/configure_engines.sh | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/backends/platform/libretro/scripts/configure_engines.sh b/backends/platform/libretro/scripts/configure_engines.sh
+index 3e1ccecf993..cf69709655e 100755
+--- a/backends/platform/libretro/scripts/configure_engines.sh
++++ b/backends/platform/libretro/scripts/configure_engines.sh
+@@ -80,6 +80,9 @@ if [ $LITE -eq 1 ] ; then
+ 	done
+ fi
+ 
++# Test NO_WIP #2
++[ $NO_WIP -eq 1 ] && engine_disable_all_unstable
++
+ # Define engines list
+ for a in $_engines ; do
+ 	# Collect all default engines dependencies and force to yes
+-- 
+2.45.2.windows.1
+

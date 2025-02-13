@@ -1,0 +1,126 @@
+From 65515eca272474a00fa7af177085fe8fbf687f09 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Wed, 12 Feb 2025 22:11:13 +0100
+Subject: [PATCH 3/5] LIBRETRO: disable large engines with HEAVY flag
+
+0 - default
+1 - enable
+2 - disable
+---
+ backends/platform/libretro/Makefile           |  1 +
+ backends/platform/libretro/Makefile.common    |  3 ++-
+ backends/platform/libretro/heavy_engines.list | 22 +++++++++++++++++++
+ .../libretro/scripts/configure_engines.sh     | 16 +++++++++++++-
+ 4 files changed, 40 insertions(+), 2 deletions(-)
+ create mode 100644 backends/platform/libretro/heavy_engines.list
+
+diff --git a/backends/platform/libretro/Makefile b/backends/platform/libretro/Makefile
+index af2063fef82..4a3cdc99236 100644
+--- a/backends/platform/libretro/Makefile
++++ b/backends/platform/libretro/Makefile
+@@ -290,6 +290,7 @@ else ifeq ($(platform), miyoo)
+    USE_CURL = 0
+    USE_MT32EMU = 0
+    USE_HIGHRES := 0
++   HEAVY := 2
+ 
+ # MIYOOMINI
+ else ifeq ($(platform), miyoomini)
+diff --git a/backends/platform/libretro/Makefile.common b/backends/platform/libretro/Makefile.common
+index 01f2ef19ec2..8e179c48c05 100644
+--- a/backends/platform/libretro/Makefile.common
++++ b/backends/platform/libretro/Makefile.common
+@@ -29,6 +29,7 @@ ENABLE_VKEYBD     = 1
+ HAVE_GCC3         = 1
+ STATIC_LINKING   ?= 0
+ LITE             ?= 0
++HEAVY            ?= 0
+ NO_WIP           ?= 1
+ USE_LIBCO        ?= 1
+ USE_MT32EMU      ?= 1
+@@ -212,7 +213,7 @@ endif
+ 
+ ifeq (,$(filter clean datafiles coreinfo,$(MAKECMDGOALS)))
+ $(info Configuring ScummVM engines...)
+-ifneq ($(shell cd $(SCRIPTS_PATH); ./configure_engines.sh $(ROOT_PATH) $(SCUMMVM_PATH) $(NO_WIP) $(STATIC_LINKING) $(LITE) $(UNAVAILABLE_DEPS)),0)
++ifneq ($(shell cd $(SCRIPTS_PATH); ./configure_engines.sh $(ROOT_PATH) $(SCUMMVM_PATH) $(NO_WIP) $(STATIC_LINKING) $(LITE) $(HEAVY) $(UNAVAILABLE_DEPS)),0)
+    $(error Configuring ScummVM engines failed)
+ else
+ -include $(SCUMMVM_PATH)/config.mk.engines
+diff --git a/backends/platform/libretro/heavy_engines.list b/backends/platform/libretro/heavy_engines.list
+new file mode 100644
+index 00000000000..85606b3fa9c
+--- /dev/null
++++ b/backends/platform/libretro/heavy_engines.list
+@@ -0,0 +1,22 @@
++ags
++
++glk
++
++kyra
++lol
++eob
++
++mads
++madsv2
++
++mm
++mm1
++xeen
++
++tsage
++
++ultima
++ultima1
++ultima4
++ultima6
++ultima8
+diff --git a/backends/platform/libretro/scripts/configure_engines.sh b/backends/platform/libretro/scripts/configure_engines.sh
+index 43a355bd395..3e1ccecf993 100755
+--- a/backends/platform/libretro/scripts/configure_engines.sh
++++ b/backends/platform/libretro/scripts/configure_engines.sh
+@@ -22,12 +22,13 @@
+ # $3     [REQ] NO_WIP [0,1]
+ # $4     [REQ] STATIC_LINKING [0,1]
+ # $5     [REQ] LITE [0,1,2]
++# $6     [REQ] HEAVY [0,1,2]
+ # $[...] [OPT] Engines dependencies not available
+ 
+ set -e
+ 
+ # Exit if in parameters are not provided
+-if [ -z $1 ] || [ -z $2 ] || [ -z $3 ] || [ -z $4 ] || [ -z $5 ] ; then
++if [ -z $1 ] || [ -z $2 ] || [ -z $3 ] || [ -z $4 ] || [ -z $5 ] || [ -z $6 ]; then
+ 	exit 1
+ fi
+ 
+@@ -42,6 +43,8 @@ STATIC_LINKING=$1
+ shift
+ LITE=$1
+ shift
++HEAVY=$1
++shift
+ no_deps=$@
+ 
+ cd "${SCUMMVM_PATH}"
+@@ -60,6 +63,17 @@ tot_deps=""
+ # Test LITE
+ [ $LITE -ne 0 ] && engine_disable_all
+ 
++# Test HEAVY
++if [ $HEAVY -eq 1 ] ; then
++	for eng in $(cat "${BUILD_PATH}"/heavy_engines.list) ; do
++		engine_enable "$eng"
++	done
++elif [ $HEAVY -eq 2 ] ; then
++	for eng in $(cat "${BUILD_PATH}"/heavy_engines.list) ; do
++		engine_disable "$eng"
++	done
++fi
++
+ if [ $LITE -eq 1 ] ; then
+ 	for eng in $(cat "${BUILD_PATH}"/lite_engines.list) ; do
+ 		engine_enable "$eng"
+-- 
+2.45.2.windows.1
+
