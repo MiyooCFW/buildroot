@@ -1,0 +1,34 @@
+From 67682387370edddb2205ff9c1b0fc80b41be23c6 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Tue, 11 Feb 2025 22:22:49 +0100
+Subject: [PATCH 5/5] LR-Makefile: use TREMOR explicitly
+
+thus disable Fluidsynth from build
+also use -fno-PIC
+---
+ backends/platform/libretro/Makefile | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/backends/platform/libretro/Makefile b/backends/platform/libretro/Makefile
+index 4a3cdc99236..a7508996a64 100644
+--- a/backends/platform/libretro/Makefile
++++ b/backends/platform/libretro/Makefile
+@@ -280,12 +280,13 @@ else ifeq ($(platform), miyoo)
+    LD = /opt/miyoo/usr/bin/arm-linux-g++
+    AR = /opt/miyoo/usr/bin/arm-linux-ar cru
+    RANLIB = /opt/miyoo/usr/bin/arm-linux-ranlib
+-   DEFINES += -DDINGUX -fomit-frame-pointer -ffast-math -march=armv5te -mtune=arm926ej-s -fPIC
++   DEFINES += -DDINGUX -fomit-frame-pointer -ffast-math -march=armv5te -mtune=arm926ej-s -fno-PIC
+    DEFINES += -ffunction-sections -fdata-sections -DDEFAULT_PERF_TUNER -DREDUCE_MEMORY_USAGE -DUNCACHED_PLUGINS
+-   LDFLAGS += -shared -Wl,--gc-sections -Wl,--version-script=$(ROOT_PATH)/link.T -fPIC
++   LDFLAGS += -shared -Wl,--gc-sections -Wl,--version-script=$(ROOT_PATH)/link.T -fno-PIC
+    USE_VORBIS = 0
+    USE_THEORADEC = 0
+    USE_TREMOR = 1
++   USE_FLUIDSYNTH = 0
+    USE_LIBCO  = 0
+    USE_CURL = 0
+    USE_MT32EMU = 0
+-- 
+2.45.2.windows.1
+
