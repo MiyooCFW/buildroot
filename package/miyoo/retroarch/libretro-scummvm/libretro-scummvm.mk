@@ -18,11 +18,22 @@ LIBRETRO_SCUMMVM_LTO_LDFLAGS = $(COMPILER_COMMONS_LSFLAGS_SO)
 
 define LIBRETRO_SCUMMVM_BUILD_CMDS
 	$(SED) "s|-O2|-O3|g" $(@D)/backends/platform/libretro/Makefile
+# Compile scummvm_heavy core & scummvm_heavy info file
 	CFLAGS="$(TARGET_CFLAGS) $(LIBRETRO_SCUMMVM_LTO_CFLAGS) -ffat-lto-objects" \
 		CXXFLAGS="$(TARGET_CXXFLAGS) $(LIBRETRO_SCUMMVM_LTO_CXXFLAGS) -ffat-lto-objects" \
 		LDFLAGS="$(TARGET_LDFLAGS) $(LIBRETRO_SCUMMVM_LTO_LDFLAGS) -ffat-lto-objects -shared -Wl,--no-undefined" \
-		$(MAKE) all TOOLSET="$(TARGET_CROSS)" -C $(@D)/backends/platform/libretro/ HEAVY=2 platform="$(RETROARCH_LIBRETRO_PLATFORM)"
-		$(TARGET_STRIP) --strip-unneeded $(@D)/backends/platform/libretro/scummvm_libretro.so
+		$(MAKE) all TOOLSET="$(TARGET_CROSS)" -C $(@D)/backends/platform/libretro/ HEAVY=1 LITE=2 platform="$(RETROARCH_LIBRETRO_PLATFORM)"
+	$(TARGET_STRIP) --strip-unneeded $(@D)/backends/platform/libretro/scummvm_libretro.so
+	mv -fn $(@D)/backends/platform/libretro/scummvm_libretro.so $(@D)/backends/platform/libretro/scummvm_heavy_libretro.so
+	mv -fn $(@D)/backends/platform/libretro/scummvm_libretro.info $(@D)/backends/platform/libretro/scummvm_heavy_libretro.info
+	sed -i 's/display_name = "ScummVM"/display_name = "ScummVM (AGS,Glk,TsAGE,Kyra,Ultima)"/' $(@D)/backends/platform/libretro/scummvm_heavy_libretro.info
+# Clean & Compile scummvm core & scummvm info file
+	$(MAKE) clean TOOLSET="$(TARGET_CROSS)" -C $(@D)/backends/platform/libretro/ platform="$(RETROARCH_LIBRETRO_PLATFORM)"
+	CFLAGS="$(TARGET_CFLAGS) $(LIBRETRO_SCUMMVM_LTO_CFLAGS) -ffat-lto-objects" \
+		CXXFLAGS="$(TARGET_CXXFLAGS) $(LIBRETRO_SCUMMVM_LTO_CXXFLAGS) -ffat-lto-objects" \
+		LDFLAGS="$(TARGET_LDFLAGS) $(LIBRETRO_SCUMMVM_LTO_LDFLAGS) -ffat-lto-objects -shared -Wl,--no-undefined" \
+		$(MAKE) all TOOLSET="$(TARGET_CROSS)" -C $(@D)/backends/platform/libretro/ HEAVY=2 LITE=0 platform="$(RETROARCH_LIBRETRO_PLATFORM)"
+	$(TARGET_STRIP) --strip-unneeded $(@D)/backends/platform/libretro/scummvm_libretro.so
 endef
 
 define LIBRETRO_SCUMMVM_INSTALL_TARGET_CMDS
@@ -32,9 +43,13 @@ define LIBRETRO_SCUMMVM_INSTALL_TARGET_CMDS
 	mv -fn $(@D)/backends/platform/libretro/scummvm/* ${BINARIES_DIR}/retroarch/system/ScummVM/
 	$(INSTALL) -D $(@D)/backends/platform/libretro/ScummVM.dat \
 		${BINARIES_DIR}/retroarch/system/ScummVM.dat
+	$(INSTALL) -D $(@D)/backends/platform/libretro/scummvm_heavy_libretro.so \
+		${BINARIES_DIR}/retroarch/cores/scummvm_heavy_libretro.so
 	$(INSTALL) -D $(@D)/backends/platform/libretro/scummvm_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/scummvm_libretro.so
 # Overwrite existing info file with src generated one
+	$(INSTALL) -D -m 0644 $(@D)/backends/platform/libretro/scummvm_heavy_libretro.info \
+		${BINARIES_DIR}/retroarch/core_info/scummvm_heavy_libretro.info
 	$(INSTALL) -D -m 0644 $(@D)/backends/platform/libretro/scummvm_libretro.info \
 		${BINARIES_DIR}/retroarch/core_info/scummvm_libretro.info
 endef
