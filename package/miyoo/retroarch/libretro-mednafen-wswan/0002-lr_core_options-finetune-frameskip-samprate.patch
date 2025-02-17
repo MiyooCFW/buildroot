@@ -1,0 +1,53 @@
+From eaece46af09d9a79466d0dd2f9450356e9c84057 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sun, 16 Feb 2025 23:11:50 +0100
+Subject: [PATCH 2/2] lr_core_options: finetune frameskip & samprate
+
+disable 60Hz mode
+---
+ libretro_core_options.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/libretro_core_options.h b/libretro_core_options.h
+index 462ff2c..22cb9f4 100644
+--- a/libretro_core_options.h
++++ b/libretro_core_options.h
+@@ -151,7 +151,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+          { "manual",   "Manual" },
+          { NULL, NULL },
+       },
+-      "disabled"
++      "manual"
+    },
+    {
+       "wswan_frameskip_threshold",
+@@ -179,7 +179,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+          { "60", NULL },
+          { NULL, NULL },
+       },
+-      "33"
++      "60"
+    },
+    {
+       "wswan_60hz_mode",
+@@ -193,7 +193,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+          { "enabled",  NULL },
+          { NULL, NULL },
+       },
+-      "enabled",
++      "disabled",
+    },
+    {
+       "wswan_sound_sample_rate",
+@@ -209,7 +209,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+          { "48000",  NULL },
+          { NULL, NULL },
+       },
+-      "44100",
++      "11025",
+    },
+    {
+       "wswan_sound_low_pass",
+-- 
+2.45.2.windows.1
+
