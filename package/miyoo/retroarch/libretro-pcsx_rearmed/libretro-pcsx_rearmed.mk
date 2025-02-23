@@ -12,9 +12,9 @@ LIBRETRO_PCSX_REARMED_LICENSE_FILES = COPYING
 # Optimize build with Profile Guided Optimization (values: 0, YES, APPLY)
 LIBRETRO_PCSX_REARMED_PGO ?= APPLY
 
-ifeq ($(LIBRETRO_PCSX_REARMED_PGO), APPLY)
+ifeq ($(LIBRETRO_PCSX_REARMED_PGO),APPLY)
 define LIBRETRO_PCSX_REARMED_CONFIGURE_CMDS
-       cp -r $(BASE_DIR)/../board/miyoo/profile/libretro-pcsx_rearmed/* $(@D)/
+	cp -r $(BASE_DIR)/../board/miyoo/profile/$(LIBC)/libretro-pcsx_rearmed/* $(@D)/
 endef
 endif
 
