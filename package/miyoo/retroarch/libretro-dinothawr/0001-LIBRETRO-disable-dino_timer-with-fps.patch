@@ -1,0 +1,26 @@
+From 092f320fd69b410a475d1bb8ea941db11ffe9224 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Fri, 21 Feb 2025 16:30:20 +0100
+Subject: [PATCH] LIBRETRO: disable `dino_timer` with fps
+
+ optimize for miyoo
+---
+ libretro_core_options.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libretro_core_options.h b/libretro_core_options.h
+index d984394..2a2be0b 100644
+--- a/libretro_core_options.h
++++ b/libretro_core_options.h
+@@ -36,7 +36,7 @@ struct retro_core_option_definition option_defs_us[] = {
+          { "disabled",  NULL },
+          { NULL, NULL},
+       },
+-      "enabled",
++      "disabled",
+    },
+    { NULL, NULL, NULL, { NULL, NULL }, NULL },
+ };
+-- 
+2.45.2.windows.1
+
