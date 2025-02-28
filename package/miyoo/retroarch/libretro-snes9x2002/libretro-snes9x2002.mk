@@ -19,9 +19,9 @@ LIBRETRO_SNES9X2002_PGO ?= APPLY
 #LIBRETRO_SNES9X2002_SUPP_OPT+=ARM_ASM=1
 #LIBRETRO_SNES9X2002_SUPP_CFLAGS+=-Wa,-mimplicit-it=thumb
 
-ifeq ($(LIBRETRO_SNES9X2002_PGO), APPLY)
+ifeq ($(LIBRETRO_SNES9X2002_PGO),APPLY)
 define LIBRETRO_SNES9X2002_CONFIGURE_CMDS
-       cp -r $(BASE_DIR)/../board/miyoo/profile/libretro-snes9x2002/* $(@D)/
+	cp -r $(BASE_DIR)/../board/miyoo/profile/$(LIBC)/libretro-snes9x2002/* $(@D)/
 endef
 endif
 
