@@ -1,0 +1,4 @@
+title=fake08
+description=fake08 libretro core
+exec=/mnt/emus/retroarch/fake08.sh
+selectordir=/mnt/roms/PICO8

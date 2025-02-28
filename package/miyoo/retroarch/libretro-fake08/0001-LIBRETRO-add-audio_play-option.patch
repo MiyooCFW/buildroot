@@ -1,0 +1,87 @@
+From fb59413d4d6897ac47862a47e5cf8a9fb30df107 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Thu, 20 Feb 2025 22:52:10 +0100
+Subject: [PATCH] LIBRETRO: add `audio_play` option
+
+---
+ platform/libretro/libretro.cpp            | 20 ++++++++++++++++++--
+ platform/libretro/libretro_core_options.h | 11 +++++++++++
+ 2 files changed, 29 insertions(+), 2 deletions(-)
+
+diff --git a/platform/libretro/libretro.cpp b/platform/libretro/libretro.cpp
+index 47fa867..daeb526 100644
+--- a/platform/libretro/libretro.cpp
++++ b/platform/libretro/libretro.cpp
+@@ -35,6 +35,7 @@ static retro_log_printf_t log_cb;
+ const size_t audioBufferSize = SAMPLESPERFRAME * NUM_BUFFERS;
+ 
+ int16_t audioBuffer[audioBufferSize];
++int16_t audioBufferNULL[audioBufferSize];
+ 
+ const int PicoScreenWidth = 128;
+ const int PicoScreenHeight = 128;
+@@ -45,6 +46,8 @@ static int crop_h_right = 0;
+ static int crop_v_top = 0;
+ static int crop_v_bottom = 0;
+ 
++static bool option_audio_fill_buffer = true;
++
+ const size_t screenBufferSize = PicoScreenWidth*PicoScreenHeight;
+ uint16_t screenBuffer[screenBufferSize];
+ 
+@@ -72,6 +75,15 @@ static void check_variables(bool startup)
+     struct retro_variable var = {0};
+     int video_updated = 0;
+ 
++    var.key = "audio_play";
++    if (enviro_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
++    {
++       if (!strcmp(var.value, "enabled"))
++          option_audio_fill_buffer = true;
++       else if (!strcmp(var.value, "disabled"))
++          option_audio_fill_buffer = false;
++    }
++
+     var.key = "fake08_video_scale";
+     if (enviro_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+     {
+@@ -404,8 +416,12 @@ EXPORT void retro_run()
+         kDown = currKDown;
+ 
+         if (frame % 2 == 0) {
+-            _audio->FillAudioBuffer(&audioBuffer, 0, SAMPLESPERFRAME);
+-            audio_batch_cb(audioBuffer, SAMPLESPERFRAME);
++            if (option_audio_fill_buffer) {
++                _audio->FillAudioBuffer(&audioBuffer, 0, SAMPLESPERFRAME);
++                audio_batch_cb(audioBuffer, SAMPLESPERFRAME);
++            } else {
++                audio_batch_cb(audioBufferNULL, SAMPLESPERFRAME);
++            }
+         }
+ 
+     }
+diff --git a/platform/libretro/libretro_core_options.h b/platform/libretro/libretro_core_options.h
+index 02c3a1a..af05ffc 100644
+--- a/platform/libretro/libretro_core_options.h
++++ b/platform/libretro/libretro_core_options.h
+@@ -49,6 +49,17 @@ extern "C" {
+  *   frontend language definition */
+ 
+ struct retro_core_option_definition option_defs_us[] = {
++   {
++      "audio_play",
++      "Audio playback",
++      "Enable or disable Audio playback for performance sake",
++      {
++         { "enabled", NULL },
++         { "disabled", NULL },
++         { NULL, NULL },
++      },
++      "enabled"
++   },
+    {
+       "fake08_video_scale",
+       "Video Scale",
+-- 
+2.45.2.windows.1
+

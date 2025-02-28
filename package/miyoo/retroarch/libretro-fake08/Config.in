@@ -1,0 +1,11 @@
+config BR2_PACKAGE_LIBRETRO_FAKE08
+	bool "libretro-fake08"
+	depends on BR2_PACKAGE_RETROARCH
+	depends on BR2_INSTALL_LIBSTDCPP
+	help
+	  A libretro PICO-8 emulator core.
+
+	  https://github.com/jtothebell/fake-08
+
+comment "LIBRETRO_FAKE08 needs a toolchain w/ C++"
+	depends on !BR2_INSTALL_LIBSTDCPP

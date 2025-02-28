@@ -1,0 +1,29 @@
+From 9573ce039aa2ea1a9eb730b5b9e215cc7c4a9955 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sat, 22 Feb 2025 15:02:35 +0100
+Subject: [PATCH] LIBRETRO: disable audio on UCLIBC
+
+FillAudioBuffer() is botched here
+---
+ platform/libretro/libretro_core_options.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/platform/libretro/libretro_core_options.h b/platform/libretro/libretro_core_options.h
+index af05ffc..5399c6d 100644
+--- a/platform/libretro/libretro_core_options.h
++++ b/platform/libretro/libretro_core_options.h
+@@ -58,7 +58,11 @@ struct retro_core_option_definition option_defs_us[] = {
+          { "disabled", NULL },
+          { NULL, NULL },
+       },
++#if !defined(__UCLIBC__)
+       "enabled"
++#else
++      "disabled"
++#endif
+    },
+    {
+       "fake08_video_scale",
+-- 
+2.45.2.windows.1
+
