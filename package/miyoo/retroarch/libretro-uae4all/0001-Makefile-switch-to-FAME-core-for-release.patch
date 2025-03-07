@@ -1,0 +1,30 @@
+From 6818b11ac6369be5867b0eabb1b3cf2686b25723 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Fri, 7 Mar 2025 21:55:24 +0100
+Subject: [PATCH] Makefile: switch to FAME core for release
+
+for faster emulation
+---
+ Makefile.libretro | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile.libretro b/Makefile.libretro
+index 71d0301..2b53614 100644
+--- a/Makefile.libretro
++++ b/Makefile.libretro
+@@ -36,9 +36,9 @@ endif
+ 
+ all: $(TARGET)
+ 
+-CYCLONE_CORE=1
+-#FAME_CORE=1
+-#FAME_CORE_C=1
++#CYCLONE_CORE=1
++FAME_CORE=1
++FAME_CORE_C=1
+ #LIB7Z=1
+ ifeq ($(platform),)
+ LDFLAGS     = -lz -lpthread
+-- 
+2.45.2.windows.1
+
