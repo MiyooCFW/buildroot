@@ -1,14 +1,14 @@
-From 9872ea07fab71eddfdd52df1840dff0ef5dba36d Mon Sep 17 00:00:00 2001
+From e2d231e9839e27d1c7a2692496c1edc6cb2dec95 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Sun, 16 Feb 2025 21:00:26 +0100
 Subject: [PATCH 1/2] Makefile: optimize & pgo flags
 
 ---
- Makefile | 17 ++++++++++++++---
- 1 file changed, 14 insertions(+), 3 deletions(-)
+ Makefile | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
 
 diff --git a/Makefile b/Makefile
-index 851dd5b..b2e06c6 100644
+index ef2deca..eb8ecbd 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -12,6 +12,8 @@ filter_out2 = $(call filter_out1,$(call filter_out1,$1))
@@ -20,12 +20,17 @@ index 851dd5b..b2e06c6 100644
  # system platform
  ifeq ($(platform),)
     platform = unix
-@@ -325,9 +327,18 @@ else ifeq ($(platform), miyoo)
+@@ -329,9 +331,23 @@ else ifeq ($(platform), miyoo)
     CC = /opt/miyoo/usr/bin/arm-linux-gcc
     CXX = /opt/miyoo/usr/bin/arm-linux-g++
     AR = /opt/miyoo/usr/bin/arm-linux-ar
 -   fpic := -fPIC
++   LIBC ?= $(shell $(CC) -print-file-name=libc.so | grep -q musl && echo "musl" || echo "glibc")
++ifeq ($(LIBC),musl)
++   fpic := -fPIC # brakes otherwise shared object core when profiling with gcc
++else
 +   fpic := -fno-PIC
++endif
     SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
 -   FLAGS += -fomit-frame-pointer -ffast-math -march=armv5te -mtune=arm926ej-s
 +   FLAGS += -fomit-frame-pointer -ffast-math -march=armv5te -mtune=arm926ej-s \
@@ -41,7 +46,7 @@ index 851dd5b..b2e06c6 100644
  
  # Windows MSVC 2017 all architectures
  else ifneq (,$(findstring windows_msvc2017,$(platform)))
-@@ -562,7 +573,7 @@ all: $(TARGET)
+@@ -566,7 +582,7 @@ all: $(TARGET)
  ifeq ($(DEBUG),1)
     FLAGS += -O0 -g
  else
