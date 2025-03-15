@@ -1,0 +1,100 @@
+From 958a3a4c41917a61dbfb51c3d7e15266110f8a58 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sat, 15 Mar 2025 13:56:30 +0100
+Subject: [PATCH] LIBRETRO: update core_options
+
+- add extra low CPU values (def 40)
+- disable dithering
+- enable fast_lighting
+- enable frameskip (def: auto_threshold 60%)
+---
+ frontend/libretro_core_options.h | 32 ++++++++++++++++++++++++++------
+ 1 file changed, 26 insertions(+), 6 deletions(-)
+
+diff --git a/frontend/libretro_core_options.h b/frontend/libretro_core_options.h
+index 8c457582..8cb42c0e 100644
+--- a/frontend/libretro_core_options.h
++++ b/frontend/libretro_core_options.h
+@@ -233,13 +233,33 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+ #if defined(HAVE_PRE_ARMV7) && !defined(_3DS)
+       " Default is 50."
+ #else
+-      " Default is 57."
++      " Default is 40."
+ #endif
+       ,
+       NULL,
+       "system",
+       {
+          { "auto", "Auto" },
++         { "10",  NULL },
++         { "11",  NULL },
++         { "12",  NULL },
++         { "13",  NULL },
++         { "14",  NULL },
++         { "15",  NULL },
++         { "16",  NULL },
++         { "17",  NULL },
++         { "18",  NULL },
++         { "19",  NULL },
++         { "20",  NULL },
++         { "21",  NULL },
++         { "22",  NULL },
++         { "23",  NULL },
++         { "24",  NULL },
++         { "25",  NULL },
++         { "26",  NULL },
++         { "27",  NULL },
++         { "28",  NULL },
++         { "29",  NULL },
+          { "30",  NULL },
+          { "31",  NULL },
+          { "32",  NULL },
+@@ -313,7 +333,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+          { "100", NULL },
+          { NULL, NULL },
+       },
+-      "auto",
++      "40",
+    },
+    {
+       "pcsx_rearmed_dithering",
+@@ -328,7 +348,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+          { "force",    "Force" },
+          { NULL, NULL },
+       },
+-#if defined(_3DS)
++#if defined(_3DS) || defined(_MIYOO)
+       "disabled",
+ #else
+       "enabled",
+@@ -365,7 +385,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+          { "fixed_interval", "Fixed Interval" },
+          { NULL, NULL },
+       },
+-      "disabled"
++      "auto_threshold"
+    },
+    {
+       "pcsx_rearmed_frameskip_threshold",
+@@ -393,7 +413,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+          { "60", NULL },
+          { NULL, NULL },
+       },
+-      "33"
++      "60"
+    },
+    {
+       "pcsx_rearmed_frameskip_interval",
+@@ -793,7 +813,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+          { "enabled",  NULL },
+          { NULL, NULL},
+       },
+-      "disabled",
++      "enabled",
+    },
+    {
+       "pcsx_rearmed_gpu_unai_scale_hires",
+-- 
+2.45.2.windows.1
+

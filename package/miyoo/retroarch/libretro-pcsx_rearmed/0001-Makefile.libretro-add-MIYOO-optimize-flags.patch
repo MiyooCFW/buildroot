@@ -1,0 +1,55 @@
+From 74e0c8c8f675fc9e07a04e15960cbf1ac2f98997 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Thu, 13 Mar 2025 23:12:39 +0100
+Subject: [PATCH] Makefile.libretro: add MIYOO optimize flags
+
+with PGO instructions (no LTO cuz we target dynamic linking here), also reduce optimization to -O2 for profiler
+---
+ Makefile.libretro | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile.libretro b/Makefile.libretro
+index 2197946c..1b0f7a2e 100644
+--- a/Makefile.libretro
++++ b/Makefile.libretro
+@@ -607,13 +607,35 @@ else ifneq (,$(findstring armv,$(platform)))
+ 
+ else ifeq ($(platform), miyoo)
+ 	TARGET := $(TARGET_NAME)_libretro.so
+-	fpic := -fPIC
+-	CFLAGS += -mcpu=arm926ej-s -fsingle-precision-constant
++	LIBC ?= $(shell $(CC) -print-file-name=libc.so | grep -q musl && echo "musl" || echo "glibc")
++ifeq ($(LIBC),musl)
++	fpic := -fPIC # brakes otherwise shared object core when profiling with gcc
++else
++	fpic := -fno-PIC
++endif
++	CFLAGS += -mcpu=arm926ej-s -fsingle-precision-constant \
++	-O2 -fdata-sections -ffunction-sections -fsingle-precision-constant
+ 	CFLAGS += -DGPU_UNAI_USE_INT_DIV_MULTINV -D_MIYOO
++	CFLAGS += -fno-common -fno-ipa-cp -fno-caller-saves -fno-regmove -finline-limit=42 \
++	-fuse-linker-plugin \
++	-fno-stack-protector -fno-ident -fomit-frame-pointer \
++	-fno-unroll-loops -ffast-math \
++	-marm
++	CXXFLAGS += $(CFLAGS)
++	CPPFLAGS += $(CFLAGS)
++	ASFLAGS += $(CFLAGS)
++	THREAD_RENDERING := 1
+ 	ARCH = arm
+ 	BUILTIN_GPU = unai
+ 	DYNAREC = ari64
+ 	HAVE_NEON = 0
++	BASE_ADDR_DYNAMIC := 1
++ifeq ($(PROFILE), YES)
++	CFLAGS += -fprofile-generate=/mnt/profile # rm path if you want dir structure intact at runtime
++	LDFLAGS += -lgcov
++else ifeq ($(PROFILE), APPLY)
++	CFLAGS += -fprofile-use -fbranch-probabilities -Wno-error=coverage-mismatch
++endif
+ 
+ # Emscripten
+ else ifeq ($(platform), emscripten)
+-- 
+2.45.2.windows.1
+
