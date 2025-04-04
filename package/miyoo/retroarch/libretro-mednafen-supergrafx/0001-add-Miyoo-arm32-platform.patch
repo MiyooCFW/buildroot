@@ -1,0 +1,61 @@
+From ea2dccde13f83fb4e84c694332761e9cf9d16b47 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Wed, 2 Apr 2025 22:11:05 +0200
+Subject: [PATCH] add Miyoo (arm32) platform
+
+with pipeline build
+---
+ .gitlab-ci.yml | 10 ++++++++++
+ Makefile       | 10 ++++++++++
+ 2 files changed, 20 insertions(+)
+
+diff --git a/.gitlab-ci.yml b/.gitlab-ci.yml
+index 36d1353..1ac1ab3 100644
+--- a/.gitlab-ci.yml
++++ b/.gitlab-ci.yml
+@@ -87,6 +87,10 @@ include:
+   - project: 'libretro-infrastructure/ci-templates'
+     file: '/tvos-arm64.yml'
+ 
++  # OpenDingux (ARM)
++  - project: 'libretro-infrastructure/ci-templates'
++    file: '/dingux-arm32.yml'
++
+   #################################### MISC ##################################
+ 
+ # Stages for building
+@@ -227,3 +231,9 @@ libretro-build-vita:
+   extends:
+     - .libretro-vita-static-retroarch-master
+     - .core-defs
++
++# Miyoo
++libretro-build-miyoo-arm32:
++  extends:
++    - .libretro-miyoo-arm32-make-default
++    - .core-defs
+\ No newline at end of file
+diff --git a/Makefile b/Makefile
+index f85b900..38b6454 100644
+--- a/Makefile
++++ b/Makefile
+@@ -264,6 +264,16 @@ else ifeq ($(platform), vita)
+    STATIC_LINKING = 1
+    EXTRA_INCLUDES := -I"$(VITASDK)/arm-vita-eabi/include"
+ 
++# Miyoo
++else ifeq ($(platform), miyoo)
++   TARGET := $(TARGET_NAME)_libretro.so
++   CC = /opt/miyoo/usr/bin/arm-linux-gcc
++   CXX = /opt/miyoo/usr/bin/arm-linux-g++
++   AR = /opt/miyoo/usr/bin/arm-linux-ar
++   fpic := -fno-PIC
++   SHARED := -shared -Wl,--no-undefined -Wl,--version-script=link.T
++   FLAGS += -fomit-frame-pointer -ffast-math -march=armv5te -mtune=arm926ej-s
++
+ # Xbox 360
+ else ifeq ($(platform), xenon)
+    TARGET := $(TARGET_NAME)_libretro_xenon360.a
+-- 
+2.45.2.windows.1
+

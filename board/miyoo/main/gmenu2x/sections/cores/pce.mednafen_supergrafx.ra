@@ -1,0 +1,4 @@
+title=mednafen_supergrafx
+description=mednafen_supergrafx libretro core
+exec=/mnt/emus/retroarch/mednafen_supergrafx.sh
+selectordir=/mnt/roms/PCE
