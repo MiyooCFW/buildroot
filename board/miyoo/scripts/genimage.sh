@@ -13,7 +13,11 @@ if test $(git tag | wc -l) -ne 0; then
 	BR2_ITERATION="$(git rev-list --count ${BR2_TAG}..HEAD)"
 fi
 
-BR2_HASH="$(git rev-parse --short HEAD)" # not using print-version from BR2_VERSION_FULL
+if git diff-index --quiet HEAD; then
+	BR2_HASH="$(git rev-parse --short HEAD)" # not using print-version from BR2_VERSION_FULL
+else
+	BR2_HASH="dirty"
+fi
 if (test "$CFW_HASH" == "$BR2_HASH" || test -z "$CFW_HASH"); then
 	CFW_TYPE="br2_dist"
 	CFW_HASH="$BR2_HASH"
