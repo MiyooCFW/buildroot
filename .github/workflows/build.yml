@@ -1,7 +1,13 @@
 name: Buildroot
 on:
   push:
+    paths-ignore:
+      - '*.md'
+      - '*.png'
   pull_request:
+    paths-ignore:
+      - '*.md'
+      - '*.png'
   workflow_dispatch:
   workflow_call:
     inputs:
