@@ -1,5 +1,5 @@
 # Buildroot Package for Miyoo CFW 2.0.0
-Opensource development package for Miyoo handhelds
+Opensource development package for Miyoo handhelds.
 
 ## Install
 
