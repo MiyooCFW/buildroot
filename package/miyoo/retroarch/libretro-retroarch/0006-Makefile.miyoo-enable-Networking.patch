@@ -1,0 +1,25 @@
+From 9116e6ccb9fba122d962876963b17fb1f72454f3 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Mon, 10 Mar 2025 20:46:29 +0100
+Subject: [PATCH] Makefile.miyoo: enable Networking
+
+---
+ Makefile.miyoo | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile.miyoo b/Makefile.miyoo
+index 4c4d92b208..87013d37f0 100644
+--- a/Makefile.miyoo
++++ b/Makefile.miyoo
+@@ -112,7 +112,7 @@ HAVE_LIBSHAKE = 0
+ HAVE_CORE_INFO_CACHE = 1
+ #HAVE_TINYALSA = 1
+ HAVE_NEAREST_RESAMPLER = 1
+-
++HAVE_NETWORKING = 1
+ OS = Linux
+ TARGET = retroarch
+ 
+-- 
+2.45.2.windows.1
+

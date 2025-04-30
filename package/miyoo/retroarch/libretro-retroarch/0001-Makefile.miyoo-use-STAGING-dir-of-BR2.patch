@@ -1,5 +1,14 @@
+From a5fdd63c17a1410c5a81c4d55faebfe45305550c Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Mon, 10 Mar 2025 20:39:21 +0100
+Subject: [PATCH] Makefile.miyoo: use STAGING dir of BR2
+
+---
+ Makefile.miyoo | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
 diff --git a/Makefile.miyoo b/Makefile.miyoo
-index 751cdf2639..df9c37fc33 100644
+index 2880af10ad..68e047898c 100644
 --- a/Makefile.miyoo
 +++ b/Makefile.miyoo
 @@ -3,7 +3,7 @@
@@ -27,3 +36,6 @@ index 751cdf2639..df9c37fc33 100644
  
  #########################
  #########################
+-- 
+2.45.2.windows.1
+

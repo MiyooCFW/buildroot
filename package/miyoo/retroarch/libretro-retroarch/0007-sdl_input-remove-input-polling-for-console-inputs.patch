@@ -1,0 +1,43 @@
+From f9f4635e7c5c19cd703ba687d649effe2666dcbd Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Wed, 30 Apr 2025 23:13:22 +0200
+Subject: [PATCH] sdl_input: remove input polling for console inputs
+
+fix double events register in e.g. on screen keyboard (osk), when using handheld btns
+---
+ input/drivers/sdl_input.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/input/drivers/sdl_input.c b/input/drivers/sdl_input.c
+index 169e92bffa..e491e5497d 100644
+--- a/input/drivers/sdl_input.c
++++ b/input/drivers/sdl_input.c
+@@ -446,6 +446,25 @@ static void sdl_input_poll(void *data)
+          if (event.key.keysym.mod & 0x8000 /*KMOD_SCROLL*/)
+             mod |= RETROKMOD_SCROLLOCK;
+ 
++#ifdef MIYOO
++            if (event.key.keysym.sym != SDLK_UP &&
++            event.key.keysym.sym != SDLK_DOWN &&
++            event.key.keysym.sym != SDLK_LEFT &&
++            event.key.keysym.sym != SDLK_RIGHT &&
++            event.key.keysym.sym != SDLK_LALT &&
++            event.key.keysym.sym != SDLK_LCTRL &&
++            event.key.keysym.sym != SDLK_LSHIFT &&
++            event.key.keysym.sym != SDLK_SPACE &&
++            event.key.keysym.sym != SDLK_TAB &&
++            event.key.keysym.sym != SDLK_BACKSPACE &&
++            event.key.keysym.sym != SDLK_PAGEUP &&
++            event.key.keysym.sym != SDLK_PAGEDOWN &&
++            event.key.keysym.sym != SDLK_RALT &&
++            event.key.keysym.sym != SDLK_RSHIFT &&
++            event.key.keysym.sym != SDLK_RCTRL)
++            //event.key.keysym.sym != SDLK_RETURN
++            //event.key.keysym.sym != SDLK_ESCAPE
++#endif
+          input_keyboard_event(event.type == SDL_KEYDOWN, code, code, mod,
+                RETRO_DEVICE_KEYBOARD);
+       }
+-- 
+2.45.2.windows.1
+
