@@ -21,6 +21,7 @@
 ::sysinit:/bin/mount -a
 ::sysinit:/bin/hostname -F /etc/hostname
 ::sysinit:/bin/mount /dev/mmcblk0p4 /mnt -o commit=5,flushoncommit,noatime,nodiratime,exec
+::sysinit:/bin/mount /dev/mmcblk0p5 /roms -o rw,noatime,nodiratime
 ::sysinit:/bin/mount /dev/mmcblk0p1 /boot -t vfat -o ro,exec,sync,utf8
 ::sysinit:/sbin/swapon /dev/mmcblk0p3
 
