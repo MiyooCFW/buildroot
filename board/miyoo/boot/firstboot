@@ -507,56 +507,63 @@ mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
 #grep all partitions current size
 SD_SIZE=$(cat "/sys/block/mmcblk0/size")
-P1_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p1/size")
-P2_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p2/size")
-P3_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p3/size")
-P4_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p4/size")
+P1_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p1/size") # BOOT
+P2_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p2/size") # ROOTFS
+P3_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p3/size") # SWAP
+P4_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p4/size") # MAIN
+P5_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p5/size") # ROMS
 SD_SIZE_IN_MiB=$((SD_SIZE * 512 / 1024 / 1024))
 SD_SIZE_IN_GiB=$((SD_SIZE * 512 / 1024 / 1024 / 1024))
 BOOT_SIZE=$(((1016+1) * 1024 / 512)) #bootloader partition=1016K (see `genimage` script in buildroot)
 ## boot_size calculated to 512 byte sector size blocks, adding +1K as a safety measure for roundups (at fatresize we use KibiBits)
 
-#Calculate unallocated left space to expand MAIN:
-SD_MAX_UNALL_SIZE="$((${SD_SIZE} - (${P1_SIZE} + ${P2_SIZE} + ${P3_SIZE} + ${P4_SIZE}) - $BOOT_SIZE))"
+#Calculate unallocated left space to expand ROMS partition:
+SD_MAX_UNALL_SIZE="$((${SD_SIZE} - (${P1_SIZE} + ${P2_SIZE} + ${P3_SIZE} + ${P4_SIZE} + ${P5_SIZE}) - $BOOT_SIZE))"
 SD_MAX_UNALL_SIZE_IN_MiB=$((SD_MAX_UNALL_SIZE * 512 / 1024 / 1024))
 SD_MAX_UNALL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_UNALL_SIZE} * 512 / 1024 / 1024 / 1024" | bc)
 
-#Calculate available space for 4'th partition (MAIN):
+#Calculate available space for 4'th partition (ROMS):
 SD_MAX_AVAIL_SIZE="$((${SD_SIZE} - (${P1_SIZE} + ${P2_SIZE} + ${P3_SIZE}) - $BOOT_SIZE))"
 SD_MAX_AVAIL_SIZE_IN_KiB=$((SD_MAX_AVAIL_SIZE * 512 / 1024))
 
-# Expand_MAIN_Partition-prompt for fatresize the p4 partition if requested
+# Expand_ROMS_Partition-prompt for the p5 (ROMS) EXT4 partition if requested
 RESIZE_COMMENCED=false
 if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RESIZE" \
-   --colors --pause "\n\n       \Z5Expand MAIN partition?\Zn\n\n   Select an option & press START
+   --colors --pause "\n\n       \Z5Expand ROMS partition?\Zn\n\n   Select an option & press START
    \n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of BTRFS partition will begin." 15 60 10); then
 	clear
 	SD_MAX_AVAIL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_AVAIL_SIZE_IN_KiB} / 1024 / 1024" | bc) #only to inform user about end point for resize
 	SD_MAX_AVAIL_SIZE_IN_GB=$(echo "scale=1; ${SD_MAX_AVAIL_SIZE_IN_KiB} * 1024 / 1000 / 1000 / 1000" | bc)
-	P4_SIZE_IN_GB=$(echo "scale=1; ${P4_SIZE} * 512 / 1000 / 1000 / 1000" | bc)
+	P5_SIZE_IN_GB=$(echo "scale=1; ${P5_SIZE} * 512 / 1000 / 1000 / 1000" | bc)
 	# roundup GB value to 0,1GB for integer calculations:
 	SD_MAX_AVAIL_SIZE_IN_GBx10=$(echo "$SD_MAX_AVAIL_SIZE_IN_GB" | tr -d ".")
-	P4_SIZE_IN_GBx10=$(echo "$P4_SIZE_IN_GB" | tr -d ".")
+	P5_SIZE_IN_GBx10=$(echo "$P5_SIZE_IN_GB" | tr -d ".")
 	#Sanity checks if we don't down- or over-resize partition:
-	if (test "$P4_SIZE_IN_GBx10" -ge "$SD_MAX_AVAIL_SIZE_IN_GBx10" || test "$SD_MAX_UNALL_SIZE_IN_MiB" -le 15); then
-		echo "Your MAIN partition is greater than available space for resizing or you lack unallocated sectors space" | tee -a ${LOG}
+	RESIZE_ABORT=false
+	if (test "$P5_SIZE_IN_GBx10" -ge "$SD_MAX_AVAIL_SIZE_IN_GBx10" || test "$SD_MAX_UNALL_SIZE_IN_MiB" -le 15); then
+		echo "Your ROMS partition is greater than available space for resizing or you lack unallocated sectors space" | tee -a ${LOG}
 		sleep 1.5
 		RESIZE_ABORT=true
 	fi
-	echo "The full size of your SD is ${SD_SIZE_IN_MiB}MB large" | tee -a ${LOG}
-	echo "Unallocated space available for resizing equals ${SD_MAX_UNALL_SIZE_IN_GiB}GB," | tee -a ${LOG}
-	echo "and more precisely it's ${SD_MAX_UNALL_SIZE_IN_MiB}MB big" | tee -a ${LOG}
-	echo "Resizing the MAIN partition to ${SD_MAX_AVAIL_SIZE_IN_GiB}GB." | tee -a ${LOG}
-	echo "This can take a few seconds." | tee -a ${LOG}
-	umount /dev/mmcblk0p4 | tee -a ${LOG}
-	P4_START_POINT=` parted /dev/mmcblk0 unit MB print | grep '4' | tail -n1 | awk '{print $2}'`
-	parted -a optimal /dev/mmcblk0 --script rm 4  | tee -a ${LOG}
-	parted -a optimal /dev/mmcblk0 --script mkpart primary $P4_START_POINT 100%  | tee -a ${LOG}
-	partx -u /dev/mmcblk0  | tee -a ${LOG}
-	mount /dev/mmcblk0p4 ${HOME} | tee -a ${LOG}
-	btrfs filesystem resize max ${HOME} | tee -a ${LOG}
-	partprobe
-	RESIZE_COMMENCED=true
+	if ! $RESIZE_ABORT; then
+		echo "The full size of your SD is ${SD_SIZE_IN_MiB}MB large" | tee -a ${LOG}
+		echo "Unallocated space available for resizing equals ${SD_MAX_UNALL_SIZE_IN_GiB}GB," | tee -a ${LOG}
+		echo "and more precisely it's ${SD_MAX_UNALL_SIZE_IN_MiB}MB big" | tee -a ${LOG}
+		echo "Resizing the ROMS partition to ${SD_MAX_AVAIL_SIZE_IN_GiB}GB." | tee -a ${LOG}
+		echo "This can take a few seconds." | tee -a ${LOG}
+		umount /dev/mmcblk0p5 | tee -a ${LOG}
+		P5_START_POINT=` parted --script /dev/mmcblk0 unit MB print | grep '5' | tail -n1 | awk '{print $2}'`
+		parted -a optimal /dev/mmcblk0 --script rm '5'  | tee -a ${LOG}
+		parted -a optimal /dev/mmcblk0 --script mkpart roms $P5_START_POINT 100%  | tee -a ${LOG}
+		partx -u /dev/mmcblk0  | tee -a ${LOG}
+		mount /dev/mmcblk0p5 /roms | tee -a ${LOG}
+		resize2fs /dev/mmcblk0p5 | tee -a ${LOG}
+		partprobe
+		RESIZE_COMMENCED=true
+	else
+		echo "ROMS partition resizing was aborted!" | tee -a ${LOG}
+		sleep 2
+	fi
 fi
 
 # Cleanup - delete the temporary file storing variable value
