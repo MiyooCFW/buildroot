@@ -95,7 +95,7 @@ elif test -r "${HOME}/firstboot.completed"; then
 	rm "${HOME}/firstboot.completed"
 fi
 
-if !(grep -q FAT_CHECK\=\0 "${HOME}/options.cfg"); then
+if !(grep -q FS_CHECK\=\0 "${HOME}/options.cfg"); then
 ##Check if FAT16 is flagged as "dirty", and if so unmount, repair, remount
 	if dmesg | grep "mmcblk0p1" > /dev/null;  then
 		echo -e "\e[31mDirty sectors detected.\e[0m"
@@ -104,6 +104,17 @@ if !(grep -q FAT_CHECK\=\0 "${HOME}/options.cfg"); then
 		fsck.vfat -y /dev/mmcblk0p1 > /dev/null; 
 		mount /dev/mmcblk0p1 "${BOOTDIR}" -t vfat -o ro,exec,sync,utf8
 		echo -e "\e[32mCheck complete.\e[0m"
+	fi
+##Check if EXT4 is flagged as "dirty", and if so unmount, repair, remount
+##Check if EXT4 in MAIN is flagged as "dirty", and if so unmount, repair, remount
+ 
+
+	if dmesg | grep "EXT4-fs (mmcblk0p4): warning: mounting fs with errors, running e2fsck is recommended" > /dev/null;  then
+		echo -e "\e[31mUnclean shutdown detected.\e[0m"
+		echo -e "\e[32mChecking FAT32 partition...\e[0m"
+		umount /dev/mmcblk0p4
+		fsck /dev/mmcblk0p4 > /dev/null; 
+		mount /dev/mmcblk0p4 "${HOME}" -o rw,sync
 	fi
 fi
 
