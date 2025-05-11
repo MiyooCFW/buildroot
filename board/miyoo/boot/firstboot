@@ -505,6 +505,10 @@ fi
 
 mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
+#define priamry partitions FS types
+P4_FS_TYPE="BTRFS"
+P5_FS_TYPE="EXT4"
+
 #grep all partitions current size
 SD_SIZE=$(cat "/sys/block/mmcblk0/size")
 P1_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p1/size") # BOOT
@@ -526,11 +530,44 @@ SD_MAX_UNALL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_UNALL_SIZE} * 512 / 1024 / 10
 SD_MAX_AVAIL_SIZE="$((${SD_SIZE} - (${P1_SIZE} + ${P2_SIZE} + ${P3_SIZE}) - $BOOT_SIZE))"
 SD_MAX_AVAIL_SIZE_IN_KiB=$((SD_MAX_AVAIL_SIZE * 512 / 1024))
 
-# Expand_ROMS_Partition-prompt for the p5 (ROMS) EXT4 partition if requested
+# Change_MAIN_FileSystem-prompt for the p4 partition if requested
+CHANGE_FS_P4=false
+if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label ${P4_FS_TYPE}\(default\) --cancel-label EXT4 --title "   Change FileSystem" \
+   --colors --pause "\n\n\Z5Change default FileSystem of MAIN?\Zn\n\n   BTRFS - safe & reliable\Zn\n\n   EXT4 - fast & optimal\Zn\n\n   Select an option & press START
+   \n\n             \ZbWARNING:\Zn\n       After 10s changes\n   to MAIN partition won't be possible." 15 60 10); then
+	
+	echo "Selected ${P4_FS_TYPE} for MAIN partition, continuing with default setup." | tee -a ${LOG}
+	sleep 2
+else
+	P4_FS_TYPE="EXT4"
+	echo -en "\n\nConverting the MAIN partition filesystem to ${P4_FS_TYPE} type.\n\n" | tee -a ${LOG}
+	echo -en "This can take a few minutes...be patient!"
+	mkdir /roms/backup
+	cp -a "${HOME}" /roms/backup
+	umount /dev/mmcblk0p4 | tee -a ${LOG}
+	# P4_START_POINT=` parted --script /dev/mmcblk0 unit MB print | grep '4' | tail -n1 | awk '{print $2}'`
+	# P4_END_POINT=` parted --script /dev/mmcblk0 unit MB print | grep '4' | tail -n1 | awk '{print $3}'`
+	# parted -a optimal /dev/mmcblk0 --script rm '4'  | tee -a ${LOG}
+	# parted -a optimal /dev/mmcblk0 --script mkpart main $P4_START_POINT $P4_END_POINT  | tee -a ${LOG}
+	# partx -u /dev/mmcblk0  | tee -a ${LOG}
+	mkfs.ext4 -q -F /dev/mmcblk0p4
+	mount /dev/mmcblk0p4 "${HOME}" -o rw,sync | tee -a ${LOG}
+	cp -a /roms/backup/"${HOME}" /
+	rm -r /roms/backup
+	CHANGE_FS_P4=true
+fi
+## Correct inittab for new p4 filesystem type
+if ( $CHANGE_FS_P4 ); then
+	mount -o remount,rw / /
+	sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p4\).*|\1 "${HOME}" -o rw,sync|" /etc/inittab
+	mount -o remount,ro / /
+fi
+
+# Expand_ROMS_Partition-prompt for the p5 (ROMS) partition if requested
 RESIZE_COMMENCED=false
 if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RESIZE" \
    --colors --pause "\n\n       \Z5Expand ROMS partition?\Zn\n\n   Select an option & press START
-   \n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of BTRFS partition will begin." 15 60 10); then
+   \n\n             \ZbWARNING:\Zn\n       After 10s auto-resize\n   of ${P5_FS_TYPE} partition will begin." 15 60 10); then
 	clear
 	SD_MAX_AVAIL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_AVAIL_SIZE_IN_KiB} / 1024 / 1024" | bc) #only to inform user about end point for resize
 	SD_MAX_AVAIL_SIZE_IN_GB=$(echo "scale=1; ${SD_MAX_AVAIL_SIZE_IN_KiB} * 1024 / 1000 / 1000 / 1000" | bc)
@@ -549,8 +586,8 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 		echo "The full size of your SD is ${SD_SIZE_IN_MiB}MB large" | tee -a ${LOG}
 		echo "Unallocated space available for resizing equals ${SD_MAX_UNALL_SIZE_IN_GiB}GB," | tee -a ${LOG}
 		echo "and more precisely it's ${SD_MAX_UNALL_SIZE_IN_MiB}MB big" | tee -a ${LOG}
-		echo "Resizing the ROMS partition to ${SD_MAX_AVAIL_SIZE_IN_GiB}GB." | tee -a ${LOG}
-		echo "This can take a few seconds." | tee -a ${LOG}
+		echo "Resizing the ROMS (${P5_FS_TYPE}) partition to ${SD_MAX_AVAIL_SIZE_IN_GiB}GB." | tee -a ${LOG}
+		echo "This can take a few minutes seconds." | tee -a ${LOG}
 		umount /dev/mmcblk0p5 | tee -a ${LOG}
 		P5_START_POINT=` parted --script /dev/mmcblk0 unit MB print | grep '5' | tail -n1 | awk '{print $2}'`
 		parted -a optimal /dev/mmcblk0 --script rm '5'  | tee -a ${LOG}
