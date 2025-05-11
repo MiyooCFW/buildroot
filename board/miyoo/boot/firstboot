@@ -544,8 +544,8 @@ else
 	echo -en "\n\nConverting the MAIN partition filesystem to ${P4_FS_TYPE} type.\n\n" | tee -a ${LOG}
 	echo -en "This can take a few minutes, be patient!"
 	sleep 3
-	mkdir /roms/backup
-	cp -v -a "${HOME}" /roms/backup
+	mkdir "${ROMS}"/backup
+	cp -v -a "${HOME}" "${ROMS}"/backup
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
 	clear
 	echo -en "\n\n"
@@ -553,8 +553,8 @@ else
 	sleep 2
 	e2fsck -y /dev/mmcblk0p4 | tee -a ${LOG}
 	mount /dev/mmcblk0p4 "${HOME}" -o rw,sync | tee -a ${LOG}
-	cp -v -a /roms/backup/"${HOME}" /
-	rm -r /roms/backup
+	cp -v -a "${ROMS}"/backup/"${HOME}" /
+	rm -r "${ROMS}"/backup
 	CHANGE_FS_P4=true
 fi
 ## Correct inittab for new p4 filesystem type
@@ -578,22 +578,22 @@ else
 	echo -en "This can take A LONG TIME, be patient!"
 	sleep 3
 	mkdir "${HOME}"/backup
-	cp -v -a /roms "${HOME}"/backup
+	cp -v -a "${ROMS}" "${HOME}"/backup
 	umount /dev/mmcblk0p5 | tee -a ${LOG}
 	clear
 	echo -en "\n\n"
 	mkfs.vfat -n ROMS -v -F32 /dev/mmcblk0p5 | tee -a ${LOG}
 	sleep 2
 	fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
-	mount /dev/mmcblk0p5 /roms -t vfat -o rw,sync,utf8 | tee -a ${LOG}
-	cp -v -a "${HOME}"/backup/roms /
+	mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,sync,utf8 | tee -a ${LOG}
+	cp -v -a "${HOME}"/backup"${ROMS}" /
 	rm -r "${HOME}"/backup
 	CHANGE_FS_P5=true
 fi
 ## Correct inittab for new p5 filesystem type
 if ( $CHANGE_FS_P5 ); then
 	mount -o remount,rw / /
-	sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 /roms -t vfat -o rw,sync,utf8|" /etc/inittab
+	sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -t vfat -o rw,sync,utf8|" /etc/inittab
 	mount -o remount,ro / /
 fi
 
@@ -643,7 +643,7 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 			fsck.fat -y /dev/mmcblk0p5 | tee -a ${LOG}
 			#echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
 			sync
-			mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p5 /roms | tee -a ${LOG}
+			mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p5 "${ROMS}" | tee -a ${LOG}
 		else
 			echo "This can take a few seconds." | tee -a ${LOG}
 			P5_START_POINT=` parted --script /dev/mmcblk0 unit MB print | grep '5' | tail -n1 | awk '{print $2}'`
@@ -652,7 +652,7 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 			partx -u /dev/mmcblk0  | tee -a ${LOG}
 			resize2fs /dev/mmcblk0p5 | tee -a ${LOG}
 			e2fsck -y /dev/mmcblk0p5 | tee -a ${LOG}
-			mount /dev/mmcblk0p5 /roms | tee -a ${LOG}
+			mount /dev/mmcblk0p5 "${ROMS}" | tee -a ${LOG}
 			partprobe
 		fi
 		RESIZE_COMMENCED=true
