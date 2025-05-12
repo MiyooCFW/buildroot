@@ -535,7 +535,7 @@ SD_MAX_AVAIL_SIZE_IN_KiB=$((SD_MAX_AVAIL_SIZE * 512 / 1024))
 CHANGE_FS_P4=false
 if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label ${P4_FS_TYPE}\(default\) --cancel-label EXT4 --title "   Change FileSystem" \
    --colors --pause "\n\n\Z5Change default FileSystem of MAIN?\Zn\n\n   BTRFS - safe & reliable\Zn\n\n   EXT4 - fast & optimal\Zn\n\n   Select an option & press START
-   \n\n             \ZbWARNING:\Zn\n       After 2min changes\n   to MAIN partition won't be possible." 15 60 120); then
+   \n\n             \ZbWARNING:\Zn\n       After 30min changes\n   to MAIN partition won't be possible." 15 60 1800); then
 	
 	echo "Selected ${P4_FS_TYPE} for MAIN partition, continuing with default setup." | tee -a ${LOG}
 	sleep 2
@@ -549,11 +549,11 @@ else
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
 	clear
 	echo -en "\n\n"
-	mkfs.ext4 -q -F /dev/mmcblk0p4 | tee -a ${LOG}
+	mkfs.ext4 -d "${ROMS}"/backup/"${HOME}" -v -F /dev/mmcblk0p4 | tee -a ${LOG}
 	sleep 2
 	e2fsck -y /dev/mmcblk0p4 | tee -a ${LOG}
 	mount /dev/mmcblk0p4 "${HOME}" -o rw,sync | tee -a ${LOG}
-	cp -v -a "${ROMS}"/backup/"${HOME}" /
+	#cp -v -a "${ROMS}"/backup/"${HOME}" /
 	rm -r "${ROMS}"/backup
 	CHANGE_FS_P4=true
 fi
@@ -566,13 +566,18 @@ fi
 
 # Change_ROMS_FileSystem-prompt for the p5 partition if requested
 CHANGE_FS_P5=false
-if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label ${P5_FS_TYPE}\(default\) --cancel-label FAT32 --title "   Change FileSystem" \
-   --colors --pause "\n\n\Z5Change default FileSystem for ROMS?\Zn\n\nEXT4 - fast write/read & UNIX compliant\Zn\n\nFAT32 - slow on-device write but Windows compatbile\Zn\n\n   Select an option & press START
-   \n\n             \ZbWARNING:\Zn\n       After 30min changes\n   to ROMS partition won't be possible." 15 60 1800); then
-	
+dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label "${P5_FS_TYPE}(def.)" --cancel-label BTRFS --extra-button --extra-label FAT32 --title "   Change FileSystem" \
+   --colors --pause "\n\n\Z5Change default FileSystem for ROMS?\Zn\n\nEXT4 - fast write/read & UNIX compliant\Zn\n\nBTRFS - slow read but poweroff safe, UNIX compliant\Zn\n\nFAT32 - slow on-device write but Windows compatbile\Zn\n\n   Select an option & press START
+   \n\n             \ZbWARNING:\Zn\n After 30min changes to ROMS\n partition won't be possible." 25 60 1800
+
+	echo $? > $TEMP
+	## Read the user's first choice from the tmp file
+	CHOICE=$(cat $TEMP)
+
+if test $CHOICE -eq 0; then
 	echo "Selected ${P5_FS_TYPE} for ROMS partition, continuing with default setup." | tee -a ${LOG}
 	sleep 2
-else
+elif test $CHOICE -eq 3; then
 	P5_FS_TYPE="FAT32"
 	echo -en "\n\nConverting the ROMS partition filesystem to ${P5_FS_TYPE} type.\n\n" | tee -a ${LOG}
 	echo -en "This can take A LONG TIME, be patient!"
@@ -584,16 +589,41 @@ else
 	echo -en "\n\n"
 	mkfs.vfat -n ROMS -v -F32 /dev/mmcblk0p5 | tee -a ${LOG}
 	sleep 2
-	fsck.fat -y /dev/mmcblk0p4 | tee -a ${LOG}
+	fsck.fat -y /dev/mmcblk0p5 | tee -a ${LOG}
 	mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,sync,utf8 | tee -a ${LOG}
 	cp -v -a "${HOME}"/backup"${ROMS}" /
 	rm -r "${HOME}"/backup
 	CHANGE_FS_P5=true
+elif test $CHOICE -eq 1; then
+	P5_FS_TYPE="BTRFS"
+	echo -en "\n\nConverting the ROMS partition filesystem to ${P5_FS_TYPE} type.\n\n" | tee -a ${LOG}
+	echo -en "This can take A LONG TIME, be patient!"
+	sleep 3
+	mkdir "${HOME}"/backup
+	cp -v -a "${ROMS}" "${HOME}"/backup
+	umount /dev/mmcblk0p5 | tee -a ${LOG}
+	clear
+	echo -en "\n\n"
+	mkfs.btrfs -r "${HOME}"/backup"${ROMS}" -v -f -L ROMS /dev/mmcblk0p5 | tee -a ${LOG}
+	sleep 2
+	btrfsck -y /dev/mmcblk0p5 | tee -a ${LOG}
+	mount /dev/mmcblk0p5 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime,exec | tee -a ${LOG}
+	#cp -v -a "${HOME}"/backup"${ROMS}" /
+	rm -r "${HOME}"/backup
+	CHANGE_FS_P5=true
+else
+	dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 2 --msgbox "Invalid choice, continuing with default setup!" 0 0
+	sleep 1.5
 fi
+
 ## Correct inittab for new p5 filesystem type
 if ( $CHANGE_FS_P5 ); then
 	mount -o remount,rw / /
-	sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -t vfat -o rw,sync,utf8|" /etc/inittab
+	if test "${P5_FS_TYPE}" == "FAT32"; then
+		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -t vfat -o rw,sync,utf8|" /etc/inittab
+	elif test "${P5_FS_TYPE}" == "BTRFS"; then
+		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime,exec|" /etc/inittab
+	fi
 	mount -o remount,ro / /
 fi
 
@@ -644,6 +674,15 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 			#echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
 			sync
 			mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p5 "${ROMS}" | tee -a ${LOG}
+		elif test "${P5_FS_TYPE}" == "BTRFS"; then
+			echo "This can take a few seconds." | tee -a ${LOG}
+			P5_START_POINT=` parted --script /dev/mmcblk0 unit MB print | grep '5' | tail -n1 | awk '{print $2}'`
+			parted -a optimal /dev/mmcblk0 --script rm '5'  | tee -a ${LOG}
+			parted -a optimal /dev/mmcblk0 --script mkpart roms $P5_START_POINT 100%  | tee -a ${LOG}
+			partx -u /dev/mmcblk0 | tee -a ${LOG}
+			mount /dev/mmcblk0p5 "${ROMS}" | tee -a ${LOG}
+			btrfs filesystem resize max ${ROMS} | tee -a ${LOG}
+			partprobe
 		else
 			echo "This can take a few seconds." | tee -a ${LOG}
 			P5_START_POINT=` parted --script /dev/mmcblk0 unit MB print | grep '5' | tail -n1 | awk '{print $2}'`
@@ -652,7 +691,7 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 			partx -u /dev/mmcblk0  | tee -a ${LOG}
 			resize2fs /dev/mmcblk0p5 | tee -a ${LOG}
 			e2fsck -y /dev/mmcblk0p5 | tee -a ${LOG}
-			mount /dev/mmcblk0p5 "${ROMS}" | tee -a ${LOG}
+			mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime,nodiratime | tee -a ${LOG}
 			partprobe
 		fi
 		RESIZE_COMMENCED=true
