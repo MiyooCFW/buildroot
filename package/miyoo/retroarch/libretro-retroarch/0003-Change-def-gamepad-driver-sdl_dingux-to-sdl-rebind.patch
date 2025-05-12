@@ -1,16 +1,18 @@
-Subject: [PATCH] change sdl_dingux gamepad to sdl & add joypad bind
+From 3cbcc816cb4840d60b2cfe7620364c4fe4fc0cd1 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Mon, 10 Mar 2025 20:42:53 +0100
+Subject: [PATCH] Change def gamepad driver (sdl_dingux  to sdl) & rebind
 
-Signed-off-by: Apaczer <94932128+Apaczer@users.noreply.github.com>
+add -DMIYOO flag
 ---
  Makefile.miyoo        |  2 +-
  config.def.h          |  4 ++-
  config.def.keybinds.h | 60 +++++++++++++++++++++----------------------
  configuration.c       | 12 ++++-----
- input/input_driver.c  |  4 +--
- 5 files changed, 42 insertions(+), 40 deletions(-)
+ 4 files changed, 40 insertions(+), 38 deletions(-)
 
 diff --git a/Makefile.miyoo b/Makefile.miyoo
-index 2880af10ad..b343697d2d 100644
+index a026317e6a..4c4d92b208 100644
 --- a/Makefile.miyoo
 +++ b/Makefile.miyoo
 @@ -120,7 +120,7 @@ OBJ :=
@@ -23,7 +25,7 @@ index 2880af10ad..b343697d2d 100644
  DEF_FLAGS += -std=gnu99 -D_GNU_SOURCE
  LIBS := -ldl -lz -lrt -pthread -lasound
 diff --git a/config.def.h b/config.def.h
-index 0eea764ee3..8a8d35789a 100644
+index 6c0d0abcd9..6b67763eae 100644
 --- a/config.def.h
 +++ b/config.def.h
 @@ -1605,8 +1605,10 @@
@@ -301,3 +303,6 @@ index b8f947273e..84ab3480fc 100644
  static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_SDL;
  #elif defined(DJGPP)
  static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_DOS;
+-- 
+2.45.2.windows.1
+
