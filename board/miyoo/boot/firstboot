@@ -724,10 +724,8 @@ touch ${HOME}/firstboot.completed
 echo
 
 #install IPK packages
-if ( $RESIZE_COMMENCED ); then
-	echo "starting ipk install manager..." | tee -a ${LOG}
-	${BASEDIR}/ipk_install.sh | tee -a ${LOG}
-fi
+echo "starting ipk install manager..." | tee -a ${LOG}
+${BASEDIR}/ipk_install.sh | tee -a ${LOG}
 
 # Reboot device if CONSOLE_VARIANT was overwritten from $CHOICE so that it could be applied in u-boot by readID 
 ## or found firstboot custom script
