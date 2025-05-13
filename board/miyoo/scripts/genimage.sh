@@ -94,12 +94,12 @@ fi
 # Generate MAIN BTRFS partition
 image="${BINARIES_DIR}/main.img"
 label="MAIN"
-mkfs.btrfs -r "${BINARIES_DIR}/main/" --shrink -v -f -L ${label} ${image}
+mkfs.btrfs -r "${BINARIES_DIR}/main/" -b 1500M -v -f -L ${label} ${image} # hardcoded value and should be enough for extra exec/libs 1G def + 500MB extra in MAIN
 
 # Generate ROMS EXT4 partition (dir at mount point is created at prebuild script)
 image_roms="${BINARIES_DIR}/roms.img"
 label_roms="ROMS"
-dd if=/dev/zero of=${image_roms} bs=1M count=125
+dd if=/dev/zero of=${image_roms} bs=1G count=1 # for fatresize we need part. size bigger than 256M, but for backup space at least 1G is need in ROMS (copy of main)
 mkfs.ext4 -d "${BINARIES_DIR}/roms/" -v -L ${label_roms} ${image_roms}
 
 support/scripts/genimage.sh ${1} -c board/miyoo/genimage-sdcard.cfg
