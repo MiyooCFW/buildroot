@@ -580,7 +580,7 @@ if test $CHOICE -eq 0; then
 elif test $CHOICE -eq 3; then
 	P5_FS_TYPE="FAT32"
 	echo -en "\n\nConverting the ROMS partition filesystem to ${P5_FS_TYPE} type.\n\n" | tee -a ${LOG}
-	echo -en "This can take A LONG TIME, be patient!"
+	echo -en "This can take a few minutes, be patient!"
 	sleep 3
 	mkdir "${HOME}"/backup
 	cp -v -a "${ROMS}" "${HOME}"/backup
@@ -597,8 +597,8 @@ elif test $CHOICE -eq 3; then
 elif test $CHOICE -eq 1; then
 	P5_FS_TYPE="BTRFS"
 	echo -en "\n\nConverting the ROMS partition filesystem to ${P5_FS_TYPE} type.\n\n" | tee -a ${LOG}
-	echo -en "This can take A LONG TIME, be patient!"
-	sleep 3
+	echo -en "This can take a few minutes, be patient!"
+	sleep 5
 	mkdir "${HOME}"/backup
 	cp -v -a "${ROMS}" "${HOME}"/backup
 	umount /dev/mmcblk0p5 | tee -a ${LOG}
@@ -671,7 +671,7 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 			#TODO: fix outputting logs from fatresize stdout
 			fatresize --size="${SD_MAX_AVAIL_SIZE_IN_KiB}"ki -v -p /dev/mmcblk0p5 -n5 | tee -a ${LOG}
 			fsck.fat -y /dev/mmcblk0p5 | tee -a ${LOG}
-			#echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p4
+			#echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p5
 			sync
 			mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p5 "${ROMS}" | tee -a ${LOG}
 		elif test "${P5_FS_TYPE}" == "BTRFS"; then
@@ -699,6 +699,11 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 		echo "ROMS partition resizing was aborted!" | tee -a ${LOG}
 		sleep 2
 	fi
+fi
+
+if ! $RESIZE_COMMENCED && test "${P5_FS_TYPE}" == "FAT32" ; then
+	sgdisk --typecode=5:0700 /dev/mmcblk0 # Microsoft basic data - partition type
+	partprobe
 fi
 
 # Cleanup - delete the temporary file storing variable value
