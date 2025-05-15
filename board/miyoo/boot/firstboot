@@ -549,7 +549,7 @@ else
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
 	clear
 	echo -en "\n\n"
-	mkfs.ext4 -d "${ROMS}"/backup/"${HOME}" -v -F /dev/mmcblk0p4 | tee -a ${LOG}
+	mkfs.ext4 -d "${ROMS}"/backup/"${HOME}" -L MAIN -v -F /dev/mmcblk0p4 | tee -a ${LOG}
 	sleep 2
 	e2fsck -y /dev/mmcblk0p4 | tee -a ${LOG}
 	mount /dev/mmcblk0p4 "${HOME}" -o rw,sync | tee -a ${LOG}
