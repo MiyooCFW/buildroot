@@ -545,7 +545,7 @@ else
 	echo -en "This can take a few minutes, be patient!"
 	sleep 3
 	mkdir "${ROMS}"/backup
-	cp -v -a "${HOME}" "${ROMS}"/backup
+	rsync -a --info=nonreg0 --info=progress2 "${HOME}" "${ROMS}"/backup
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
 	clear
 	echo -en "\n\n"
@@ -583,7 +583,7 @@ elif test $CHOICE -eq 3; then
 	echo -en "This can take a few minutes, be patient!"
 	sleep 3
 	mkdir "${HOME}"/backup
-	cp -v -a "${ROMS}" "${HOME}"/backup
+	rsync -rvt --modify-window=1 --exclude "lost+found" --info=nonreg0 --info=progress2 "${ROMS}" "${HOME}"/backup
 	umount /dev/mmcblk0p5 | tee -a ${LOG}
 	clear
 	echo -en "\n\n"
@@ -591,7 +591,7 @@ elif test $CHOICE -eq 3; then
 	sleep 2
 	fsck.fat -y /dev/mmcblk0p5 | tee -a ${LOG}
 	mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,sync,utf8 | tee -a ${LOG}
-	cp -v -a "${HOME}"/backup"${ROMS}" /
+	rsync -rvt --modify-window=1 --exclude "lost+found" --info=nonreg0 --info=progress2 "${HOME}"/backup"${ROMS}" /
 	rm -r "${HOME}"/backup
 	CHANGE_FS_P5=true
 elif test $CHOICE -eq 1; then
@@ -600,7 +600,7 @@ elif test $CHOICE -eq 1; then
 	echo -en "This can take a few minutes, be patient!"
 	sleep 5
 	mkdir "${HOME}"/backup
-	cp -v -a "${ROMS}" "${HOME}"/backup
+	rsync -a --info=nonreg0 --info=progress2 "${ROMS}" "${HOME}"/backup
 	umount /dev/mmcblk0p5 | tee -a ${LOG}
 	clear
 	echo -en "\n\n"
