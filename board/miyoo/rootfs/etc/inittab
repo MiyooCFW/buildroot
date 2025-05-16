@@ -15,11 +15,13 @@
 
 # Startup the system
 ::sysinit:/bin/mount -t proc proc /proc
+::sysinit:/bin/mount -o remount,ro /
 ::sysinit:/bin/mkdir -p /dev/pts
 ::sysinit:/bin/mkdir -p /dev/shm
 ::sysinit:/bin/mount -a
 ::sysinit:/bin/hostname -F /etc/hostname
 ::sysinit:/bin/mount /dev/mmcblk0p4 /mnt -o commit=5,flushoncommit,noatime,nodiratime,exec
+::sysinit:/bin/mount /dev/mmcblk0p5 /roms -o rw,noatime,nodiratime
 ::sysinit:/bin/mount /dev/mmcblk0p1 /boot -t vfat -o ro,exec,sync,utf8
 ::sysinit:/sbin/swapon /dev/mmcblk0p3
 

@@ -60,6 +60,7 @@ export IMAGE_NAME="${BR2_VENDOR}-${CFW_TYPE}-${CFW_RELEASE}-${CFW_HASH}_${LIBC}-
 # Relocate board files for genimage-sdcard config to read (see last cmd)
 cp -r board/miyoo/boot "${BINARIES_DIR}"
 cp -r board/miyoo/main "${BINARIES_DIR}"
+cp -r board/miyoo/roms "${BINARIES_DIR}"
 
 # Write CFW version to splash image
 convert board/miyoo/miyoo-splash.png -pointsize 12 -fill white -annotate +10+230 "v${CFW_RELEASE} ${CFW_VERSION} (${LIBC}) ${STATUS}${APPEND_VERSION}" -type Palette -colors 224 -depth 8 -compress none -verbose BMP3:"${BINARIES_DIR}"/boot/miyoo-splash.bmp
@@ -93,6 +94,12 @@ fi
 # Generate MAIN BTRFS partition
 image="${BINARIES_DIR}/main.img"
 label="MAIN"
-mkfs.btrfs -r "${BINARIES_DIR}/main/" --shrink -v -f -L ${label} ${image}
+mkfs.btrfs -r "${BINARIES_DIR}/main/" -b 1500M -v -f -L ${label} ${image} # hardcoded value and should be enough for extra exec/libs 1G def + 500MB extra in MAIN
+
+# Generate ROMS EXT4 partition (dir at mount point is created at prebuild script)
+image_roms="${BINARIES_DIR}/roms.img"
+label_roms="ROMS"
+dd if=/dev/zero of=${image_roms} bs=1G count=1 # for fatresize we need part. size bigger than 256M, but for backup space at least 1G is need in ROMS (copy of main)
+mkfs.ext4 -d "${BINARIES_DIR}/roms/" -v -L ${label_roms} ${image_roms}
 
 support/scripts/genimage.sh ${1} -c board/miyoo/genimage-sdcard.cfg

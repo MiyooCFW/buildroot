@@ -1,0 +1,26 @@
+From defe2787bb485ab91d97c81f503955f01d738c3d Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sun, 11 May 2025 14:36:22 +0200
+Subject: [PATCH] image-hd: reduce number of GPT entries
+
+to fit in bootloader in first sectors
+---
+ image-hd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/image-hd.c b/image-hd.c
+index 5e3a3b4..fc46e89 100644
+--- a/image-hd.c
++++ b/image-hd.c
+@@ -98,7 +98,7 @@ struct gpt_partition_entry {
+ } __attribute__((packed));
+ ct_assert(sizeof(struct gpt_partition_entry) == 128);
+ 
+-#define GPT_ENTRIES 		128
++#define GPT_ENTRIES 		56
+ #define GPT_SECTORS		(1 + GPT_ENTRIES * sizeof(struct gpt_partition_entry) / 512)
+ #define GPT_REVISION_1_0	0x00010000
+ 
+-- 
+2.45.2.windows.1
+

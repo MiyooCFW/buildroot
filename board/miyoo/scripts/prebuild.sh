@@ -26,3 +26,6 @@ Architecture: arm\n" >> ${VAR_OPKG}/status
 done
 
 sleep 2
+
+# create mount point for ROMS p5 partition
+mkdir -p ${ROOTFS_PATH}/roms
