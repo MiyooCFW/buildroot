@@ -1,5 +1,4 @@
 #!/bin/busybox sh
-MOUNTDIR=/boot
 export TERM=linux
 
 # expect to be run from /boot, where the boot partition is mounted (readonly)
@@ -15,12 +14,10 @@ echo -e "\e[32m" # green
 echo "firstboot script running..." | tee -a ${LOG}
 echo
 
-BASEDIR="${MOUNTDIR}"
-
 # run a custom script if present - could be used to fix u-boot and such
-if test -r "${BASEDIR}/firstboot.custom.sh"; then
+if test -r "${BOOTDIR}/firstboot.custom.sh"; then
 	echo "Running a specific firstboot script..." | tee -a ${LOG}
-	(cd "${BASEDIR}" && sh firstboot.custom.sh) | tee -a ${LOG}
+	(cd "${BOOTDIR}" && sh firstboot.custom.sh) | tee -a ${LOG}
 	echo "Finished running a specific firstboot script." | tee -a ${LOG}
 fi
 
@@ -44,7 +41,7 @@ consequences arising from the use or misuse of this software.
 TEMP=$(mktemp) 
 
 ## Access /boot directory
-mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
+mount -o remount,rw "${BOOTDIR}" | tee -a ${LOG}
 
 # list of available devices in u-boot Environment parameters' read from FORCE_VERSION
 devices_ID="
@@ -109,8 +106,8 @@ done
 
 # try to read what handheld we're on when calling func
 console_var_func(){
-	if (test -r "${MOUNTDIR}/console.cfg"); then
-		source "${MOUNTDIR}/console.cfg"
+	if (test -r "${BOOTDIR}/console.cfg"); then
+		source "${BOOTDIR}/console.cfg"
 	else 
 		export CONSOLE_VARIANT="unknown"
 	fi
@@ -129,7 +126,7 @@ safe_shutdown_func(){
 	mv ${LOG} ${HOME}/log_firstboot.txt
 	sync
 	sleep 1
-	mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
+	mount -o remount,ro "${BOOTDIR}" | tee -a ${LOG}
 	umount /dev/mmcblk0p4 | tee -a ${LOG}
 	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails
 	sleep 4
@@ -148,14 +145,14 @@ safe_poweroff_func(){
 }
 
 console_unknown_func(){
-	echo "CONSOLE_VARIANT=unknown" > ${MOUNTDIR}/console.cfg
-	echo "##DO_NOT_REMOVE_THIS_LINE##" >> ${MOUNTDIR}/console.cfg
+	echo "CONSOLE_VARIANT=unknown" > ${BOOTDIR}/console.cfg
+	echo "##DO_NOT_REMOVE_THIS_LINE##" >> ${BOOTDIR}/console.cfg
 }
 
 ## Default CONSOLE_VARIANT for st7789s screens
 default_console_func(){
-	echo "CONSOLE_VARIANT=pocketgo" > ${MOUNTDIR}/console.cfg
-	cp ${MOUNTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${MOUNTDIR}/suniv-f1c100s-miyoo.dtb
+	echo "CONSOLE_VARIANT=pocketgo" > ${BOOTDIR}/console.cfg
+	cp ${BOOTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${BOOTDIR}/suniv-f1c100s-miyoo.dtb
 	# No need to overwrite uboot FORCE version for default so continue procedure
 	CONSOLE_OVERWRITE=false
 }
@@ -192,7 +189,7 @@ test_video_func(){
 	# "YES" choice for Test_Video msgbox DIALOG_EXTRA exit code
 	if test $CHOICE -eq 3; then
 		# Correct variant for st7789s (non forced)
-		echo "CONSOLE_VARIANT=st7789s" > ${MOUNTDIR}/console.cfg
+		echo "CONSOLE_VARIANT=st7789s" > ${BOOTDIR}/console.cfg
 	# "Flipped!" choice for Test_Video msgbox DIALOG_CANCEL exit code
 	elif test $CHOICE -eq 1; then
 		# Test_Flip-prompt double checks if user selected correct answer for 1'st video test
@@ -200,7 +197,7 @@ test_video_func(){
 	# "NO" or timeout choice for Test_Video msgbox thus DIALOG_OK exit code
 	elif test $CHOICE -eq 0; then
 		# Correct variant for bittboy2x_v1 (non forced)
-		echo "CONSOLE_VARIANT=bittboy" > ${MOUNTDIR}/console.cfg
+		echo "CONSOLE_VARIANT=bittboy" > ${BOOTDIR}/console.cfg
 		safe_reboot_func
 	# Error (DIALOG_ERROR) or ESCAPE button pressed (DIALOG_ESCAPE) thus exit code -1/255
 	else
@@ -219,7 +216,7 @@ test_video2_func(){
 	# "YES" choice for Test_Video'2 msgbox DIALOG_CANCEL exit code
 	## thus we have valid version, just update to FORCE_VERSION and continue
 	if test $CHOICE -eq 1; then
-		echo "CONSOLE_VARIANT=bittboy2x_v1" > ${MOUNTDIR}/console.cfg
+		echo "CONSOLE_VARIANT=bittboy2x_v1" > ${BOOTDIR}/console.cfg
 	# "NO" or timeout choice for Test_Video msgbox thus DIALOG_OK exit code 0 (or ERROR/ESCAPE with -1/255)
 	## correct variant to unknown and redo whole flashing_prd again
 	else
@@ -240,28 +237,28 @@ test_keyboard_func(){
 	## thus we have valid version, just update to FORCE_VERSION and continue
 	if test $CHOICE -eq 1; then
 		if test "$CONSOLE_VARIANT" == "bittboy3"; then
-			echo "CONSOLE_VARIANT=bittboy3.5" > ${MOUNTDIR}/console.cfg
+			echo "CONSOLE_VARIANT=bittboy3.5" > ${BOOTDIR}/console.cfg
 		elif test "$CONSOLE_VARIANT" == "bittboy2"; then
-			echo "CONSOLE_VARIANT=bittboy2x_v2" > ${MOUNTDIR}/console.cfg
+			echo "CONSOLE_VARIANT=bittboy2x_v2" > ${BOOTDIR}/console.cfg
 		elif test "$CONSOLE_VARIANT" == "xyc"; then
-			echo "CONSOLE_VARIANT=xyc_gc9306" > ${MOUNTDIR}/console.cfg
+			echo "CONSOLE_VARIANT=xyc_gc9306" > ${BOOTDIR}/console.cfg
 			# Test_Image-prompt if proper "invert" colors parameter was loaded:
 			INVERSION=1 #applied only if colors are inverted
 			test_image_func
 		elif test "$CONSOLE_VARIANT" == "m3"; then
-			echo "CONSOLE_VARIANT=m3_gc9306" > ${MOUNTDIR}/console.cfg
+			echo "CONSOLE_VARIANT=m3_gc9306" > ${BOOTDIR}/console.cfg
 		fi
 	# "NO" or timeout choice for Test_Keyboard msgbox DIALOG_OK exit code
 	## thus correct Auto-Detection variant and reboot
 	elif test $CHOICE -eq 0; then
 		if test "$CONSOLE_VARIANT" == "bittboy3"; then
-			echo "CONSOLE_VARIANT=bittboy2" > ${MOUNTDIR}/console.cfg
+			echo "CONSOLE_VARIANT=bittboy2" > ${BOOTDIR}/console.cfg
 		elif test "$CONSOLE_VARIANT" == "bittboy2"; then
 			console_unknown_func
 		elif test "$CONSOLE_VARIANT" == "xyc"; then
 			console_unknown_func
 		elif test "$CONSOLE_VARIANT" == "m3"; then
-			echo "CONSOLE_VARIANT=xyc" > ${MOUNTDIR}/console.cfg
+			echo "CONSOLE_VARIANT=xyc" > ${BOOTDIR}/console.cfg
 		fi
 		safe_reboot_func
 	# Error (DIALOG_ERROR) or ESCAPE button pressed (DIALOG_ESCAPE) thus exit code -1/255
@@ -289,7 +286,7 @@ test_variant_func(){
 test_flip_func(){
 	if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --stdout --ok-label YES --cancel-label NO --title "Test Flip" --pause "  \n   Flipped? \n\nAre you sure?!" 12 15 10); then
 		# Correct variant for bittboy3.5 (non forced) and display info about flipped image
-		echo "CONSOLE_VARIANT=bittboy3" > ${MOUNTDIR}/console.cfg
+		echo "CONSOLE_VARIANT=bittboy3" > ${BOOTDIR}/console.cfg
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 2 --msgbox "Image flipped! correct&reboot" 0 0
 		sleep 1.5
 		#TODO: use special Unicode characters to draw text upside-down e.g.:
@@ -303,14 +300,14 @@ test_flip_func(){
 
 #Checking if device at hand is operational within flashing procedure
 CONSOLE_DETECTED=false
-if (grep -qE "${DETECTED_1}|${DETECTED_2}|${DETECTED_3}|${DETECTED_4}|${DETECTED_5}|${DETECTED_6}|${DETECTED_7}|${DETECTED_8}|${DETECTED_9}|${DETECTED_10}" "${MOUNTDIR}/uEnv.txt"); then
+if (grep -qE "${DETECTED_1}|${DETECTED_2}|${DETECTED_3}|${DETECTED_4}|${DETECTED_5}|${DETECTED_6}|${DETECTED_7}|${DETECTED_8}|${DETECTED_9}|${DETECTED_10}" "${BOOTDIR}/uEnv.txt"); then
 	CONSOLE_DETECTED=true
 fi
 
 # I - Test_Block
 detect_console_func
 if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
-	if (grep -q "$DETECTED_1" "${MOUNTDIR}/uEnv.txt"); then
+	if (grep -q "$DETECTED_1" "${BOOTDIR}/uEnv.txt"); then
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 3 --msgbox  "Auto-Detected $DETECTED_1" 0 0
 		# Test_Video-prompt if proper miyoo video's version driver was loaded:
 		## Loop Test_Video until correct selection has been performed (CHOICE=0/3)
@@ -321,36 +318,36 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				break
 			fi
 		done
-	elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
+	elif (grep -q "$DETECTED_2" "${BOOTDIR}/uEnv.txt"); then
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 3 --msgbox  "Auto-Detected $DETECTED_2" 0 0
-		echo "CONSOLE_VARIANT=m3" > ${MOUNTDIR}/console.cfg
-	elif (grep -q "$DETECTED_3" "${MOUNTDIR}/uEnv.txt"); then
+		echo "CONSOLE_VARIANT=m3" > ${BOOTDIR}/console.cfg
+	elif (grep -q "$DETECTED_3" "${BOOTDIR}/uEnv.txt"); then
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 3 --msgbox  "Auto-Detected $DETECTED_3" 0 0
-		echo "CONSOLE_VARIANT=m3_r61520" > ${MOUNTDIR}/console.cfg
+		echo "CONSOLE_VARIANT=m3_r61520" > ${BOOTDIR}/console.cfg
 		# Test_Image-prompt if proper "invert" colors parameter was loaded:
 		INVERSION=0 #applied only if colors are inverted 
 		test_image_func
 	# look in II Test block for following DETECTED versions as these imply devices_auto_ID variants:
 	## DETECTED_4 - bittboy
 	## DETECTED_5 - bittboy3/2
-	elif (grep -q "$DETECTED_6" "${MOUNTDIR}/uEnv.txt"); then
+	elif (grep -q "$DETECTED_6" "${BOOTDIR}/uEnv.txt"); then
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 3 --msgbox  "Auto-Detected $DETECTED_6" 0 0
-		echo "CONSOLE_VARIANT=m3_rm68090" > ${MOUNTDIR}/console.cfg
-	elif (grep -q "$DETECTED_7" "${MOUNTDIR}/uEnv.txt"); then
+		echo "CONSOLE_VARIANT=m3_rm68090" > ${BOOTDIR}/console.cfg
+	elif (grep -q "$DETECTED_7" "${BOOTDIR}/uEnv.txt"); then
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 3 --msgbox  "Auto-Detected $DETECTED_7" 0 0
-		#echo "CONSOLE_VARIANT=r61520" > ${MOUNTDIR}/console.cfg
-	elif (grep -q "$DETECTED_8" "${MOUNTDIR}/uEnv.txt"); then
+		#echo "CONSOLE_VARIANT=r61520" > ${BOOTDIR}/console.cfg
+	elif (grep -q "$DETECTED_8" "${BOOTDIR}/uEnv.txt"); then
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 3 --msgbox  "Auto-Detected $DETECTED_8" 0 0
-		#echo "CONSOLE_VARIANT=r61505w" > ${MOUNTDIR}/console.cfg
-	elif (grep -q "$DETECTED_9" "${MOUNTDIR}/uEnv.txt"); then
+		#echo "CONSOLE_VARIANT=r61505w" > ${BOOTDIR}/console.cfg
+	elif (grep -q "$DETECTED_9" "${BOOTDIR}/uEnv.txt"); then
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 3 --msgbox  "Auto-Detected $DETECTED_9" 0 0
-		echo "CONSOLE_VARIANT=m3_hx8347d" > ${MOUNTDIR}/console.cfg
-	elif (grep -q "$DETECTED_10" "${MOUNTDIR}/uEnv.txt"); then
+		echo "CONSOLE_VARIANT=m3_hx8347d" > ${BOOTDIR}/console.cfg
+	elif (grep -q "$DETECTED_10" "${BOOTDIR}/uEnv.txt"); then
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 3 --msgbox  "Auto-Detected $DETECTED_10" 0 0
-		#echo "CONSOLE_VARIANT=unknown-error" > ${MOUNTDIR}/console.cfg
+		#echo "CONSOLE_VARIANT=unknown-error" > ${BOOTDIR}/console.cfg
 	fi
 	# Overwrite CONSOLE_VARIANT from new entry
-	source "${MOUNTDIR}/console.cfg"
+	source "${BOOTDIR}/console.cfg"
 fi
 
 # II - Test_Block
@@ -361,7 +358,7 @@ detect_console_func
 ## test if no device specified in console.cfg
 if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 	# show selection menu for ST7789S devices
-	if (test "$CONSOLE_VARIANT" == "st7789s" && grep -q "$DETECTED_1" "${MOUNTDIR}/uEnv.txt"); then
+	if (test "$CONSOLE_VARIANT" == "st7789s" && grep -q "$DETECTED_1" "${BOOTDIR}/uEnv.txt"); then
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --timeout 60 --title "Select your device:" --menu " " 15 40 5 \
 		1 "Powkiddy Q20" \
 		2 "Powkiddy Q90" \
@@ -376,23 +373,23 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		## Perform actions based on the user's choice
 		case $CHOICE in
 			1)
-				echo "CONSOLE_VARIANT=q20" > ${MOUNTDIR}/console.cfg
-				cp ${MOUNTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${MOUNTDIR}/suniv-f1c100s-miyoo.dtb
+				echo "CONSOLE_VARIANT=q20" > ${BOOTDIR}/console.cfg
+				cp ${BOOTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${BOOTDIR}/suniv-f1c100s-miyoo.dtb
 				;;
 			2)
-				echo "CONSOLE_VARIANT=q90" > ${MOUNTDIR}/console.cfg
-				cp ${MOUNTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${MOUNTDIR}/suniv-f1c100s-miyoo.dtb
+				echo "CONSOLE_VARIANT=q90" > ${BOOTDIR}/console.cfg
+				cp ${BOOTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${BOOTDIR}/suniv-f1c100s-miyoo.dtb
 				;;
 			3)
-				echo "CONSOLE_VARIANT=v90" > ${MOUNTDIR}/console.cfg
-				cp ${MOUNTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${MOUNTDIR}/suniv-f1c100s-miyoo.dtb
+				echo "CONSOLE_VARIANT=v90" > ${BOOTDIR}/console.cfg
+				cp ${BOOTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${BOOTDIR}/suniv-f1c100s-miyoo.dtb
 				;;
 			4)
 				default_console_func
 				;;
 			5)
-				echo "CONSOLE_VARIANT=pocketgo_TE" > ${MOUNTDIR}/console.cfg
-				cp ${MOUNTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${MOUNTDIR}/suniv-f1c100s-miyoo.dtb
+				echo "CONSOLE_VARIANT=pocketgo_TE" > ${BOOTDIR}/console.cfg
+				cp ${BOOTDIR}/suniv-f1c100s-miyoo-4bit.dtb ${BOOTDIR}/suniv-f1c100s-miyoo.dtb
 				;;
 			*)
 				dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 4 --msgbox "Invalid choice. Exiting and selecting default device from autodetection." 0 0
@@ -400,10 +397,10 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				sleep 0.1
 				;;
 		esac
-	elif (((test "$CONSOLE_VARIANT" == "bittboy2" || test "$CONSOLE_VARIANT" == "bittboy3") && grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt") || ((test "$CONSOLE_VARIANT" == "xyc" || test "$CONSOLE_VARIANT" == "m3") && grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt")); then
-		if (grep -q "$DETECTED_5" "${MOUNTDIR}/uEnv.txt"); then
+	elif (((test "$CONSOLE_VARIANT" == "bittboy2" || test "$CONSOLE_VARIANT" == "bittboy3") && grep -q "$DETECTED_5" "${BOOTDIR}/uEnv.txt") || ((test "$CONSOLE_VARIANT" == "xyc" || test "$CONSOLE_VARIANT" == "m3") && grep -q "$DETECTED_2" "${BOOTDIR}/uEnv.txt")); then
+		if (grep -q "$DETECTED_5" "${BOOTDIR}/uEnv.txt"); then
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 3 --msgbox  "Auto-Detected $DETECTED_5" 0 0
-		elif (grep -q "$DETECTED_2" "${MOUNTDIR}/uEnv.txt"); then
+		elif (grep -q "$DETECTED_2" "${BOOTDIR}/uEnv.txt"); then
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 4 --msgbox  "Correcting $DETECTED_2 - wait for further instructions" 0 0
 		fi
 		# Test_Keyboard-prompt if proper miyoo.kbd  version was loaded:
@@ -414,7 +411,7 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				break
 			fi
 		done
-	elif (test "$CONSOLE_VARIANT" == "bittboy" && grep -q "$DETECTED_4" "${MOUNTDIR}/uEnv.txt") ; then
+	elif (test "$CONSOLE_VARIANT" == "bittboy" && grep -q "$DETECTED_4" "${BOOTDIR}/uEnv.txt") ; then
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 3 --msgbox  "Auto-Detected $DETECTED_4" 0 0
 		# Test_Video'2-prompt if proper miyoo video's version driver was loaded:
 		test_video2_func
@@ -503,7 +500,9 @@ fi
 /sbin/mkswap /dev/mmcblk0p3
 /sbin/swapon /dev/mmcblk0p3
 
-mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
+sync
+sleep 1
+mount -o remount,ro "${BOOTDIR}" | tee -a ${LOG}
 
 #define priamry partitions FS types
 P4_FS_TYPE="BTRFS"
@@ -697,9 +696,10 @@ df -Th >> ${LOG}
 rm $TEMP
 
 # disable this script
-mount -o remount,rw "${MOUNTDIR}" | tee -a ${LOG}
+mount -o remount,rw "${BOOTDIR}" | tee -a ${LOG}
 echo "Disabling the firstboot script." | tee -a ${LOG}
-mv "${MOUNTDIR}/firstboot" "${MOUNTDIR}/firstboot.done" | tee -a ${LOG}
+mv "${BOOTDIR}/firstboot" "${BOOTDIR}/firstboot.done" | tee -a ${LOG}
+mount -o remount,ro "${BOOTDIR}" | tee -a ${LOG}
 
 # copy over the config files
 echo "Copying default configuration files into place..." | tee -a ${LOG}
@@ -708,7 +708,6 @@ if $BITTBOY_CONFIG; then
 elif $MIYOO_CONFIG; then
 	cp "${HOME}/gmenu2x/input_miyoo.conf" "${HOME}/gmenu2x/input.conf"
 fi
-mount -o remount,ro "${MOUNTDIR}" | tee -a ${LOG}
 
 sync
 echo "firstboot script finished." | tee -a ${LOG}
@@ -717,11 +716,11 @@ echo
 
 #install IPK packages
 echo "starting ipk install manager..." | tee -a ${LOG}
-${BASEDIR}/ipk_install.sh | tee -a ${LOG}
+${BOOTDIR}/ipk_install.sh | tee -a ${LOG}
 
 # Reboot device if CONSOLE_VARIANT was overwritten from $CHOICE so that it could be applied in u-boot by readID 
 ## or found firstboot custom script
-if ($CONSOLE_OVERWRITE || test -r "${BASEDIR}/firstboot.custom.sh"); then
+if ($CONSOLE_OVERWRITE || test -r "${BOOTDIR}/firstboot.custom.sh"); then
 	safe_reboot_func
 else
 #just grep logs from temp directory before continuing

@@ -3,10 +3,10 @@
 BOOTLOGO="boot-logo"
 export HOME=/mnt
 export ROMS=/roms
+export BOOTDIR=/boot # we expect /dev/mmcblk0p1 has been mounted here read only, from inittab
 export SDL_NOMOUSE=1
 START="${HOME}/autoexec.sh"
 
-BOOTDIR=/boot # we expect /dev/mmcblk0p1 has been mounted here read only, from inittab
 LOGS=/dev/null
 
 # check if it's first boot and turn on messages if yes
