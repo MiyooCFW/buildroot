@@ -67,11 +67,11 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --title "WARN
 	clear
 	for package in $selected_packages; do
 		ipk_package="${help_messages[$((2 * package + 1))]}"
-		echo "Installing $ipk_package..."
+		echo "Installing $ipk_package..." | tee -a ${LOG}
 		if opkg install "$ipk_package" 2>/dev/null; then
-		echo "$ipk_package installed successfully."
+		echo "$ipk_package installed successfully." | tee -a ${LOG}
 		else
-		echo "Failed to install $ipk_package."
+		echo "Failed to install $ipk_package." | tee -a ${LOG}
 		fi
 	done
 	echo "Installation complete."

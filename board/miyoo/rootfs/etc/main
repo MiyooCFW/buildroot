@@ -8,14 +8,19 @@ export SDL_NOMOUSE=1
 START="${HOME}/autoexec.sh"
 
 LOGS=/dev/null
+UMTPR_LOGS=/dev/null
+GMENU2X_LOGS=/dev/null
 
 # check if it's first boot and turn on messages if yes
 if ((test -r "${BOOTDIR}/firstboot") || (test -r "${HOME}/firstboot.completed")); then
 	DEBUG_MSG="yes"
 	LOGS=$(mktemp)
+	UMTPR_LOGS="${HOME}/log_umtpr.txt"
+	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt"
 fi
 
 export LOGS # so that subshells can use this as well
+export GMENU2X_LOGS
 
 if test "x${DEBUG_MSG}" == "xyes"; then
 	echo -e "\e[0m"    # normal foreground color
@@ -27,13 +32,14 @@ fi
 # load kernel modules
 
 # load usb gadget
-mount none /sys/kernel/config -t configfs
-mkdir /sys/kernel/config/usb_gadget/g2
-cd /sys/kernel/config/usb_gadget/g2
-mkdir configs/c.1
-mkdir functions/ffs.mtp
-mkdir strings/0x409
-mkdir configs/c.1/strings/0x409
+echo "Loading USB gadget" | tee -a "${LOGS}"
+mount none /sys/kernel/config -t configfs | tee -a "${LOGS}"
+mkdir /sys/kernel/config/usb_gadget/g2 >> "${LOGS}"
+cd /sys/kernel/config/usb_gadget/g2 >> "${LOGS}"
+mkdir configs/c.1 >> "${LOGS}"
+mkdir functions/ffs.mtp >> "${LOGS}"
+mkdir strings/0x409 >> "${LOGS}"
+mkdir configs/c.1/strings/0x409 >> "${LOGS}"
 
 echo 0x0100 > idProduct
 echo 0x1D6B > idVendor
@@ -43,10 +49,10 @@ echo "Miyoo CFW 2.0" > strings/0x409/product
 
 echo "Conf 1" > configs/c.1/strings/0x409/configuration
 echo 120 > configs/c.1/MaxPower
-ln -s functions/ffs.mtp configs/c.1
-mkdir /dev/ffs-mtp
-mount -t functionfs mtp /dev/ffs-mtp
-umtprd >> "${LOGS}" 2>&1 &
+ln -s functions/ffs.mtp configs/c.1 | tee -a "${LOGS}"
+mkdir /dev/ffs-mtp >> "${LOGS}"
+mount -t functionfs mtp /dev/ffs-mtp | tee -a "${LOGS}"
+umtprd >> "${UMTPR_LOGS}" 2>&1 &
 sleep 1
 ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
 
@@ -69,7 +75,7 @@ if test -r "${HOME}/tvout"; then
 	echo 0 > ${HOME}/.backlight.conf
 	modprobe -r $video
 	#TVMODE options.cfg setting 
-	export tvmode=$(grep -o TVMODE=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
+	tvmode=$(grep -o TVMODE=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
 	modprobe miyoo-tvout $tvmode
 	echo 1 > /sys/class/vtconsole/vtcon1/bind
 	modprobe -r $video
@@ -81,10 +87,12 @@ else
 	if (!(test -r "${BOOTDIR}/modules.custom.sh") || !(grep -q MODULES_CUSTOM\=\1 "${HOME}/options.cfg")); then
 		# Load video module read from uEnv.txt & defined by variant in console.cfg
 		#FLIP & INVERT options.cfg setting
-		export flip=$(grep -o FLIP=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
-		export invert=$(grep -o INVERT=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
-		modprobe $video $flip $invert
+		echo "Loding video module with args" >> "${LOGS}"
+		flip=$(grep -o FLIP=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
+		invert=$(grep -o INVERT=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
+		modprobe $video $flip $invert | tee -a "${LOGS}"
 	else
+		echo "Loding custom modules." >> "${LOGS}"
 		(cd "${BOOTDIR}" && sh modules.custom.sh ) >> "${LOGS}" 2>&1
 	fi
 fi
@@ -163,7 +171,7 @@ fi
 if test "x${DEBUG_MSG}" == "xyes"; then
 	sleep 1
 	dmesg > ${HOME}/dmesg.txt
-	yes | mv ${LOGS} ${HOME}/log.txt
+	mv ${LOGS} ${HOME}/log.txt
 fi
 
 while [ 1 ]
@@ -171,8 +179,9 @@ do
 	if test -f "${START}"; then
 		source "${START}"
 	else
-		cd "${HOME}"/gmenu2x;
-		./gmenu2x >> /dev/null 2>&1;
+		echo "Starting GMenu2x" >> "${LOGS}"
+		cd "${HOME}"/gmenu2x || exit;
+		./gmenu2x >> "${GMENU2X_LOGS}" 2>&1;
 	fi
 	clear
 done
