@@ -13,7 +13,7 @@ UMTPR_LOGS=/dev/null
 GMENU2X_LOGS=/dev/null
 
 # check if it's first boot and turn on messages if yes
-if ((test -r "${BOOTDIR}/firstboot") || (test -r "${HOME}/firstboot.completed")); then
+if (test -r "${BOOTDIR}/firstboot" || test -r "${HOME}/firstboot.completed" || !(grep -q DEBUG\=\0 "${HOME}/options.cfg")); then
 	DEBUG_MSG="yes"
 	LOGS_TEMP=$(mktemp)
 	mkdir -p ${HOME}/logs
