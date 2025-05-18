@@ -2,11 +2,21 @@
 export TERM=linux
 
 # expect to be run from /boot, where the boot partition is mounted (readonly)
-LOG=$(mktemp)
-#LOG=/dev/null
-LOG_FIRSTBOOT=${HOME}/log_firstboot.txt
+LOG=${HOME}/logs/log_firstboot.txt
+LOG_TEMP=$(mktemp)
 export LOG
-export LOG_FIRSTBOOT
+export LOG_TEMP
+
+restore_temp_log_func(){
+	cat ${LOGS_TEMP} >> ${LOGS}
+	LOGS_TEMP=$(mktemp)
+}
+
+restore_dmesg_log_func(){
+	echo -en "\nNew DMESG log:\n" >> ${HOME}/logs/dmesg.txt
+	dmesg >> ${HOME}/logs/dmesg.txt
+}
+
 # high brightness
 echo '10' > /sys/devices/platform/backlight/backlight/backlight/brightness
 
@@ -22,7 +32,6 @@ if test -r "${BOOTDIR}/firstboot.custom.sh"; then
 	(cd "${BOOTDIR}" && sh firstboot.custom.sh) | tee -a ${LOG}
 	echo "Finished running a specific firstboot script." | tee -a ${LOG}
 fi
-
 
 echo " "
 sleep 1
@@ -124,14 +133,13 @@ detect_console_func(){
 # write logs, sync & unmount MAIN before reboot/poweroff
 safe_shutdown_func(){
 	echo "please wait a few seconds for a ${SHUTDOWN}...." | tee -a ${LOG}
-	dmesg > ${HOME}/dmesg.txt
-	cat ${LOG} >> ${LOG_FIRSTBOOT}
+	restore_dmesg_log_func
 	sync
 	sleep 1
-	mount -o remount,ro "${BOOTDIR}" | tee -a ${LOG_FIRSTBOOT}
+	mount -o remount,ro "${BOOTDIR}" | tee -a ${LOG}
 	sleep 2
-	umount /dev/mmcblk0p4 | tee -a ${LOG_FIRSTBOOT}
-	#umount /dev/mmcblk0p1 | tee -a ${LOG} # this fails cuz we're running this script of /boot
+	umount /dev/mmcblk0p4 | tee -a ${LOG}
+	#umount /dev/mmcblk0p1 # this fails cuz we're running this script of /boot
 	sleep 4
 }
 
@@ -576,13 +584,14 @@ else
 	sleep 3
 	mkdir "${ROMS}"/backup | tee -a ${LOG}
 	rsync -a --info=nonreg0 --info=progress2 "${HOME}" "${ROMS}"/backup | tee -a ${LOG}
-	umount /dev/mmcblk0p4 | tee -a ${LOG}
+	umount /dev/mmcblk0p4 | tee -a ${LOG_TEMP}
 	clear
 	echo -en "\n\n"
-	mkfs.ext4 -d "${ROMS}"/backup/"${HOME}" -L MAIN -v -F /dev/mmcblk0p4 | tee -a ${LOG}
+	mkfs.ext4 -d "${ROMS}"/backup/"${HOME}" -L MAIN -v -F /dev/mmcblk0p4 | tee -a ${LOG_TEMP}
 	sleep 2
-	e2fsck -y /dev/mmcblk0p4 | tee -a ${LOG}
-	mount /dev/mmcblk0p4 "${HOME}" -o rw,sync,exec | tee -a ${LOG}
+	e2fsck -y /dev/mmcblk0p4 | tee -a ${LOG_TEMP}
+	mount /dev/mmcblk0p4 "${HOME}" -o rw,sync,exec | tee -a ${LOG_TEMP}
+	restore_temp_log_func
 	rm -r "${ROMS}"/backup | tee -a ${LOG}
 	CHANGE_FS_P4=true
 fi
@@ -766,6 +775,6 @@ ${BOOTDIR}/ipk_install.sh | tee -a ${LOG}
 if ($CONSOLE_OVERWRITE || test -r "${BOOTDIR}/firstboot.custom.sh"); then
 	safe_reboot_func
 else
-#just grep logs from temp directory before continuing
-	cat ${LOG} >> ${LOG_FIRSTBOOT}
+#just grep logs from temp directory before continuing just in case
+	restore_temp_log_func
 fi
