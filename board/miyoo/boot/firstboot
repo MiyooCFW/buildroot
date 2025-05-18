@@ -551,7 +551,7 @@ else
 	mkfs.ext4 -d "${ROMS}"/backup/"${HOME}" -L MAIN -v -F /dev/mmcblk0p4 | tee -a ${LOG}
 	sleep 2
 	e2fsck -y /dev/mmcblk0p4 | tee -a ${LOG}
-	mount /dev/mmcblk0p4 "${HOME}" -o rw,sync | tee -a ${LOG}
+	mount /dev/mmcblk0p4 "${HOME}" -o rw,sync,exec | tee -a ${LOG}
 	#cp -v -a "${ROMS}"/backup/"${HOME}" /
 	rm -r "${ROMS}"/backup
 	CHANGE_FS_P4=true
@@ -559,7 +559,7 @@ fi
 ## Correct inittab for new p4 filesystem type
 if ( $CHANGE_FS_P4 ); then
 	mount -o remount,rw / /
-	sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p4\).*|\1 "${HOME}" -o rw,sync|" /etc/inittab
+	sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p4\).*|\1 "${HOME}" -o rw,sync,exec|" /etc/inittab
 	mount -o remount,ro / /
 fi
 
@@ -597,13 +597,13 @@ if ( $CHANGE_FS_P5 ); then
 		mkfs.vfat -n ROMS -v -F32 /dev/mmcblk0p5 | tee -a ${LOG}
 		sleep 2
 		fsck.fat -y /dev/mmcblk0p5 | tee -a ${LOG}
-		mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,sync,utf8 | tee -a ${LOG}
+		mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,utf8 | tee -a ${LOG}
 		rsync -rvt --modify-window=1 --exclude "lost+found" --info=nonreg0 --info=progress2 "${HOME}"/backup"${ROMS}" /
 	elif test "${P5_FS_TYPE}" == "BTRFS"; then
 		mkfs.btrfs -r "${HOME}"/backup"${ROMS}" -v -f -L ROMS /dev/mmcblk0p5 | tee -a ${LOG}
 		sleep 2
 		btrfsck -y /dev/mmcblk0p5 | tee -a ${LOG}
-		mount /dev/mmcblk0p5 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime,exec | tee -a ${LOG}
+		mount /dev/mmcblk0p5 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime | tee -a ${LOG}
 	fi
 	rm -r "${HOME}"/backup
 ## Correct inittab for new p5 filesystem type
@@ -611,7 +611,7 @@ if ( $CHANGE_FS_P5 ); then
 	if test "${P5_FS_TYPE}" == "FAT32"; then
 		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -t vfat -o rw,utf8|" /etc/inittab
 	elif test "${P5_FS_TYPE}" == "BTRFS"; then
-		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime,exec|" /etc/inittab
+		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime|" /etc/inittab
 	fi
 	mount -o remount,ro / /
 fi
@@ -670,7 +670,7 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 			parted -a optimal /dev/mmcblk0 --script mkpart roms $P5_START_POINT 100%  | tee -a ${LOG}
 			partx -u /dev/mmcblk0 | tee -a ${LOG}
 			if test "${P5_FS_TYPE}" == "BTRFS"; then
-				mount /dev/mmcblk0p5 "${ROMS}" | tee -a ${LOG}
+				mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime | tee -a ${LOG}
 				btrfs filesystem resize max ${ROMS} | tee -a ${LOG}
 			else #EXT4
 				resize2fs /dev/mmcblk0p5 | tee -a ${LOG}

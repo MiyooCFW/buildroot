@@ -103,7 +103,7 @@ if !(grep -q FS_CHECK\=\0 "${HOME}/options.cfg"); then
 		echo -e "\e[32mChecking&Repairing FAT16 BOOT partition...\e[0m"
 		umount /dev/mmcblk0p1
 		fsck.vfat -y /dev/mmcblk0p1 > /dev/null; 
-		mount /dev/mmcblk0p1 "${BOOTDIR}" -t vfat -o ro,exec,sync,utf8
+		mount /dev/mmcblk0p1 "${BOOTDIR}" -t vfat -o ro,exec,utf8
 		echo -e "\e[32mCheck complete.\e[0m"
 	fi
 ##Check if MAIN (EXT4) is flagged as "dirty", and if so unmount, repair, remount
@@ -112,7 +112,7 @@ if !(grep -q FS_CHECK\=\0 "${HOME}/options.cfg"); then
 		echo -e "\e[32mChecking MAIN(EXT4) partition...\e[0m"
 		umount /dev/mmcblk0p4
 		e2fsck -y /dev/mmcblk0p4 > /dev/null; 
-		mount /dev/mmcblk0p4 "${HOME}" -o rw,sync
+		mount /dev/mmcblk0p4 "${HOME}" -o rw,sync,exec
 	fi
 ##Check if ROMS (EXT4 or FAT32) is flagged as "dirty", and if so unmount, repair, remount
 	if dmesg | grep "EXT4-fs (mmcblk0p5): warning: mounting fs with errors, running e2fsck is recommended" > /dev/null;  then
@@ -120,13 +120,13 @@ if !(grep -q FS_CHECK\=\0 "${HOME}/options.cfg"); then
 		echo -e "\e[32mChecking ROMS(EXT4) partition...\e[0m"
 		umount /dev/mmcblk0p5
 		e2fsck -y /dev/mmcblk0p5 > /dev/null; 
-		mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime,nodiratime
+		mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime
 	elif dmesg | grep "FAT-fs (mmcblk0p5): Volume was not properly unmounted. Some data may be corrupt. Please run fsck." > /dev/null;  then
 		echo -e "\e[31mDirty sectors detected.\e[0m"
 		echo -e "\e[32mChecking&Repairing ROMS(FAT32) partition...\e[0m"
 		umount /dev/mmcblk0p5
 		fsck.vfat -y /dev/mmcblk0p5 > /dev/null; 
-		mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,sync,utf8
+		mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,utf8
 		echo -e "\e[32mCheck complete.\e[0m"
 	fi
 fi
