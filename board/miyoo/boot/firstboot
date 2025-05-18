@@ -609,7 +609,7 @@ if ( $CHANGE_FS_P5 ); then
 ## Correct inittab for new p5 filesystem type
 	mount -o remount,rw / /
 	if test "${P5_FS_TYPE}" == "FAT32"; then
-		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -t vfat -o rw,sync,utf8|" /etc/inittab
+		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -t vfat -o rw,utf8|" /etc/inittab
 	elif test "${P5_FS_TYPE}" == "BTRFS"; then
 		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime,exec|" /etc/inittab
 	fi
@@ -662,7 +662,7 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 			fsck.fat -y /dev/mmcblk0p5 | tee -a ${LOG}
 			#echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p5
 			sync
-			mount -t vfat -o rw,sync,utf8 /dev/mmcblk0p5 "${ROMS}" | tee -a ${LOG}
+			mount -t vfat -o rw,utf8 /dev/mmcblk0p5 "${ROMS}" | tee -a ${LOG}
 		else
 			echo "This can take a few seconds." | tee -a ${LOG}
 			P5_START_POINT=` parted --script /dev/mmcblk0 unit MB print | grep '5' | tail -n1 | awk '{print $2}'`
