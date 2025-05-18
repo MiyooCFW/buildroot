@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-UMTPRD_VERSION = 7d7d099df0dd929f95de0f45a2b6b006545207c6
+UMTPRD_VERSION = f5ef8985f6226c69b944392f7a2d53bc24f72cb4 #commit a734ef0 breakes with mq_open error
 UMTPRD_SITE_METHOD = git
 UMTPRD_SITE = https://github.com/viveris/uMTP-Responder.git
 UMTPRD_LICENSE = GPL-3.0+
