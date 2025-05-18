@@ -192,7 +192,11 @@ do
 	else
 		echo "Starting GMenu2x" >> "${LOGS}"
 		cd "${HOME}"/gmenu2x || exit;
-		./gmenu2x >> "${GMENU2X_LOGS}" 2>&1;
+		if (!(grep -q DEBUG\=\0 "${HOME}/options.cfg")); then
+			gdb -ex="set confirm off" -ex=run -ex="bt full" -ex=q ./gmenu2x-debug >> "${GMENU2X_LOGS}"
+		else
+			./gmenu2x >> "${GMENU2X_LOGS}" 2>&1;
+		fi
 	fi
 	clear
 done
