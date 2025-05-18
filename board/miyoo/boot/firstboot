@@ -535,7 +535,7 @@ echo "Formatting swap P3 partition" | tee -a ${LOG}
 sleep 1
 /sbin/mkswap /dev/mmcblk0p3 # >> ${LOG} - this fails
 /sbin/swapon /dev/mmcblk0p3 # >> ${LOG} - this fails (I think)
-echo -en "\n Available memory:\n" | tee -a ${LOG}
+echo -en "\n  Available memory:\n" >> ${LOG}
 free -m >> ${LOG}
 sync
 sleep 1
@@ -583,7 +583,7 @@ else
 	echo -en "\e[32mThis can take a few minutes, be patient!\e[0m"
 	sleep 3
 	mkdir "${ROMS}"/backup | tee -a ${LOG}
-	rsync -a --info=nonreg0 --info=progress2 "${HOME}" "${ROMS}"/backup | tee -a ${LOG}
+	rsync -a --info=nonreg0 --info=progress2 "${HOME}" "${ROMS}"/backup | tee -a ${LOG_TEMP}
 	umount /dev/mmcblk0p4 | tee -a ${LOG_TEMP}
 	clear
 	echo -en "\n\n"
