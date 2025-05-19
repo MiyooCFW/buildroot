@@ -9,11 +9,13 @@ export LOG_TEMP
 
 restore_temp_log_func(){
 	cat ${LOG_TEMP} >> ${LOG}
+	sleep 2
 	LOG_TEMP=$(mktemp)
 }
 
 restore_dmesg_log_func(){
 	echo -en "\nNew DMESG log:\n" >> ${HOME}/logs/dmesg.txt
+	sleep 2
 	dmesg >> ${HOME}/logs/dmesg.txt
 }
 
@@ -21,9 +23,9 @@ restore_dmesg_log_func(){
 echo '10' > /sys/devices/platform/backlight/backlight/backlight/brightness
 
 #echo -e "\e[?3c"
-echo -e "\e[32m" # green
+#echo -e "\e[32m" # green
 
-echo "firstboot script running...\e[0m" | tee -a ${LOG}
+echo -en "\e[32mfirstboot script running...\e[0m" | tee -a ${LOG}
 
 # run a custom script if present - could be used to fix u-boot and such
 if test -r "${BOOTDIR}/firstboot.custom.sh"; then
@@ -137,7 +139,7 @@ safe_shutdown_func(){
 	sleep 1
 	mount -o remount,ro "${BOOTDIR}" 2>&1 | tee -a ${LOG}
 	sleep 2
-	umount /dev/mmcblk0p4 2>&1 | tee -a ${LOG}
+	umount /dev/mmcblk0p4 2>&1 # | tee -a ${LOG} - logging here may brake unmouting
 	#umount /dev/mmcblk0p1 # this fails cuz we're running this script of /boot
 	sleep 4
 }
@@ -583,7 +585,14 @@ else
 	echo -en "\e[32mThis can take a few minutes, be patient!\e[0m"
 	sleep 3
 	mkdir "${ROMS}"/backup 2>&1 | tee -a ${LOG}
-	rsync -a --info=nonreg0 --info=progress2 "${HOME}" "${ROMS}"/backup 2>&1 | tee -a ${LOG_TEMP}
+	rsync -a --info=nonreg0 --info=progress2 "${HOME}" "${ROMS}"/backup
+	echo $? > $TEMP && EXIT_CODE=$(cat $TEMP)
+	if test $EXIT_CODE -eq 0; then
+		echo "Archiving ${HOME} partition successful" | tee -a ${LOG_TEMP}
+	else
+		echo -en "\033[0;31mArchiving ${HOME} to ${ROMS}/backup failed with rsync exit code ${EXIT_CODE}\033[0m" | tee -a ${LOG_TEMP}
+	fi
+	sleep 2
 	umount /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP}
 	clear
 	echo -en "\n\n"
@@ -632,7 +641,14 @@ if $CHANGE_FS_P5; then
 	echo -en "\e[32mThis can take a few minutes, be patient!\e[0m"
 	sleep 3
 	mkdir "${HOME}"/backup 2>&1 | tee -a ${LOG}
-	rsync -a --info=nonreg0 --info=progress2 "${ROMS}" "${HOME}"/backup 2>&1 | tee -a ${LOG}
+	rsync -a --info=nonreg0 --info=progress2 "${ROMS}" "${HOME}"/backup
+	echo $? > $TEMP && EXIT_CODE=$(cat $TEMP)
+	if test $EXIT_CODE -eq 0; then
+		echo "Archiving ${ROMS} partition successful" | tee -a ${LOG}
+	else
+		echo "\033[0;31mArchiving ${ROMS} to ${HOME}/backup failed with rsync exit code ${EXIT_CODE}\033[0m" | tee -a ${LOG}
+	fi
+	sleep 2
 	umount /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 	clear
 	echo -en "\n\n"
@@ -641,11 +657,17 @@ if $CHANGE_FS_P5; then
 		sleep 2
 		fsck.fat -y /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 		mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,utf8 2>&1 | tee -a ${LOG}
-		rsync -rvt --modify-window=1 --exclude "lost+found" --info=nonreg0 --info=progress2 "${HOME}"/backup"${ROMS}" / 2>&1 | tee -a ${LOG}
+		rsync -rvt --modify-window=1 --exclude "lost+found" --info=nonreg0 --info=progress2 "${HOME}"/backup"${ROMS}" /
+		echo $? > $TEMP && EXIT_CODE=$(cat $TEMP)
+		if test $EXIT_CODE -eq 0; then
+			echo "Extracting archive in ${ROMS} partition successful" | tee -a ${LOG}
+		else
+			echo "\033[0;31mExtracting archive ${ROMS} from ${HOME}/backup${ROMS} failed with rsync exit code ${EXIT_CODE}\033[0m" | tee -a ${LOG}
+		fi
 	elif test "${P5_FS_TYPE}" == "BTRFS"; then
 		mkfs.btrfs -r "${HOME}"/backup"${ROMS}" -v -f -L ROMS /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 		sleep 2
-		btrfsck -y /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
+		btrfsck /dev/mmcblk0p5 2>&1 | tee -a ${LOG} # does not repair FS, just check integrity as it is dengarous to do so
 		mount /dev/mmcblk0p5 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime 2>&1 | tee -a ${LOG}
 	fi
 	rm -r "${HOME}"/backup
