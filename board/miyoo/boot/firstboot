@@ -8,8 +8,8 @@ export LOG
 export LOG_TEMP
 
 restore_temp_log_func(){
-	cat ${LOGS_TEMP} >> ${LOGS}
-	LOGS_TEMP=$(mktemp)
+	cat ${LOG_TEMP} >> ${LOG}
+	LOG_TEMP=$(mktemp)
 }
 
 restore_dmesg_log_func(){
@@ -23,13 +23,12 @@ echo '10' > /sys/devices/platform/backlight/backlight/backlight/brightness
 #echo -e "\e[?3c"
 echo -e "\e[32m" # green
 
-echo "firstboot script running..." | tee -a ${LOG}
-echo
+echo "firstboot script running...\e[0m" | tee -a ${LOG}
 
 # run a custom script if present - could be used to fix u-boot and such
 if test -r "${BOOTDIR}/firstboot.custom.sh"; then
 	echo "Running a specific firstboot script..." | tee -a ${LOG}
-	(cd "${BOOTDIR}" && sh firstboot.custom.sh) | tee -a ${LOG}
+	(cd "${BOOTDIR}" && sh firstboot.custom.sh) 2>&1 | tee -a ${LOG}
 	echo "Finished running a specific firstboot script." | tee -a ${LOG}
 fi
 
@@ -52,7 +51,7 @@ consequences arising from the use or misuse of this software.
 TEMP=$(mktemp) 
 
 ## Access /boot directory
-mount -o remount,rw "${BOOTDIR}" | tee -a ${LOG}
+mount -o remount,rw "${BOOTDIR}" 2>&1 | tee -a ${LOG}
 
 # list of available devices in u-boot Environment parameters' read from FORCE_VERSION
 devices_ID="
@@ -136,9 +135,9 @@ safe_shutdown_func(){
 	restore_dmesg_log_func
 	sync
 	sleep 1
-	mount -o remount,ro "${BOOTDIR}" | tee -a ${LOG}
+	mount -o remount,ro "${BOOTDIR}" 2>&1 | tee -a ${LOG}
 	sleep 2
-	umount /dev/mmcblk0p4 | tee -a ${LOG}
+	umount /dev/mmcblk0p4 2>&1 | tee -a ${LOG}
 	#umount /dev/mmcblk0p1 # this fails cuz we're running this script of /boot
 	sleep 4
 }
@@ -533,13 +532,14 @@ fi
 # Format swap parition
 echo "Formatting swap P3 partition" | tee -a ${LOG}
 sleep 1
-/sbin/mkswap /dev/mmcblk0p3 # >> ${LOG} - this fails
-/sbin/swapon /dev/mmcblk0p3 # >> ${LOG} - this fails (I think)
+/sbin/mkswap /dev/mmcblk0p3 2>&1 | tee -a ${LOG} # this logging may fail
+sleep 1
+/sbin/swapon /dev/mmcblk0p3 2>&1 | tee -a ${LOG} # this logging may fail (I think)
 echo -en "\n  Available memory:\n" >> ${LOG}
 free -m >> ${LOG}
 sync
 sleep 1
-mount -o remount,ro "${BOOTDIR}" | tee -a ${LOG}
+mount -o remount,ro "${BOOTDIR}" 2>&1 | tee -a ${LOG}
 
 #define primary partitions FS types
 ##TODO: detect FS type in script eg. grep `df -Th` cmd
@@ -582,17 +582,17 @@ else
 	echo -en "\n\nConverting the MAIN partition filesystem to ${P4_FS_TYPE} type.\n\n" | tee -a ${LOG}
 	echo -en "\e[32mThis can take a few minutes, be patient!\e[0m"
 	sleep 3
-	mkdir "${ROMS}"/backup | tee -a ${LOG}
-	rsync -a --info=nonreg0 --info=progress2 "${HOME}" "${ROMS}"/backup | tee -a ${LOG_TEMP}
-	umount /dev/mmcblk0p4 | tee -a ${LOG_TEMP}
+	mkdir "${ROMS}"/backup 2>&1 | tee -a ${LOG}
+	rsync -a --info=nonreg0 --info=progress2 "${HOME}" "${ROMS}"/backup 2>&1 | tee -a ${LOG_TEMP}
+	umount /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP}
 	clear
 	echo -en "\n\n"
-	mkfs.ext4 -d "${ROMS}"/backup/"${HOME}" -L MAIN -v -F /dev/mmcblk0p4 | tee -a ${LOG_TEMP}
+	mkfs.ext4 -d "${ROMS}"/backup/"${HOME}" -L MAIN -v -F /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP}
 	sleep 2
-	e2fsck -y /dev/mmcblk0p4 | tee -a ${LOG_TEMP}
-	mount /dev/mmcblk0p4 "${HOME}" -o rw,sync,exec | tee -a ${LOG_TEMP}
+	e2fsck -y /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP}
+	mount /dev/mmcblk0p4 "${HOME}" -o rw,sync,exec 2>&1 | tee -a ${LOG_TEMP}
 	restore_temp_log_func
-	rm -r "${ROMS}"/backup | tee -a ${LOG}
+	rm -r "${ROMS}"/backup 2>&1 | tee -a ${LOG}
 	CHANGE_FS_P4=true
 fi
 ## Correct inittab for new p4 filesystem type
@@ -631,22 +631,22 @@ if $CHANGE_FS_P5; then
 	echo -en "\n\nConverting the ROMS partition filesystem to ${P5_FS_TYPE} type.\n\n" | tee -a ${LOG}
 	echo -en "\e[32mThis can take a few minutes, be patient!\e[0m"
 	sleep 3
-	mkdir "${HOME}"/backup | tee -a ${LOG}
-	rsync -a --info=nonreg0 --info=progress2 "${ROMS}" "${HOME}"/backup | tee -a ${LOG}
-	umount /dev/mmcblk0p5 | tee -a ${LOG}
+	mkdir "${HOME}"/backup 2>&1 | tee -a ${LOG}
+	rsync -a --info=nonreg0 --info=progress2 "${ROMS}" "${HOME}"/backup 2>&1 | tee -a ${LOG}
+	umount /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 	clear
 	echo -en "\n\n"
 	if test "${P5_FS_TYPE}" == "FAT32"; then
-		mkfs.vfat -n ROMS -v -F32 /dev/mmcblk0p5 | tee -a ${LOG}
+		mkfs.vfat -n ROMS -v -F32 /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 		sleep 2
-		fsck.fat -y /dev/mmcblk0p5 | tee -a ${LOG}
-		mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,utf8 | tee -a ${LOG}
-		rsync -rvt --modify-window=1 --exclude "lost+found" --info=nonreg0 --info=progress2 "${HOME}"/backup"${ROMS}" / | tee -a ${LOG}
+		fsck.fat -y /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
+		mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,utf8 2>&1 | tee -a ${LOG}
+		rsync -rvt --modify-window=1 --exclude "lost+found" --info=nonreg0 --info=progress2 "${HOME}"/backup"${ROMS}" / 2>&1 | tee -a ${LOG}
 	elif test "${P5_FS_TYPE}" == "BTRFS"; then
-		mkfs.btrfs -r "${HOME}"/backup"${ROMS}" -v -f -L ROMS /dev/mmcblk0p5 | tee -a ${LOG}
+		mkfs.btrfs -r "${HOME}"/backup"${ROMS}" -v -f -L ROMS /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 		sleep 2
-		btrfsck -y /dev/mmcblk0p5 | tee -a ${LOG}
-		mount /dev/mmcblk0p5 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime | tee -a ${LOG}
+		btrfsck -y /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
+		mount /dev/mmcblk0p5 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime 2>&1 | tee -a ${LOG}
 	fi
 	rm -r "${HOME}"/backup
 ## Correct inittab for new p5 filesystem type
@@ -704,30 +704,30 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 		echo "Unallocated space available for resizing equals ${SD_MAX_UNALL_SIZE_IN_GiB}GB," | tee -a ${LOG}
 		echo "and more precisely it's ${SD_MAX_UNALL_SIZE_IN_MiB}MB big" | tee -a ${LOG}
 		echo "Resizing the ROMS (${P5_FS_TYPE}) partition to ${SD_MAX_AVAIL_SIZE_IN_GiB}GB." | tee -a ${LOG}
-		umount /dev/mmcblk0p5 | tee -a ${LOG}
+		umount /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 		if test "${P5_FS_TYPE}" == "FAT32"; then
 			echo -en "\e[32mThis can take a few minutes, be patient!\e[0m"
 			#TODO: fix outputting logs from fatresize stdout
-			fatresize --size="${SD_MAX_AVAIL_SIZE_IN_KiB}"ki -v -p /dev/mmcblk0p5 -n5 | tee -a ${LOG}
-			fsck.fat -y /dev/mmcblk0p5 | tee -a ${LOG}
+			fatresize --size="${SD_MAX_AVAIL_SIZE_IN_KiB}"ki -v -p /dev/mmcblk0p5 -n5 2>&1 | tee -a ${LOG}
+			fsck.fat -y /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 			#echo -n -e \\xEB\\x58\\x90 > /dev/mmcblk0p5
 			sync
-			mount -t vfat -o rw,utf8 /dev/mmcblk0p5 "${ROMS}" | tee -a ${LOG}
+			mount -t vfat -o rw,utf8 /dev/mmcblk0p5 "${ROMS}" 2>&1 | tee -a ${LOG}
 		else
 			echo -en "\e[32mThis can take a few seconds!\e[0m"
 			P5_START_POINT=` parted --script /dev/mmcblk0 unit MB print | grep '5' | tail -n1 | awk '{print $2}'`
-			parted -a optimal /dev/mmcblk0 --script rm '5'  | tee -a ${LOG}
-			parted -a optimal /dev/mmcblk0 --script mkpart roms $P5_START_POINT 100%  | tee -a ${LOG}
-			partx -u /dev/mmcblk0 | tee -a ${LOG}
+			parted -a optimal /dev/mmcblk0 --script rm '5'  2>&1 | tee -a ${LOG}
+			parted -a optimal /dev/mmcblk0 --script mkpart roms $P5_START_POINT 100%  2>&1 | tee -a ${LOG}
+			partx -u /dev/mmcblk0 2>&1 | tee -a ${LOG}
 			if test "${P5_FS_TYPE}" == "BTRFS"; then
-				mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime | tee -a ${LOG}
-				btrfs filesystem resize max ${ROMS} | tee -a ${LOG}
+				mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime 2>&1 | tee -a ${LOG}
+				btrfs filesystem resize max ${ROMS} 2>&1 | tee -a ${LOG}
 			else #EXT4
-				resize2fs /dev/mmcblk0p5 | tee -a ${LOG}
-				e2fsck -y /dev/mmcblk0p5 | tee -a ${LOG}
-				mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime,nodiratime | tee -a ${LOG}
+				resize2fs /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
+				e2fsck -y /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
+				mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime,nodiratime 2>&1 | tee -a ${LOG}
 			fi
-			partprobe | tee -a ${LOG}
+			partprobe 2>&1 | tee -a ${LOG}
 		fi
 		RESIZE_COMMENCED=true
 	else
@@ -736,20 +736,20 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 	fi
 fi
 if ! $RESIZE_COMMENCED && test "${P5_FS_TYPE}" == "FAT32" ; then
-	sgdisk --typecode=5:0700 /dev/mmcblk0  | tee -a ${LOG} # Microsoft basic data - partition type
-	partprobe | tee -a ${LOG}
+	sgdisk --typecode=5:0700 /dev/mmcblk0  2>&1 | tee -a ${LOG} # Microsoft basic data - partition type
+	partprobe 2>&1 | tee -a ${LOG}
 fi
 # output FS table with type
-df -Th >> ${LOG}
+df -Th >> ${LOG} 2>&1
 
 # Cleanup - delete the temporary file storing variable value
 rm $TEMP
 
 # disable this script
-mount -o remount,rw "${BOOTDIR}" | tee -a ${LOG}
+mount -o remount,rw "${BOOTDIR}" 2>&1 | tee -a ${LOG}
 echo "Disabling the firstboot script." | tee -a ${LOG}
-mv "${BOOTDIR}/firstboot" "${BOOTDIR}/firstboot.done" | tee -a ${LOG}
-mount -o remount,ro "${BOOTDIR}" | tee -a ${LOG}
+mv "${BOOTDIR}/firstboot" "${BOOTDIR}/firstboot.done" 2>&1 | tee -a ${LOG}
+mount -o remount,ro "${BOOTDIR}" 2>&1 | tee -a ${LOG}
 
 # copy over the config files
 echo "Copying default configuration files into place..." | tee -a ${LOG}
@@ -768,7 +768,7 @@ echo
 
 #install IPK packages
 echo "starting ipk install manager..." | tee -a ${LOG}
-${BOOTDIR}/ipk_install.sh | tee -a ${LOG}
+${BOOTDIR}/ipk_install.sh 2>&1 | tee -a ${LOG}
 
 # Reboot device if CONSOLE_VARIANT was overwritten from $CHOICE so that it could be applied in u-boot by readID 
 ## or found firstboot custom script
