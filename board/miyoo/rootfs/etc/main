@@ -16,10 +16,9 @@ GMENU2X_LOGS=/dev/null
 if (test -r "${BOOTDIR}/firstboot" || test -r "${HOME}/firstboot.completed" || !(grep -q DEBUG\=\0 "${HOME}/options.cfg")); then
 	DEBUG_MSG="yes"
 	LOGS_TEMP=$(mktemp)
-	mkdir -p ${HOME}/logs
-	LOGS="${HOME}/logs/log.txt"
-	UMTPR_LOGS="${HOME}/logs/log_umtpr.txt"
-	GMENU2X_LOGS="${HOME}/logs/log_gmenu2x.txt"
+	LOGS="${HOME}/log.txt"
+	UMTPR_LOGS="${HOME}/log_umtpr.txt"
+	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt"
 fi
 
 export LOGS # so that subshells can use this as well
@@ -181,7 +180,7 @@ fi
 # Writes dmesg after firstboot procedure or if DEBUG_MSG=yes
 if test "x${DEBUG_MSG}" == "xyes"; then
 	sleep 1
-	dmesg > ${HOME}/logs/dmesg.txt
+	dmesg > ${HOME}/dmesg.txt
 	restore_temp_log_func
 fi
 

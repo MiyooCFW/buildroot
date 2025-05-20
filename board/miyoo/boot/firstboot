@@ -2,7 +2,7 @@
 export TERM=linux
 
 # expect to be run from /boot, where the boot partition is mounted (readonly)
-LOG=${HOME}/logs/log_firstboot.txt
+LOG=${HOME}/log_firstboot.txt
 LOG_TEMP=$(mktemp)
 export LOG
 export LOG_TEMP
@@ -14,9 +14,9 @@ restore_temp_log_func(){
 }
 
 restore_dmesg_log_func(){
-	echo -en "\nNew DMESG log:\n" >> ${HOME}/logs/dmesg.txt
+	echo -en "\nNew DMESG log:\n" >> ${HOME}/dmesg.txt
 	sleep 2
-	dmesg >> ${HOME}/logs/dmesg.txt
+	dmesg >> ${HOME}/dmesg.txt
 }
 
 # high brightness
@@ -534,9 +534,9 @@ fi
 # Format swap parition
 echo "Formatting swap P3 partition" | tee -a ${LOG}
 sleep 1
-/sbin/mkswap /dev/mmcblk0p3 2>&1 | tee -a ${LOG} # this logging may fail
-sleep 1
-/sbin/swapon /dev/mmcblk0p3 2>&1 | tee -a ${LOG} # this logging may fail (I think)
+/sbin/swapoff -a 2>&1 | tee -a ${LOG} # unplug SWAP, otherwise if present it won't be recreated via mkswap
+/sbin/mkswap /dev/mmcblk0p3 2>&1 | tee -a ${LOG}
+/sbin/swapon /dev/mmcblk0p3 2>&1 | tee -a ${LOG}
 echo -en "\n  Available memory:\n" >> ${LOG}
 free -m >> ${LOG}
 sync
