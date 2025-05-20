@@ -17,8 +17,16 @@ if (test -r "${BOOTDIR}/firstboot" || test -r "${HOME}/firstboot.completed" || !
 	DEBUG_MSG="yes"
 	LOGS_TEMP=$(mktemp)
 	LOGS="${HOME}/log.txt"
-	UMTPR_LOGS="${HOME}/log_umtpr.txt"
+	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt" # just standard stdout/stderr
+fi
+
+if !(grep -q DEBUG_GMENU2X\=\0 "${HOME}/options.cfg"); then
+	DEBUG_GMENU2X="yes"
 	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt"
+fi
+if !(grep -q DEBUG_UMTPR\=\0 "${HOME}/options.cfg"); then
+	DEBUG_UMTPR="yes"
+	UMTPR_LOGS="${HOME}/log_umtpr.txt"
 fi
 
 export LOGS # so that subshells can use this as well
@@ -60,7 +68,12 @@ echo 120 > configs/c.1/MaxPower
 ln -s functions/ffs.mtp configs/c.1 2>&1 | tee -a "${LOGS}"
 mkdir -p /dev/ffs-mtp >> "${LOGS}" 2>&1
 mount -t functionfs mtp /dev/ffs-mtp 2>&1 | tee -a "${LOGS}"
-umtprd >> "${UMTPR_LOGS}" 2>&1 &
+if test "x${DEBUG_UMTPR}" == "xyes"; then
+	umtprd-debug >> "${UMTPR_LOGS}" 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting
+else
+	umtprd >> "${UMTPR_LOGS}" 2>&1 &
+fi
+
 sleep 1
 ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
 
@@ -191,7 +204,7 @@ do
 	else
 		echo "Starting GMenu2x" >> "${LOGS}"
 		cd "${HOME}"/gmenu2x || { echo "Failed to cd into ${HOME}/gmenu2x" >> "${LOGS}" ; exit; }
-		if (!(grep -q DEBUG\=\0 "${HOME}/options.cfg")); then
+		if test "x${DEBUG_GMENU2X}" == "xyes"; then
 			gdb -ex="set confirm off" -ex=run -ex="bt full" -ex=q ./gmenu2x-debug >> "${GMENU2X_LOGS}" 2>&1
 		else
 			./gmenu2x >> "${GMENU2X_LOGS}" 2>&1
