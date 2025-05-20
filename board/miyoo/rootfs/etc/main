@@ -193,7 +193,8 @@ fi
 # Writes dmesg after firstboot procedure or if DEBUG_MSG=yes
 if test "x${DEBUG_MSG}" == "xyes"; then
 	sleep 1
-	dmesg > ${HOME}/dmesg.txt
+	echo -en "\n\nNew DMESG log:\n" >> ${HOME}/dmesg.txt
+	dmesg >> ${HOME}/dmesg.txt
 	restore_temp_log_func
 fi
 
