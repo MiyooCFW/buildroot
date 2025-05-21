@@ -12,17 +12,17 @@ LOGS_TEMP=/dev/null
 UMTPR_LOGS=/dev/null
 GMENU2X_LOGS=/dev/null
 
-if !(grep -q DEBUG_GMENU2X\=\0 "${HOME}/options.cfg"); then
+if (grep -q DEBUG_GMENU2X\=\1 "${HOME}/options.cfg"); then
 	DEBUG_GMENU2X="yes"
 	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt"
 fi
-if !(grep -q DEBUG_UMTPR\=\0 "${HOME}/options.cfg"); then
+if (grep -q DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
 	DEBUG_UMTPR="yes"
 	UMTPR_LOGS="${HOME}/log_umtpr.txt"
 fi
 
 # check if it's first boot and turn on messages if yes
-if (test -r "${BOOTDIR}/firstboot" || test -r "${HOME}/firstboot.completed" || !(grep -q DEBUG\=\0 "${HOME}/options.cfg")); then
+if (test -r "${BOOTDIR}/firstboot" || test -r "${HOME}/firstboot.completed" || grep -q DEBUG\=\1 "${HOME}/options.cfg"); then
 	DEBUG_MSG="yes"
 	LOGS_TEMP=$(mktemp)
 	LOGS="${HOME}/log.txt"
