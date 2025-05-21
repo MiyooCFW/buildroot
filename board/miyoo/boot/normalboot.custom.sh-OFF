@@ -3,5 +3,3 @@
 # CONSOLE_VARIANT is also set
 # launch daemon
 daemon >> "${LOGS}" 2>&1
-# st7789sfb video driver long initialization fix
-echo " "
