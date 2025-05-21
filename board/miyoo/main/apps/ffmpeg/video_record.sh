@@ -16,7 +16,7 @@ else
 	# Wait a few seconds before actual screen record, the X264 encoder needs resources before it will stabilize video ouput
 	st_exec_func "echo -e \"\n\n\n\n\n\n\t\t\tStarting VIDEO record...\n\t\t\tWait a few seconds to start.\"; read -t 10;\
 	 if pgrep ffmpeg >/dev/null; then\
-	 	echo -e \"\n\n\t\t\tRecording VIDEO in background...\";\
+	 	echo -e \"\n\n\t\t  Recording VIDEO in background...\n\n  WARNING: Disable output logging or this\n\t\t   will not continue any further.\";\
 	 else\
 	 	echo -e \"\n\n\t\t\tFailed to launch ffmpeg for record...\";\
 	 fi; read -t 2"
