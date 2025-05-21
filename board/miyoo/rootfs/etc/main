@@ -12,14 +12,6 @@ LOGS_TEMP=/dev/null
 UMTPR_LOGS=/dev/null
 GMENU2X_LOGS=/dev/null
 
-# check if it's first boot and turn on messages if yes
-if (test -r "${BOOTDIR}/firstboot" || test -r "${HOME}/firstboot.completed" || !(grep -q DEBUG\=\0 "${HOME}/options.cfg")); then
-	DEBUG_MSG="yes"
-	LOGS_TEMP=$(mktemp)
-	LOGS="${HOME}/log.txt"
-	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt" # just standard stdout/stderr
-fi
-
 if !(grep -q DEBUG_GMENU2X\=\0 "${HOME}/options.cfg"); then
 	DEBUG_GMENU2X="yes"
 	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt"
@@ -27,6 +19,16 @@ fi
 if !(grep -q DEBUG_UMTPR\=\0 "${HOME}/options.cfg"); then
 	DEBUG_UMTPR="yes"
 	UMTPR_LOGS="${HOME}/log_umtpr.txt"
+fi
+
+# check if it's first boot and turn on messages if yes
+if (test -r "${BOOTDIR}/firstboot" || test -r "${HOME}/firstboot.completed" || !(grep -q DEBUG\=\0 "${HOME}/options.cfg")); then
+	DEBUG_MSG="yes"
+	LOGS_TEMP=$(mktemp)
+	LOGS="${HOME}/log.txt"
+	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt" # just standard stdout/stderr
+elif test "x${DEBUG_UMTPR}" == "xyes"; then
+	LOGS_TEMP=$(mktemp)
 fi
 
 export LOGS # so that subshells can use this as well
@@ -41,7 +43,11 @@ else
 fi
 
 restore_temp_log_func(){
-	cat ${LOGS_TEMP} >> ${LOGS}
+	if test "x${DEBUG_UMTPR}" == "xyes"; then
+		cat ${LOGS_TEMP} >> ${UMTPR_LOGS}
+	else
+		cat ${LOGS_TEMP} >> ${LOGS}
+	fi
 	LOGS_TEMP=$(mktemp)
 }
 
@@ -69,9 +75,9 @@ ln -s functions/ffs.mtp configs/c.1 2>&1 | tee -a "${LOGS}"
 mkdir -p /dev/ffs-mtp >> "${LOGS}" 2>&1
 mount -t functionfs mtp /dev/ffs-mtp 2>&1 | tee -a "${LOGS}"
 if test "x${DEBUG_UMTPR}" == "xyes"; then
-	umtprd-debug >> "${UMTPR_LOGS}" 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting
+	umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
 else
-	umtprd >> "${UMTPR_LOGS}" 2>&1 &
+	umtprd >> /dev/null 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting so no logging here
 fi
 
 sleep 1
@@ -210,6 +216,8 @@ do
 		else
 			./gmenu2x >> "${GMENU2X_LOGS}" 2>&1
 		fi
+		test "x${DEBUG_UMTPR}" == "xyes"\
+		 && restore_temp_log_func
 	fi
 	clear
 done

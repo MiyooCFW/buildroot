@@ -2,7 +2,7 @@
 
 echo peripheral > /sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode
 modprobe -r g_serial
-killall umtprd
+killall umtprd umtprd-debug
 /mnt/apps/usb-mtd/remove.sh g2
 mount none /sys/kernel/config -t configfs
 mkdir /sys/kernel/config/usb_gadget/g2
@@ -23,7 +23,11 @@ echo 120 > configs/c.1/MaxPower
 ln -s functions/ffs.mtp configs/c.1
 mkdir /dev/ffs-mtp
 mount -t functionfs mtp /dev/ffs-mtp
+if (grep -q DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
+umtprd-debug &
+else
 umtprd &
+fi
 sleep 1
 ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
 
