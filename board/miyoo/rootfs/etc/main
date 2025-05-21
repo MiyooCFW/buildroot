@@ -12,22 +12,23 @@ LOGS_TEMP=/dev/null
 UMTPR_LOGS=/dev/null
 GMENU2X_LOGS=/dev/null
 
-if (grep -q DEBUG_GMENU2X\=\1 "${HOME}/options.cfg"); then
+# check if it's first boot and turn on messages if yes
+if (grep -sq DEBUG\=\1 "${HOME}/options.cfg" || test -r "${BOOTDIR}/firstboot" || test -r "${HOME}/firstboot.completed"); then
+	DEBUG_MSG="yes"
+	LOGS="${HOME}/log.txt"
+	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt" # just standard stdout/stderr
+	#UMTPR_LOGS=/dev/null # see description at umtprd cmd
+fi
+if (grep -sq DEBUG_GMENU2X\=\1 "${HOME}/options.cfg"); then
 	DEBUG_GMENU2X="yes"
 	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt"
 fi
-if (grep -q DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
+if (grep -sq DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
 	DEBUG_UMTPR="yes"
 	UMTPR_LOGS="${HOME}/log_umtpr.txt"
 fi
 
-# check if it's first boot and turn on messages if yes
-if (test -r "${BOOTDIR}/firstboot" || test -r "${HOME}/firstboot.completed" || grep -q DEBUG\=\1 "${HOME}/options.cfg"); then
-	DEBUG_MSG="yes"
-	LOGS_TEMP=$(mktemp)
-	LOGS="${HOME}/log.txt"
-	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt" # just standard stdout/stderr
-elif test "x${DEBUG_UMTPR}" == "xyes"; then
+if test "x${DEBUG_MSG}" == "xyes" || test "x${DEBUG_GMENU2X}" == "xyes" || test "x${DEBUG_UMTPR}" == "xyes"; then
 	LOGS_TEMP=$(mktemp)
 fi
 
@@ -50,6 +51,9 @@ restore_temp_log_func(){
 	fi
 	LOGS_TEMP=$(mktemp)
 }
+
+! test -r "${HOME}/options.cfg"\
+ && echo "Did not find valid ${HOME}/options.cfg file, using default configuration." >> ${LOGS}
 
 # load kernel modules
 
@@ -77,7 +81,7 @@ mount -t functionfs mtp /dev/ffs-mtp 2>&1 | tee -a "${LOGS}"
 if test "x${DEBUG_UMTPR}" == "xyes"; then
 	umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
 else
-	umtprd >> /dev/null 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting so no logging here
+	umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting so logging here to /dev/null
 fi
 
 sleep 1
@@ -113,7 +117,7 @@ else
 		mv ${HOME}/.backlight.bak ${HOME}/.backlight.conf
 	fi
 	# MODULES_CUSTOM scripting
-	if (!(test -r "${BOOTDIR}/modules.custom.sh") || !(grep -q MODULES_CUSTOM\=\1 "${HOME}/options.cfg")); then
+	if (!(test -r "${BOOTDIR}/modules.custom.sh") || !(grep -sq MODULES_CUSTOM\=\1 "${HOME}/options.cfg")); then
 		# Load video module read from uEnv.txt & defined by variant in console.cfg
 		#FLIP & INVERT options.cfg setting
 		flip=$(grep -o FLIP=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
@@ -133,7 +137,7 @@ elif test -r "${HOME}/firstboot.completed"; then
 	rm "${HOME}/firstboot.completed"
 fi
 
-if !(grep -q FS_CHECK\=\0 "${HOME}/options.cfg"); then
+if !(grep -sq FS_CHECK\=\0 "${HOME}/options.cfg"); then
 ##Check if BOOT (FAT16) is flagged as "dirty", and if so unmount, repair, remount
 	if dmesg | grep "mmcblk0p1" > /dev/null;  then
 		echo -e "\e[31mDirty sectors detected.\e[0m" | tee -a "${LOGS}"
@@ -189,7 +193,7 @@ else
 fi
 
 # run boot logo animation
-if (!(grep -q BOOT_LOGO\=\0 "${HOME}/options.cfg")); then
+if (!(grep -sq BOOT_LOGO\=\0 "${HOME}/options.cfg")); then
 	${BOOTLOGO} >> "${LOGS}" 2>&1
 fi
 
