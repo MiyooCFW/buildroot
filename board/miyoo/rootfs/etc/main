@@ -8,14 +8,33 @@ export SDL_NOMOUSE=1
 START="${HOME}/autoexec.sh"
 
 LOGS=/dev/null
+LOGS_TEMP=/dev/null
+UMTPR_LOGS=/dev/null
+GMENU2X_LOGS=/dev/null
 
 # check if it's first boot and turn on messages if yes
-if ((test -r "${BOOTDIR}/firstboot") || (test -r "${HOME}/firstboot.completed")); then
+if (grep -sq DEBUG\=\1 "${HOME}/options.cfg" || test -r "${BOOTDIR}/firstboot" || test -r "${HOME}/firstboot.completed"); then
 	DEBUG_MSG="yes"
-	LOGS=$(mktemp)
+	LOGS="${HOME}/log.txt"
+	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt" # just standard stdout/stderr
+	#UMTPR_LOGS=/dev/null # see description at umtprd cmd
+fi
+if (grep -sq DEBUG_GMENU2X\=\1 "${HOME}/options.cfg"); then
+	DEBUG_GMENU2X="yes"
+	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt"
+fi
+if (grep -sq DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
+	DEBUG_UMTPR="yes"
+	UMTPR_LOGS="${HOME}/log_umtpr.txt"
+fi
+
+if test "x${DEBUG_MSG}" == "xyes" || test "x${DEBUG_GMENU2X}" == "xyes" || test "x${DEBUG_UMTPR}" == "xyes"; then
+	LOGS_TEMP=$(mktemp)
 fi
 
 export LOGS # so that subshells can use this as well
+export LOGS_TEMP
+export GMENU2X_LOGS
 
 if test "x${DEBUG_MSG}" == "xyes"; then
 	echo -e "\e[0m"    # normal foreground color
@@ -24,16 +43,29 @@ else
 	echo -e "\e[30m"   # black foreground color
 fi
 
+restore_temp_log_func(){
+	if test "x${DEBUG_UMTPR}" == "xyes"; then
+		cat ${LOGS_TEMP} >> ${UMTPR_LOGS}
+	else
+		cat ${LOGS_TEMP} >> ${LOGS}
+	fi
+	LOGS_TEMP=$(mktemp)
+}
+
+! test -r "${HOME}/options.cfg"\
+ && echo "Did not find valid ${HOME}/options.cfg file, using default configuration." >> ${LOGS}
+
 # load kernel modules
 
 # load usb gadget
-mount none /sys/kernel/config -t configfs
-mkdir /sys/kernel/config/usb_gadget/g2
-cd /sys/kernel/config/usb_gadget/g2
-mkdir configs/c.1
-mkdir functions/ffs.mtp
-mkdir strings/0x409
-mkdir configs/c.1/strings/0x409
+echo "Loading USB gadget" >> "${LOGS}"
+mount none /sys/kernel/config -t configfs 2>&1 | tee -a "${LOGS}"
+mkdir -p /sys/kernel/config/usb_gadget/g2 >> "${LOGS}" 2>&1
+cd /sys/kernel/config/usb_gadget/g2 || echo "Failed to cd into /sys/kernel/config/usb_gadget/g2" >> "${LOGS}" 2>&1
+mkdir -p configs/c.1 >> "${LOGS}" 2>&1
+mkdir -p functions/ffs.mtp >> "${LOGS}" 2>&1
+mkdir -p strings/0x409 >> "${LOGS}" 2>&1
+mkdir -p configs/c.1/strings/0x409 >> "${LOGS}" 2>&1
 
 echo 0x0100 > idProduct
 echo 0x1D6B > idVendor
@@ -43,10 +75,15 @@ echo "Miyoo CFW 2.0" > strings/0x409/product
 
 echo "Conf 1" > configs/c.1/strings/0x409/configuration
 echo 120 > configs/c.1/MaxPower
-ln -s functions/ffs.mtp configs/c.1
-mkdir /dev/ffs-mtp
-mount -t functionfs mtp /dev/ffs-mtp
-umtprd >> "${LOGS}" 2>&1 &
+ln -s functions/ffs.mtp configs/c.1 2>&1 | tee -a "${LOGS}"
+mkdir -p /dev/ffs-mtp >> "${LOGS}" 2>&1
+mount -t functionfs mtp /dev/ffs-mtp 2>&1 | tee -a "${LOGS}"
+if test "x${DEBUG_UMTPR}" == "xyes"; then
+	umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
+else
+	umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting so logging here to /dev/null
+fi
+
 sleep 1
 ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
 
@@ -61,30 +98,34 @@ BACKLIGHT=$(cat ${HOME}/.backlight.conf)
 
 # TVout scripting backend
 if test -r "${HOME}/tvout"; then
+	echo "Starting TVout video." >> "${LOGS}"
 	echo 0 > /sys/class/backlight/backlight/brightness
 	echo 0 > /sys/class/vtconsole/vtcon1/bind
 	if test $BACKLIGHT -ne 0; then
-		cp ${HOME}/.backlight.conf ${HOME}/.backlight.bak
+		cp ${HOME}/.backlight.conf ${HOME}/.backlight.bak 2>&1 | tee -a "${LOGS}"
 	fi
 	echo 0 > ${HOME}/.backlight.conf
-	modprobe -r $video
+	modprobe -r $video 2>&1 | tee -a "${LOGS}"
 	#TVMODE options.cfg setting 
-	export tvmode=$(grep -o TVMODE=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
-	modprobe miyoo-tvout $tvmode
+	tvmode=$(grep -o TVMODE=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
+	echo "Loding TV module miyoo-tvout with args tvmode=${tvmode}" >> "${LOGS}"
+	modprobe miyoo-tvout $tvmode 2>&1 | tee -a "${LOGS}"
 	echo 1 > /sys/class/vtconsole/vtcon1/bind
-	modprobe -r $video
+	modprobe -r $video 2>&1 | tee -a "${LOGS}"
 else
 	if ((test -r "${HOME}/.backlight.bak")); then
 		mv ${HOME}/.backlight.bak ${HOME}/.backlight.conf
 	fi
 	# MODULES_CUSTOM scripting
-	if (!(test -r "${BOOTDIR}/modules.custom.sh") || !(grep -q MODULES_CUSTOM\=\1 "${HOME}/options.cfg")); then
+	if (!(test -r "${BOOTDIR}/modules.custom.sh") || !(grep -sq MODULES_CUSTOM\=\1 "${HOME}/options.cfg")); then
 		# Load video module read from uEnv.txt & defined by variant in console.cfg
 		#FLIP & INVERT options.cfg setting
-		export flip=$(grep -o FLIP=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
-		export invert=$(grep -o INVERT=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
-		modprobe $video $flip $invert
+		flip=$(grep -o FLIP=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
+		invert=$(grep -o INVERT=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
+		echo "Loding video module ${video} with args flip=${flip} invert=${invert}" >> "${LOGS}"
+		modprobe $video $flip $invert 2>&1 | tee -a "${LOGS}"
 	else
+		echo "Loding custom modules." >> "${LOGS}"
 		(cd "${BOOTDIR}" && sh modules.custom.sh ) >> "${LOGS}" 2>&1
 	fi
 fi
@@ -96,38 +137,39 @@ elif test -r "${HOME}/firstboot.completed"; then
 	rm "${HOME}/firstboot.completed"
 fi
 
-if !(grep -q FS_CHECK\=\0 "${HOME}/options.cfg"); then
+if !(grep -sq FS_CHECK\=\0 "${HOME}/options.cfg"); then
 ##Check if BOOT (FAT16) is flagged as "dirty", and if so unmount, repair, remount
 	if dmesg | grep "mmcblk0p1" > /dev/null;  then
-		echo -e "\e[31mDirty sectors detected.\e[0m"
-		echo -e "\e[32mChecking&Repairing FAT16 BOOT partition...\e[0m"
-		umount /dev/mmcblk0p1
-		fsck.vfat -y /dev/mmcblk0p1 > /dev/null; 
-		mount /dev/mmcblk0p1 "${BOOTDIR}" -t vfat -o ro,exec,utf8
-		echo -e "\e[32mCheck complete.\e[0m"
+		echo -e "\e[31mDirty sectors detected.\e[0m" | tee -a "${LOGS}"
+		echo -e "\e[32mChecking&Repairing FAT16 BOOT partition...\e[0m" | tee -a "${LOGS}"
+		umount /dev/mmcblk0p1 2>&1 | tee -a "${LOGS}"
+		fsck.vfat -y /dev/mmcblk0p1 >> "${LOGS}" 2>&1
+		mount /dev/mmcblk0p1 "${BOOTDIR}" -t vfat -o ro,exec,utf8 2>&1 | tee -a "${LOGS}"
+		echo -e "\e[32mCheck complete.\e[0m" | tee -a "${LOGS}"
 	fi
 ##Check if MAIN (EXT4) is flagged as "dirty", and if so unmount, repair, remount
 	if dmesg | grep "EXT4-fs (mmcblk0p4): warning: mounting fs with errors, running e2fsck is recommended" > /dev/null;  then
-		echo -e "\e[31mUnclean shutdown detected.\e[0m"
-		echo -e "\e[32mChecking MAIN(EXT4) partition...\e[0m"
-		umount /dev/mmcblk0p4
-		e2fsck -y /dev/mmcblk0p4 > /dev/null; 
-		mount /dev/mmcblk0p4 "${HOME}" -o rw,sync,exec
+		echo -e "\e[31mUnclean shutdown detected.\e[0m" | tee -a "${LOGS}"
+		echo -e "\e[32mChecking MAIN(EXT4) partition...\e[0m" | tee -a "${LOGS}"
+		umount /dev/mmcblk0p4 2>&1 | tee -a "${LOGS_TEMP}"
+		e2fsck -y /dev/mmcblk0p4 >> "${LOGS_TEMP}";
+		mount /dev/mmcblk0p4 "${HOME}" -o rw,sync,exec 2>&1 | tee -a "${LOGS_TEMP}"
+		restore_temp_log_func
 	fi
 ##Check if ROMS (EXT4 or FAT32) is flagged as "dirty", and if so unmount, repair, remount
 	if dmesg | grep "EXT4-fs (mmcblk0p5): warning: mounting fs with errors, running e2fsck is recommended" > /dev/null;  then
-		echo -e "\e[31mUnclean shutdown detected.\e[0m"
-		echo -e "\e[32mChecking ROMS(EXT4) partition...\e[0m"
-		umount /dev/mmcblk0p5
-		e2fsck -y /dev/mmcblk0p5 > /dev/null; 
-		mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime
+		echo -e "\e[31mUnclean shutdown detected.\e[0m" | tee -a "${LOGS}"
+		echo -e "\e[32mChecking ROMS(EXT4) partition...\e[0m" | tee -a "${LOGS}"
+		umount /dev/mmcblk0p5 2>&1 | tee -a "${LOGS}"
+		e2fsck -y /dev/mmcblk0p5 >> "${LOGS}" 2>&1; 
+		mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime 2>&1 | tee -a "${LOGS}"
 	elif dmesg | grep "FAT-fs (mmcblk0p5): Volume was not properly unmounted. Some data may be corrupt. Please run fsck." > /dev/null;  then
-		echo -e "\e[31mDirty sectors detected.\e[0m"
-		echo -e "\e[32mChecking&Repairing ROMS(FAT32) partition...\e[0m"
-		umount /dev/mmcblk0p5
-		fsck.vfat -y /dev/mmcblk0p5 > /dev/null; 
-		mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,utf8
-		echo -e "\e[32mCheck complete.\e[0m"
+		echo -e "\e[31mDirty sectors detected.\e[0m" | tee -a "${LOGS}"
+		echo -e "\e[32mChecking&Repairing ROMS(FAT32) partition...\e[0m" | tee -a "${LOGS}"
+		umount /dev/mmcblk0p5 2>&1 | tee -a "${LOGS}"
+		fsck.vfat -y /dev/mmcblk0p5 >> "${LOGS}" 2>&1
+		mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,utf8 2>&1 | tee -a "${LOGS}"
+		echo -e "\e[32mCheck complete.\e[0m" | tee -a "${LOGS}"
 	fi
 fi
 
@@ -151,19 +193,19 @@ else
 fi
 
 # run boot logo animation
-if (!(grep -q BOOT_LOGO\=\0 "${HOME}/options.cfg")); then
+if (!(grep -sq BOOT_LOGO\=\0 "${HOME}/options.cfg")); then
 	${BOOTLOGO} >> "${LOGS}" 2>&1
 fi
 
-# can't unmount boot because 'daemon' runs from it - but it's mounted read-only
-#  so it's fine
+# we could unmount /boot here but since it's read-only it doesn't hurt to leave it running
 ## umount /dev/mmcblk0p1
 
 # Writes dmesg after firstboot procedure or if DEBUG_MSG=yes
 if test "x${DEBUG_MSG}" == "xyes"; then
 	sleep 1
-	dmesg > ${HOME}/dmesg.txt
-	yes | mv ${LOGS} ${HOME}/log.txt
+	echo -en "\n\nNew DMESG log:\n" >> ${HOME}/dmesg.txt
+	dmesg >> ${HOME}/dmesg.txt
+	restore_temp_log_func
 fi
 
 while [ 1 ]
@@ -171,8 +213,15 @@ do
 	if test -f "${START}"; then
 		source "${START}"
 	else
-		cd "${HOME}"/gmenu2x;
-		./gmenu2x >> /dev/null 2>&1;
+		echo "Starting GMenu2x" >> "${LOGS}"
+		cd "${HOME}"/gmenu2x || { echo "Failed to cd into ${HOME}/gmenu2x" >> "${LOGS}" ; exit; }
+		if test "x${DEBUG_GMENU2X}" == "xyes"; then
+			gdb -ex="set confirm off" -ex=run -ex="bt full" -ex=q ./gmenu2x-debug >> "${GMENU2X_LOGS}" 2>&1
+		else
+			./gmenu2x >> "${GMENU2X_LOGS}" 2>&1
+		fi
+		test "x${DEBUG_UMTPR}" == "xyes"\
+		 && restore_temp_log_func
 	fi
 	clear
 done
