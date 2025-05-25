@@ -136,24 +136,34 @@ safe_shutdown_func(){
 	echo "please wait a few seconds for a ${SHUTDOWN}...." | tee -a ${LOG}
 	restore_dmesg_log_func
 	sync
-	sleep 1
+	while (pgrep "sync"); do
+		sleep 1
+	done
 	mount -o remount,ro "${BOOTDIR}" 2>&1 | tee -a ${LOG}
 	sleep 2
 	umount /dev/mmcblk0p4 2>&1 # | tee -a ${LOG} - logging here may brake unmouting
 	#umount /dev/mmcblk0p1 # this fails cuz we're running this script of /boot
-	sleep 4
+	while (pgrep "umount"); do
+		sleep 1
+	done
 }
 
 safe_reboot_func(){
 	SHUTDOWN=reboot
 	safe_shutdown_func
 	reboot
+	while (pgrep "reboot"); do
+		sleep 1
+	done
 }
 
 safe_poweroff_func(){
 	SHUTDOWN=poweroff
 	safe_shutdown_func
 	poweroff
+	while (pgrep "poweroff"); do
+		sleep 1
+	done
 }
 
 console_unknown_func(){
@@ -540,7 +550,9 @@ sleep 1
 echo -en "\n  Available memory:\n" >> ${LOG}
 free -m >> ${LOG}
 sync
-sleep 1
+while (pgrep "sync"); do
+	sleep 1
+done
 mount -o remount,ro "${BOOTDIR}" 2>&1 | tee -a ${LOG}
 
 #define primary partitions FS types
@@ -594,6 +606,9 @@ else
 	fi
 	sleep 2
 	umount /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP}
+	while (pgrep "umount"); do
+		sleep 1
+	done
 	clear
 	echo -en "\n\n"
 	mkfs.ext4 -d "${ROMS}"/backup/"${HOME}" -L MAIN -v -F /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP}
@@ -609,6 +624,9 @@ if $CHANGE_FS_P4 && test "${P4_FS_TYPE}" == "EXT4" ; then
 	echo "Correcting inittab of p4 at ${HOME} procedure" >> ${LOG}
 	sleep 1
 	mount -o remount,rw / /
+	while (pgrep "mount"); do
+		sleep 1
+	done
 	sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p4\).*|\1 "${HOME}" -o rw,sync,exec|" /etc/inittab
 	mount -o remount,ro / /
 	cat /etc/inittab >> ${LOG}
@@ -650,6 +668,9 @@ if $CHANGE_FS_P5; then
 	fi
 	sleep 2
 	umount /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
+	while (pgrep "umount"); do
+		sleep 1
+	done
 	clear
 	echo -en "\n\n"
 	if test "${P5_FS_TYPE}" == "FAT32"; then
@@ -657,6 +678,9 @@ if $CHANGE_FS_P5; then
 		sleep 2
 		fsck.fat -y /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 		mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,utf8 2>&1 | tee -a ${LOG}
+		while (pgrep "mount"); do
+			sleep 1
+		done
 		rsync -rvt --modify-window=1 --exclude "lost+found" --info=nonreg0 --info=progress2 "${HOME}"/backup"${ROMS}" /
 		echo $? > $TEMP && EXIT_CODE=$(cat $TEMP)
 		if test $EXIT_CODE -eq 0; then
@@ -675,6 +699,9 @@ if $CHANGE_FS_P5; then
 	echo "Correcting inittab of p5 at ${ROMS} procedure" >> ${LOG}
 	sleep 1
 	mount -o remount,rw / /
+	while (pgrep "mount"); do
+		sleep 1
+	done
 	if test "${P5_FS_TYPE}" == "FAT32"; then
 		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -t vfat -o rw,utf8|" /etc/inittab
 	elif test "${P5_FS_TYPE}" == "BTRFS"; then
