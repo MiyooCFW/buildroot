@@ -1,0 +1,30 @@
+From 3c40da1fea8c7c9c550624b27d94ca36d887721d Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sat, 24 May 2025 23:38:13 +0200
+Subject: [PATCH] autotools: allow enabling lsblk with --disable-all-programs
+
+via upstream commit d87ac5c
+---
+ configure.ac | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index 54a91e87d..498ff7b67 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1631,7 +1631,11 @@ AC_CHECK_FUNCS([swapon])
+ AC_CHECK_FUNCS([swapoff])
+ 
+ 
+-UL_BUILD_INIT([lsblk], [check])
++AC_ARG_ENABLE([lsblk],
++  AS_HELP_STRING([--disable-lsblk], [do not build lsblk]),
++  [], [UL_DEFAULT_ENABLE([lsblk], [check])]
++)
++UL_BUILD_INIT([lsblk])
+ UL_REQUIRES_LINUX([lsblk])
+ UL_REQUIRES_BUILD([lsblk], [libblkid])
+ UL_REQUIRES_BUILD([lsblk], [libmount])
+-- 
+2.45.2.windows.1
+
