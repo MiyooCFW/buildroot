@@ -132,7 +132,7 @@ fi
 
 # check if it's first boot and defer to the firstboot script if yes
 if test -r "${BOOTDIR}/firstboot"; then
-	exec sh "${BOOTDIR}/firstboot"
+	sh "${BOOTDIR}/firstboot"
 elif test -r "${HOME}/firstboot.completed"; then
 	rm "${HOME}/firstboot.completed"
 fi
