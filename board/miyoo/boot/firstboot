@@ -760,6 +760,7 @@ fi
 if ! $RESIZE_COMMENCED && test "${P5_FS_TYPE}" == "FAT32" ; then
 	sgdisk --typecode=5:0700 /dev/mmcblk0  2>&1 | tee -a ${LOG} # Microsoft basic data - partition type
 	partprobe 2>&1 | tee -a ${LOG}
+	echo "Executed partprobe to correct partition table." >> ${LOG}
 fi
 # output FS table with type
 df -Th >> ${LOG} 2>&1
@@ -780,6 +781,10 @@ if $BITTBOY_CONFIG; then
 elif $MIYOO_CONFIG; then
 	cp "${HOME}/gmenu2x/input_miyoo.conf" "${HOME}/gmenu2x/input.conf"
 fi
+
+# create symlink to ROMS part. at /mnt/
+ln -s "${ROMS}" "${HOME}" 2>&1 | tee -a ${LOG}
+
 echo -en "\nUsing following GMenu2X input configuration:\n" >> ${GMENU2X_LOGS}
 cat "${HOME}/gmenu2x/input.conf" >> ${GMENU2X_LOGS}
 
