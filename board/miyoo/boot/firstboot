@@ -545,7 +545,7 @@ fi
 echo "Formatting swap P3 partition" | tee -a ${LOG}
 sleep 1
 /sbin/swapoff -a 2>&1 | tee -a ${LOG} # unplug SWAP, otherwise if present it won't be recreated via mkswap
-/sbin/mkswap /dev/mmcblk0p3 2>&1 | tee -a ${LOG}
+/sbin/mkswap -L SWAP /dev/mmcblk0p3 2>&1 | tee -a ${LOG}
 /sbin/swapon /dev/mmcblk0p3 2>&1 | tee -a ${LOG}
 echo -en "\n  Available memory:\n" >> ${LOG}
 free -m >> ${LOG}
