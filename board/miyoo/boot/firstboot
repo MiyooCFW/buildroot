@@ -556,17 +556,26 @@ done
 mount -o remount,ro "${BOOTDIR}" 2>&1 | tee -a ${LOG}
 
 #define primary partitions FS types
-##TODO: detect FS type in script eg. grep `df -Th` cmd
-P4_FS_TYPE="BTRFS"
-P5_FS_TYPE="EXT4"
+P1_FS_TYPE="$(lsblk -n --output=FSTYPE /dev/mmcblk0p1 | tr '[:lower:]' '[:upper:]')"
+P2_FS_TYPE="$(lsblk -n --output=FSTYPE /dev/mmcblk0p2 | tr '[:lower:]' '[:upper:]')"
+#P3_FS_TYPE="$(lsblk -n --output=FSTYPE /dev/mmcblk0p3 | tr '[:lower:]' '[:upper:]')"
+P4_FS_TYPE="$(lsblk -n --output=FSTYPE /dev/mmcblk0p4 | tr '[:lower:]' '[:upper:]')"
+P5_FS_TYPE="$(lsblk -n --output=FSTYPE /dev/mmcblk0p5 | tr '[:lower:]' '[:upper:]')"
+
+#define primary partitions LABELS
+P1_LABEL="$(lsblk -n --output=LABEL /dev/mmcblk0p1)" # BOOT
+P2_LABEL="$(lsblk -n --output=LABEL /dev/mmcblk0p2)" # ROOTFS
+#P3_LABEL="$(lsblk -n --output=LABEL /dev/mmcblk0p3)" # SWAP
+P4_LABEL="$(lsblk -n --output=LABEL /dev/mmcblk0p4)" # MAIN
+P5_LABEL="$(lsblk -n --output=LABEL /dev/mmcblk0p5)" # ROMS
 
 #grep all partitions current size
 SD_SIZE=$(cat "/sys/block/mmcblk0/size")
-P1_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p1/size") # BOOT
-P2_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p2/size") # ROOTFS
-P3_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p3/size") # SWAP
-P4_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p4/size") # MAIN
-P5_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p5/size") # ROMS
+P1_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p1/size")
+P2_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p2/size")
+P3_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p3/size")
+P4_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p4/size")
+P5_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p5/size")
 SD_SIZE_IN_MiB=$((SD_SIZE * 512 / 1024 / 1024))
 SD_SIZE_IN_GiB=$((SD_SIZE * 512 / 1024 / 1024 / 1024))
 BOOT_SIZE=$(((1016+1 - 1000 + 1024) * 1024 / 512)) #bootloader partition=1016K (see `genimage` script in buildroot)
@@ -583,17 +592,20 @@ SD_MAX_AVAIL_SIZE="$((${SD_SIZE} - (${P1_SIZE} + ${P2_SIZE} + ${P3_SIZE} + ${P4_
 SD_MAX_AVAIL_SIZE_IN_KiB=$((SD_MAX_AVAIL_SIZE * 512 / 1024))
 
 # Change_MAIN_FileSystem-prompt for the p4 partition if requested
-echo "Change MAIN FileSystem procedure" >> ${LOG}
+echo "Change ${P4_LABEL} FileSystem procedure" >> ${LOG}
 CHANGE_FS_P4=false
-if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label ${P4_FS_TYPE}\(default\) --cancel-label EXT4 --title "   Change FileSystem" \
-   --colors --pause "\n\n\Z5Change default FileSystem of MAIN?\Zn\n\n   BTRFS - safe & reliable\Zn\n\n   EXT4 - fast & optimal\Zn\n\n   Select an option & press START
-   \n\n             \ZbWARNING:\Zn\n       After 30min changes\n   to MAIN partition won't be possible." 15 60 1800); then
+test "${P4_FS_TYPE}" == "BTRFS"\
+ && P4_FS_TYPE_EXTRA="EXT4"\
+ || P4_FS_TYPE_EXTRA="BTRFS"
+if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label "${P4_FS_TYPE}"\(default\) --cancel-label "${P4_FS_TYPE_EXTRA}" --title "   Change FileSystem" \
+   --colors --pause "\n\n\Z5Change default FileSystem of ${P4_LABEL}?\Zn\n\n   BTRFS - safe & reliable\Zn\n\n   EXT4 - fast & optimal\Zn\n\n   Select an option & press START
+   \n\n             \ZbWARNING:\Zn\n       After 30min changes\n   to ${P4_LABEL} partition won't be possible." 15 60 1800); then
 	
-	echo "Selected ${P4_FS_TYPE} for MAIN partition, continuing with default setup." | tee -a ${LOG}
+	echo "Selected ${P4_FS_TYPE} for ${P4_LABEL} partition, continuing with default setup." | tee -a ${LOG}
 	sleep 2
 else
-	P4_FS_TYPE="EXT4"
-	echo -en "\n\nConverting the MAIN partition filesystem to ${P4_FS_TYPE} type.\n\n" | tee -a ${LOG}
+	P4_FS_TYPE="${P4_FS_TYPE_EXTRA}"
+	echo -en "\n\nConverting the ${P4_LABEL} partition filesystem to ${P4_FS_TYPE} type.\n\n" | tee -a ${LOG}
 	echo -en "\e[32mThis can take a few minutes, be patient!\e[0m"
 	sleep 3
 	mkdir "${ROMS}"/backup 2>&1 | tee -a ${LOG}
@@ -611,51 +623,74 @@ else
 	done
 	clear
 	echo -en "\n\n"
-	mkfs.ext4 -d "${ROMS}"/backup/"${HOME}" -L MAIN -v -F /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP}
-	sleep 2
-	e2fsck -y /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP}
-	mount /dev/mmcblk0p4 "${HOME}" -o rw,sync,exec 2>&1 | tee -a ${LOG_TEMP}
+	if test "${P4_FS_TYPE}" == "EXT4"; then
+		mkfs.ext4 -d "${ROMS}"/backup/"${HOME}" -L "${P4_LABEL}" -v -F /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP}
+		sleep 2
+		e2fsck -y /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP}
+		mount /dev/mmcblk0p4 "${HOME}" -o rw,sync,exec 2>&1 | tee -a ${LOG_TEMP}
+		CHANGE_FS_P4=true
+	elif test "${P4_FS_TYPE}" == "BTRFS"; then
+		mkfs.btrfs -r "${ROMS}"/backup/"${HOME}" -L "${P4_LABEL}" -v -f /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP}
+		btrfsck /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP} # does not repair FS, just check integrity as it is dengarous to do so
+		mount /dev/mmcblk0p4 "${HOME}" -o commit=5,flushoncommit,noatime,nodiratime,exec 2>&1 | tee -a ${LOG_TEMP}
+		CHANGE_FS_P4=true
+	else
+		echo "ERROR: Unrecognized new extra FSTYPE for ${HOME} partition, no changes will be made just mounting back!" | tee -a ${LOG_TEMP}
+		mount /dev/mmcblk0p4 "${HOME}" 2>&1 | tee -a ${LOG_TEMP}
+	fi
 	restore_temp_log_func
 	rm -r "${ROMS}"/backup 2>&1 | tee -a ${LOG}
-	CHANGE_FS_P4=true
 fi
 ## Correct inittab for new p4 filesystem type
-if $CHANGE_FS_P4 && test "${P4_FS_TYPE}" == "EXT4" ; then
+if ${CHANGE_FS_P4}; then
 	echo "Correcting inittab of p4 at ${HOME} procedure" >> ${LOG}
 	sleep 1
 	mount -o remount,rw / /
 	while (pgrep "mount"); do
 		sleep 1
 	done
-	sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p4\).*|\1 "${HOME}" -o rw,sync,exec|" /etc/inittab
+	if test "${P4_FS_TYPE}" == "EXT4" ; then
+		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p4\).*|\1 "${HOME}" -o rw,sync,exec|" /etc/inittab
+	elif test "${P4_FS_TYPE}" == "BTRFS" ; then
+		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p4\).*|\1 "${HOME}" -o commit=5,flushoncommit,noatime,nodiratime,exec|" /etc/inittab
+	fi	
 	mount -o remount,ro / /
 	cat /etc/inittab >> ${LOG}
 fi
 
 # Change_ROMS_FileSystem-prompt for the p5 partition if requested
-echo "Change ROMS FileSystem procedure" >> ${LOG}
+echo "Change ${P5_LABEL} FileSystem procedure" >> ${LOG}
 CHANGE_FS_P5=false
-dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label "${P5_FS_TYPE}(def.)" --cancel-label BTRFS --extra-button --extra-label FAT32 --title "   Change FileSystem" \
-   --colors --pause "\n\n\Z5Change default FileSystem for ROMS?\Zn\n\nEXT4 - fast write/read & UNIX compliant\Zn\n\nBTRFS - slow read but poweroff safe, UNIX compliant\Zn\n\nFAT32 - slow on-device write but Windows compatbile\Zn\n\n   Select an option & press START
-   \n\n             \ZbWARNING:\Zn\n After 30min changes to ROMS\n partition won't be possible." 25 60 1800
+test "${P5_FS_TYPE}" == "EXT4"\
+ && P5_FS_TYPE_EXTRA="BTRFS"\
+ && P5_FS_TYPE_EXTRA2="FAT32"
+test "${P5_FS_TYPE}" == "BTRFS"\
+ && P5_FS_TYPE_EXTRA="EXT4"\
+ && P5_FS_TYPE_EXTRA2="FAT32"
+test "${P5_FS_TYPE}" == "FAT32"\
+ && P5_FS_TYPE_EXTRA="BTRFS"\
+ && P5_FS_TYPE_EXTRA2="EXT4"
+dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label "${P5_FS_TYPE}(def.)" --cancel-label "${P5_FS_TYPE_EXTRA}" --extra-button --extra-label "${P5_FS_TYPE_EXTRA2}" --title "   Change FileSystem" \
+   --colors --pause "\n\n\Z5Change default FileSystem for ${P5_LABEL}?\Zn\n\nEXT4 - fast write/read & UNIX compliant\Zn\n\nBTRFS - slow read but poweroff safe, UNIX compliant\Zn\n\nFAT32 - slow on-device write but Windows compatbile\Zn\n\n   Select an option & press START
+   \n\n             \ZbWARNING:\Zn\n After 30min changes to ${P5_LABEL}\n partition won't be possible." 25 60 1800
 	echo $? > $TEMP
 	## Read the user's first choice from the tmp file
 	CHOICE=$(cat $TEMP)
 if test $CHOICE -eq 0; then
-	echo "Selected ${P5_FS_TYPE} for ROMS partition, continuing with default setup." | tee -a ${LOG}
+	echo "Selected ${P5_FS_TYPE} for ${P5_LABEL} partition, continuing with default setup." | tee -a ${LOG}
 	sleep 2
-elif test $CHOICE -eq 3; then
-	P5_FS_TYPE="FAT32"
-	CHANGE_FS_P5=true
 elif test $CHOICE -eq 1; then
-	P5_FS_TYPE="BTRFS"
+	P5_FS_TYPE="${P5_FS_TYPE_EXTRA}"
+	CHANGE_FS_P5=true
+elif test $CHOICE -eq 3; then
+	P5_FS_TYPE="${P5_FS_TYPE_EXTRA2}"
 	CHANGE_FS_P5=true
 else
 	dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 2 --msgbox "Invalid choice, continuing with default setup!" 0 0
 	sleep 1.5
 fi
 if $CHANGE_FS_P5; then
-	echo -en "\n\nConverting the ROMS partition filesystem to ${P5_FS_TYPE} type.\n\n" | tee -a ${LOG}
+	echo -en "\n\nConverting the ${P5_LABEL} partition filesystem to ${P5_FS_TYPE} type.\n\n" | tee -a ${LOG}
 	echo -en "\e[32mThis can take a few minutes, be patient!\e[0m"
 	sleep 3
 	mkdir "${HOME}"/backup 2>&1 | tee -a ${LOG}
@@ -674,7 +709,7 @@ if $CHANGE_FS_P5; then
 	clear
 	echo -en "\n\n"
 	if test "${P5_FS_TYPE}" == "FAT32"; then
-		mkfs.vfat -n ROMS -v -F32 /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
+		mkfs.vfat -n ${P5_LABEL} -v -F32 /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 		sleep 2
 		fsck.fat -y /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 		mount /dev/mmcblk0p5 "${ROMS}" -t vfat -o rw,utf8 2>&1 | tee -a ${LOG}
@@ -689,10 +724,19 @@ if $CHANGE_FS_P5; then
 			echo "\033[0;31mExtracting archive ${ROMS} from ${HOME}/backup${ROMS} failed with rsync exit code ${EXIT_CODE}\033[0m" | tee -a ${LOG}
 		fi
 	elif test "${P5_FS_TYPE}" == "BTRFS"; then
-		mkfs.btrfs -r "${HOME}"/backup"${ROMS}" -v -f -L ROMS /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
+		mkfs.btrfs -r "${HOME}"/backup"${ROMS}" -v -f -L ${P5_LABEL} /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 		sleep 2
 		btrfsck /dev/mmcblk0p5 2>&1 | tee -a ${LOG} # does not repair FS, just check integrity as it is dengarous to do so
 		mount /dev/mmcblk0p5 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime 2>&1 | tee -a ${LOG}
+	elif test "${P5_FS_TYPE}" == "EXT4"; then
+		mkfs.ext4 -d "${HOME}"/backup"${ROMS}" -L "${P5_LABEL}" -v -F /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
+		sleep 2
+		e2fsck -y /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
+		mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime 2>&1 | tee -a ${LOG}
+	else
+		echo "ERROR: Unrecognized new extra FSTYPE for ${ROMS} partition, no changes will be made just mounting back!" | tee -a ${LOG}
+		mount /dev/mmcblk0p5 "${ROMS}" 2>&1 | tee -a ${LOG}
+		CHANGE_FS_P5=false
 	fi
 	rm -r "${HOME}"/backup
 ## Correct inittab for new p5 filesystem type
@@ -706,16 +750,18 @@ if $CHANGE_FS_P5; then
 		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -t vfat -o rw,utf8|" /etc/inittab
 	elif test "${P5_FS_TYPE}" == "BTRFS"; then
 		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime|" /etc/inittab
+	elif test "${P5_FS_TYPE}" == "EXT4"; then
+		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -o rw,noatime|" /etc/inittab
 	fi
 	mount -o remount,ro / /
 	cat /etc/inittab >> ${LOG}
 fi
 
 # Expand_ROMS_Partition-prompt for the p5 (ROMS) partition if requested
-echo "Expand ROMS FileSystem procedure" >> ${LOG}
+echo "Expand ${P5_LABEL} FileSystem procedure" >> ${LOG}
 RESIZE_COMMENCED=false
 if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YES --cancel-label NO --title "   AUTO-RESIZE" \
-   --colors --pause "\n\n       \Z5Expand ROMS partition?\Zn\n\n   Select an option & press START
+   --colors --pause "\n\n       \Z5Expand ${P5_LABEL} partition?\Zn\n\n   Select an option & press START
    \n\n             \ZbWARNING:\Zn\n       After 30min auto-resize\n   of ${P5_FS_TYPE} partition will begin." 15 60 1800); then
 	clear
 	SD_MAX_AVAIL_SIZE_IN_GiB=$(echo "scale=1; ${SD_MAX_AVAIL_SIZE_IN_KiB} / 1024 / 1024" | bc) #only to inform user about end point for resize
@@ -727,7 +773,7 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 	#Sanity checks if we don't down- or over-resize partition:
 	RESIZE_ABORT=false
 	if (test "$P5_SIZE_IN_GBx10" -ge "$SD_MAX_AVAIL_SIZE_IN_GBx10" || test "$SD_MAX_UNALL_SIZE_IN_MiB" -le 15); then
-		echo "Your ROMS partition is greater than available space for resizing or you lack unallocated sectors space" | tee -a ${LOG}
+		echo "Your ${P5_LABEL} partition is greater than available space for resizing or you lack unallocated sectors space" | tee -a ${LOG}
 		sleep 1.5
 		RESIZE_ABORT=true
 	fi
@@ -747,12 +793,17 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 			fi
 		fi
 	fi
+	if !(test "${P5_FS_TYPE}" == "FAT32" || test "${P5_FS_TYPE}" == "BTRFS" || test "${P5_FS_TYPE}" == "EXT4"); then
+		echo "ERROR: I couldn't recognize FSTYPE for ${ROMS} partition, resizing ABORTED!" | tee -a ${LOG}
+		RESIZE_ABORT=true
+	fi
+
 	if ! $RESIZE_ABORT; then
 		echo "Performing resize on ${ROMS}" >> ${LOG}
 		echo "The full size of your SD is ${SD_SIZE_IN_MiB}MB large" | tee -a ${LOG}
 		echo "Unallocated space available for resizing equals ${SD_MAX_UNALL_SIZE_IN_GiB}GB," | tee -a ${LOG}
 		echo "and more precisely it's ${SD_MAX_UNALL_SIZE_IN_MiB}MB big" | tee -a ${LOG}
-		echo "Resizing the ROMS (${P5_FS_TYPE}) partition to ${SD_MAX_AVAIL_SIZE_IN_GiB}GB." | tee -a ${LOG}
+		echo "Resizing the ${P5_LABEL} (${P5_FS_TYPE}) partition to ${SD_MAX_AVAIL_SIZE_IN_GiB}GB." | tee -a ${LOG}
 		umount /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 		if test "${P5_FS_TYPE}" == "FAT32"; then
 			echo -en "\e[32mThis can take a few minutes, be patient!\e[0m"
@@ -769,18 +820,22 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 			parted -a optimal /dev/mmcblk0 --script mkpart roms $P5_START_POINT 100%  2>&1 | tee -a ${LOG}
 			partx -u /dev/mmcblk0 2>&1 | tee -a ${LOG}
 			if test "${P5_FS_TYPE}" == "BTRFS"; then
-				mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime 2>&1 | tee -a ${LOG}
+				mount /dev/mmcblk0p5 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime 2>&1 | tee -a ${LOG}
 				btrfs filesystem resize max ${ROMS} 2>&1 | tee -a ${LOG}
-			else #EXT4
+			elif test "${P5_FS_TYPE}" == "EXT4"; then
 				resize2fs /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 				e2fsck -y /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
-				mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime,nodiratime 2>&1 | tee -a ${LOG}
+				mount /dev/mmcblk0p5 "${ROMS}" -o rw,noatime 2>&1 | tee -a ${LOG}
+			else
+				echo "ERROR: I still couldn't recognize FSTYPE for ${ROMS} partition, no resizing will be made just mounting back!" | tee -a ${LOG}
+				mount /dev/mmcblk0p5 "${ROMS}" 2>&1 | tee -a ${LOG}
+				#RESIZE_COMMENCED=false
 			fi
 			partprobe 2>&1 | tee -a ${LOG}
 		fi
 		RESIZE_COMMENCED=true
 	else
-		echo "ROMS partition resizing was aborted!" | tee -a ${LOG}
+		echo "${P5_LABEL} partition resizing was aborted!" | tee -a ${LOG}
 		sleep 2
 	fi
 fi
