@@ -578,9 +578,8 @@ P4_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p4/size")
 P5_SIZE=$(cat "/sys/block/mmcblk0/mmcblk0p5/size")
 SD_SIZE_IN_MiB=$((SD_SIZE * 512 / 1024 / 1024))
 SD_SIZE_IN_GiB=$((SD_SIZE * 512 / 1024 / 1024 / 1024))
-BOOT_SIZE=$(((1016+1 - 1000 + 1024) * 1024 / 512)) #bootloader partition=1016K (see `genimage` script in buildroot)
+BOOT_SIZE=$(((1016+1 - 1000) * 1024 / 512)) #bootloader partition=1016K (see `genimage` script in buildroot)
 												   ## boot_size calculated to 512 byte sector size blocks, adding +1K as a safety measure for roundups (at fatresize we use KibiBits)
-												   ## adding 1M (1024) for GPT align offset
 
 #Calculate unallocated left space to expand ROMS partition:
 SD_MAX_UNALL_SIZE="$((${SD_SIZE} - (${P1_SIZE} + ${P2_SIZE} + ${P3_SIZE} + ${P4_SIZE} + ${P5_SIZE}) - $BOOT_SIZE))"
