@@ -194,6 +194,7 @@ test_image_func(){
 	else
 	#TODO - make "invert" flag overwriting less dependent
 		echo "Colors are inverted, changing..." | tee -a ${LOG}
+		sed -i '/^INVERT=/d' ${HOME}/options.cfg | tee -a ${LOG}
 		echo "INVERT=${INVERSION}" >> ${HOME}/options.cfg
 		safe_reboot_func
 	fi
@@ -858,7 +859,12 @@ rm $TEMP
 # disable this script
 mount -o remount,rw "${BOOTDIR}" 2>&1 | tee -a ${LOG}
 echo "Disabling the firstboot script." | tee -a ${LOG}
-mv "${BOOTDIR}/firstboot" "${BOOTDIR}/firstboot.done" 2>&1 | tee -a ${LOG}
+if grep -sq FIRSTBOOT\=\1 "${HOME}/options.cfg"; then
+	sed -i '/^FIRSTBOOT=/d' ${HOME}/options.cfg 2>&1 | tee -a ${LOG}
+	echo "FIRSTBOOT=0" >> ${HOME}/options.cfg
+else
+	mv "${BOOTDIR}/firstboot" "${BOOTDIR}/firstboot.done" 2>&1 | tee -a ${LOG}
+fi
 mount -o remount,ro "${BOOTDIR}" 2>&1 | tee -a ${LOG}
 
 # copy over the config files
