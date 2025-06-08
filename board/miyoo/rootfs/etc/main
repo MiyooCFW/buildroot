@@ -13,7 +13,7 @@ UMTPR_LOGS=/dev/null
 GMENU2X_LOGS=/dev/null
 
 # check if it's first boot and turn on messages if yes
-if (grep -sq DEBUG\=\1 "${HOME}/options.cfg" || test -r "${BOOTDIR}/firstboot" || test -r "${HOME}/firstboot.completed"); then
+if (grep -sq DEBUG\=\1 "${HOME}/options.cfg" || test -r "${BOOTDIR}/firstboot" || test -r "${HOME}/firstboot.completed" || grep -sq FIRSTBOOT\=\1 "${HOME}/options.cfg"); then
 	DEBUG_MSG="yes"
 	LOGS="${HOME}/log.txt"
 	GMENU2X_LOGS="${HOME}/log_gmenu2x.txt" # just standard stdout/stderr
@@ -131,8 +131,12 @@ else
 fi
 
 # check if it's first boot and defer to the firstboot script if yes
+if grep -sq FIRSTBOOT\=\1 "${HOME}/options.cfg"; then
+	test -r "${BOOTDIR}/firstboot.done" \
+	 && sh "${BOOTDIR}/firstboot.done"
+fi
 if test -r "${BOOTDIR}/firstboot"; then
-	exec sh "${BOOTDIR}/firstboot"
+	sh "${BOOTDIR}/firstboot"
 elif test -r "${HOME}/firstboot.completed"; then
 	rm "${HOME}/firstboot.completed"
 fi
