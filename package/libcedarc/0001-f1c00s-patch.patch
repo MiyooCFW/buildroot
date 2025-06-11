@@ -1,0 +1,423 @@
+From eb76610f359ab44cf3313004e97f6345725dbc2b Mon Sep 17 00:00:00 2001
+From: tpietrus <tomasz.pietruszkiewicz@nokia.com>
+Date: Sun, 8 Jun 2025 22:26:58 +0200
+Subject: [PATCH] f1c00s patch
+
+---
+ openmax/vdec/src/omx_vdec_aw_decoder_linux.c |  75 +++++-
+ vdecoder/pixel_format.c                      | 252 +++++++++++++++++++
+ 2 files changed, 324 insertions(+), 3 deletions(-)
+
+diff --git a/openmax/vdec/src/omx_vdec_aw_decoder_linux.c b/openmax/vdec/src/omx_vdec_aw_decoder_linux.c
+index 8a619ca..acc0332 100644
+--- a/openmax/vdec/src/omx_vdec_aw_decoder_linux.c
++++ b/openmax/vdec/src/omx_vdec_aw_decoder_linux.c
+@@ -71,6 +71,10 @@ typedef struct OmxAwDecoderContext
+     VideoPicture*          pPicture;
+ 
+     OMX_BOOL               bUseZeroCopyBuffer;
++	char*                  pYV12;
++	VideoPicture           CvtPicture;
++	int                    tWidth;
++	int                    tHeight;
+ 
+ 
+ }OmxAwDecoderContext;
+@@ -403,6 +407,52 @@ static void liReopenVideoEngine(OmxAwDecoderContext *pCtx)
+     return ;
+ }
+ 
++static int yv12_align_fill(char* p_dst, int w, int h, int aw, int ah)
++{
++	int i, j;
++	int map = aw * ah;
++	int v_size = (map) >> 2;
++	char *pv = p_dst + map;
++	char *pu = pv + v_size;//  / 4
++
++	int dw = aw - w;
++	int dh = ah -h;
++	int dw_h = dw / 2;
++	int dh_h = dh / 2;
++	int w_h = w / 2;
++	int h_h = h / 2;
++	int aw_h = aw / 2;
++	int ah_h = ah / 2;
++	int map_oft = aw_h * h_h;
++
++	if((w == aw) && (h == ah))
++		return 0;
++
++
++	for(i=0;i<h_h;i++)
++	{
++		for(j=0;j<dw_h;j++)
++		{
++			pv[w_h + j + aw_h * i] = 128;
++			pu[w_h + j + aw_h * i] = 128;
++		}
++
++	}
++
++
++	for(i=0;i<dh_h;i++)
++	{
++		for(j=0;j<aw_h;j++)
++		{
++			pv[map_oft + j + aw_h * i] = 128;
++			pu[map_oft + j + aw_h * i] = 128;
++		}
++
++	}
++
++	return 0;
++}
++
+ static int __liCallback(OmxDecoder* pDec, DecoderCallback callback,
+                                     void* pUserData)
+ {
+@@ -471,7 +521,7 @@ static int __liPrepare(OmxDecoder* pDec)
+ 
+     pCtx->mVideoConfig.nAlignStride       = pCtx->mGpuAlignStride;
+ 
+-    pCtx->mVideoConfig.eOutputPixelFormat = PIXEL_FORMAT_YV12;//* Used to be YV12.
++    pCtx->mVideoConfig.eOutputPixelFormat = PIXEL_FORMAT_YUV_MB32_420;//* Used to be YV12.
+ 
+ #if (ENABLE_SCALEDOWN_WHEN_RESOLUTION_MOER_THAN_1080P)
+     if (pCtx->mStreamInfo.nWidth > 1920
+@@ -482,6 +532,10 @@ static int __liPrepare(OmxDecoder* pDec)
+         pCtx->mVideoConfig.nVerticalScaleDownRatio = 1;
+     }
+ #endif
++	pCtx->tWidth = pCtx->mStreamInfo.nWidth;
++	pCtx->tHeight = pCtx->mStreamInfo.nHeight;
++	pCtx->mStreamInfo.nWidth = (pCtx->mStreamInfo.nWidth + 31) & ~31;
++	pCtx->mStreamInfo.nHeight = (pCtx->mStreamInfo.nHeight + 31) & ~31;
+ 
+     if(pCtx->mStreamInfo.eCodecFormat == VIDEO_CODEC_FORMAT_WMV3)
+     {
+@@ -506,6 +560,14 @@ static int __liPrepare(OmxDecoder* pDec)
+     ret = InitializeVideoDecoder(pCtx->m_decoder,
+                                  &(pCtx->mStreamInfo),
+                                  &pCtx->mVideoConfig);
++	pCtx->pYV12 = (char*)malloc(sizeof(char) * pCtx->mStreamInfo.nWidth * pCtx->mStreamInfo.nHeight * 3 / 2);
++	if(pCtx->pYV12 == NULL)
++	{
++		loge("pCtx->pYV12 malloc fail\n");
++		return -1;
++	}
++	pCtx->CvtPicture.pData0 = pCtx->pYV12;
++	pCtx->CvtPicture.ePixelFormat = PIXEL_FORMAT_YV12;
+     if(ret != 0)
+     {
+         DestroyVideoDecoder(pCtx->m_decoder);
+@@ -706,12 +768,14 @@ static OMX_BUFFERHEADERTYPE* __liDrain(OmxDecoder* pDec)
+          pCtx->pPicture->nWidth,    pCtx->pPicture->nHeight,
+          pCtx->pPicture->nTopOffset,pCtx->pPicture->nBottomOffset,
+          pCtx->pPicture->nLeftOffset,pCtx->pPicture->nRightOffset);
++	RotatePicture(pCtx->decMemOps, pCtx->pPicture, &pCtx->CvtPicture, 0, 32, 32);
++	yv12_align_fill(pCtx->CvtPicture.pData0, pCtx-> tWidth, pCtx-> tWidth, pCtx->mStreamInfo.nWidth, pCtx->mStreamInfo.nHeight);
+     CdcMemFlushCache(pCtx->decMemOps, (void*)pCtx->pPicture->pData0,
+              pCtx->pPicture->nLineStride * pCtx->pPicture->nHeight*3/2);
+     OMX_PARAM_PORTDEFINITIONTYPE* outDef = getPortDef(pCtx->pOutPort);
+ #if USE_ALIGN_SIZE
+     AlignCopyYV12((unsigned char*)pOutBufHdr->pBuffer,
+-                                (unsigned char*)pCtx->pPicture->pData0,
++                                (unsigned char*)pCtx->CvtPicture.pData0,
+                                 outDef->format.video.nFrameWidth,
+                                 outDef->format.video.nFrameHeight);
+ 
+@@ -785,6 +849,11 @@ static  void __liClose(OmxDecoder* pDec)
+         DestroyVideoDecoder(pCtx->m_decoder);
+         pCtx->m_decoder           = NULL;
+     }
++	if(pCtx->pYV12 != NULL)
++	{
++		free(pCtx->pYV12);
++		pCtx->pYV12 = NULL;
++	}
+     pCtx->mCodecSpecificDataLen = 0;
+     memset(pCtx->mCodecSpecificData, 0 , CODEC_SPECIFIC_DATA_LENGTH);
+     OmxReleaseMutex(pCtx->awMutexHandler);
+@@ -835,7 +904,7 @@ static int __liSetOutputEos(OmxDecoder* pDec)
+ static void __liGetFormat(OmxDecoder* pDec)
+ {
+     OmxAwDecoderContext *pCtx = (OmxAwDecoderContext*)pDec;
+-    pCtx->mVideoConfig.eOutputPixelFormat = PIXEL_FORMAT_YV12;
++    pCtx->mVideoConfig.eOutputPixelFormat = PIXEL_FORMAT_YUV_MB32_420;
+ }
+ 
+ static inline void __liSetExtBufNum(OmxDecoder* pDec, OMX_S32 num)
+diff --git a/vdecoder/pixel_format.c b/vdecoder/pixel_format.c
+index 3d47e6a..25b9880 100755
+--- a/vdecoder/pixel_format.c
++++ b/vdecoder/pixel_format.c
+@@ -556,6 +556,253 @@ void ConvertMb32422ToYv12C(char* pSrc,char* pDstU, char*pDstV,int nPicWidth, int
+ //****************************************************************//
+ //****************************************************************//
+ 
++static void MB32_CVT_YV12(char* pSrc, char* pSrc_v, char* pDst, int nWidth, int nHeight)
++{
++	int i = 0;
++	int j = 0;
++	int m = 0;
++	int n = 0;
++	int k = 0;
++	int nMbWidth = 0;
++	int nMbHeight = 0;
++	int nMbWidth_uv = 0;
++	int nMbHeight_uv = 0;
++	int nLineStride = 0;
++	int nLineStride_uv = 0;
++	int lineNum = 0;
++	int lineNum_uv = 0;
++	int offset = 0;
++	int offset_uv = 0;
++	int maxNum = 0;
++	char* ptr = NULL;
++	char* ptr_uv = NULL;
++	char* pDstU = NULL;
++	char* pDstV = NULL;
++	int nWidth_uv = 0;
++	int nHeight_uv = 0;
++	char bufferY[32];
++	char bufferV[16], bufferU[16];
++	int nWidthMatchFlag = 0;
++	int nWidthMatchFlag_uv = 0;
++	int nCopyMbWidth = 0;
++	int nCopyMbWidth_uv = 0;
++	char *dstAsm = NULL;
++	char *dst0Asm = NULL;
++	char *dst1Asm = NULL;
++	char *srcAsm = NULL;
++	char *srcAsm_uv = NULL;
++
++	int bCnt2 = 1;
++
++	nLineStride = (nWidth + 15) &~15;
++	nMbWidth = (nWidth + 31)&~31;
++	nMbWidth >>= 5;//n 32 width   / 32
++
++	nMbHeight = (nHeight + 31)&~31;
++	nMbHeight >>= 5;// / 32
++	ptr = pSrc;
++
++	nWidthMatchFlag = 0;
++	nCopyMbWidth = nMbWidth - 1;
++
++	nWidth_uv = (nWidth + 1) / 2;
++	nHeight_uv = (nHeight + 1) / 2;
++
++	nLineStride_uv = (nWidth_uv + 7)&~7;
++
++	nMbWidth_uv = (nWidth_uv * 2 + 31)&~31;
++	nMbWidth_uv >>= 5;// / 32
++
++	nMbHeight_uv = (nHeight_uv + 31)&~31;
++	nMbHeight_uv >>= 5;// / 32
++	ptr_uv = pSrc_v;
++	pDstU = pDst + (nWidth * nHeight) + (nWidth / 2 * nHeight / 2);
++	pDstV = pDst + (nWidth * nHeight);
++	nWidthMatchFlag_uv = 0;
++	nCopyMbWidth_uv = nMbWidth_uv - 1;
++
++	if ((nMbWidth << 5) == nLineStride)// * 32
++	{
++		nWidthMatchFlag = 1;
++		nCopyMbWidth = nMbWidth;
++	}
++
++	if ((nMbWidth_uv << 4) == nLineStride_uv)//*16
++	{
++		nWidthMatchFlag_uv = 1;
++		nCopyMbWidth_uv = nMbWidth_uv;
++
++	}
++
++	for (i = 0; i < nMbHeight; i++)
++	{
++		for (j = 0; j < nCopyMbWidth; j++)
++		{
++			for (m = 0; m < 32; m++)
++			{
++				if (((i << 5) + m) >= nHeight)// * 32
++				{
++					ptr += 32;
++					continue;
++				}
++				srcAsm = ptr;
++				lineNum = (i << 5) + m;           //line num      * 32
++				offset = lineNum * nLineStride + (j << 5);// * 32
++				dstAsm = pDst + offset;
++
++				memcpy(dstAsm, srcAsm, 32);
++
++				if (bCnt2)
++				{
++					srcAsm_uv = ptr_uv;
++					lineNum_uv = (i << 4) + m;           //line num i / 2 * 32
++					offset_uv = lineNum_uv * nLineStride_uv + (j << 4);// * 16
++					dst0Asm = pDstU + offset_uv;
++					dst1Asm = pDstV + offset_uv;
++
++					//memcpy(dst0Asm, srcAsm_uv, 16);
++					//memcpy(dst1Asm, (void *)(srcAsm_uv + 16), 16);
++					dst0Asm[0] = srcAsm_uv[0];
++					dst0Asm[1] = srcAsm_uv[2];
++					dst0Asm[2] = srcAsm_uv[4];
++					dst0Asm[3] = srcAsm_uv[6];
++					dst0Asm[4] = srcAsm_uv[8];
++					dst0Asm[5] = srcAsm_uv[10];
++					dst0Asm[6] = srcAsm_uv[12];
++					dst0Asm[7] = srcAsm_uv[14];
++
++					dst0Asm[8] = srcAsm_uv[16];
++					dst0Asm[9] = srcAsm_uv[18];
++					dst0Asm[10] = srcAsm_uv[20];
++					dst0Asm[11] = srcAsm_uv[22];
++					dst0Asm[12] = srcAsm_uv[24];
++					dst0Asm[13] = srcAsm_uv[26];
++					dst0Asm[14] = srcAsm_uv[28];
++					dst0Asm[15] = srcAsm_uv[30];
++
++					dst1Asm[0] = srcAsm_uv[1];
++					dst1Asm[1] = srcAsm_uv[3];
++					dst1Asm[2] = srcAsm_uv[5];
++					dst1Asm[3] = srcAsm_uv[7];
++					dst1Asm[4] = srcAsm_uv[9];
++					dst1Asm[5] = srcAsm_uv[11];
++					dst1Asm[6] = srcAsm_uv[13];
++					dst1Asm[7] = srcAsm_uv[15];
++
++					dst1Asm[8] = srcAsm_uv[17];
++					dst1Asm[9] = srcAsm_uv[19];
++					dst1Asm[10] = srcAsm_uv[21];
++					dst1Asm[11] = srcAsm_uv[23];
++					dst1Asm[12] = srcAsm_uv[25];
++					dst1Asm[13] = srcAsm_uv[27];
++					dst1Asm[14] = srcAsm_uv[29];
++					dst1Asm[15] = srcAsm_uv[31];
++
++					ptr_uv += 32;
++				}
++				ptr += 32;
++			}
++		}
++
++		if (nWidthMatchFlag != 1)
++		{
++			for (m = 0; m < 32; m++)
++			{
++				if (((i << 5) + m) >= nHeight)// * 32
++				{
++					ptr += 32;
++					continue;
++				}
++				dstAsm = bufferY;
++				srcAsm = ptr;
++				lineNum = (i << 5) + m;           //line num   * 32
++				offset = lineNum * nLineStride + (j << 5);// * 32
++
++				memcpy(dstAsm, srcAsm, 32);
++				ptr += 32;
++				for (k = 0; k < 32; k++)
++				{
++					if ((j * 32 + k) >= nLineStride)
++					{
++						break;
++					}
++					pDst[offset + k] = bufferY[k];
++				}
++			}
++		}
++
++		if (bCnt2) {
++			if (nWidthMatchFlag_uv != 1)
++			{
++				for (m = 0; m < 32; m++)
++				{
++					if (((i << 4) + m) >= nHeight_uv)//i / 2 * 32
++					{
++						ptr_uv += 32;
++						continue;
++					}
++
++					srcAsm_uv = ptr_uv;
++					lineNum_uv = (i << 4) + m;           //line num i / 2 * 32
++					offset = lineNum_uv * nLineStride_uv + (j << 4);// * 16
++					dst0Asm = bufferU;
++					dst1Asm = bufferV;
++
++					//memcpy(dst0Asm, srcAsm, 16);
++					//memcpy(dst1Asm, (char *)(srcAsm + 16), 16);
++					dst0Asm[0] = srcAsm_uv[0];
++					dst0Asm[1] = srcAsm_uv[2];
++					dst0Asm[2] = srcAsm_uv[4];
++					dst0Asm[3] = srcAsm_uv[6];
++					dst0Asm[4] = srcAsm_uv[8];
++					dst0Asm[5] = srcAsm_uv[10];
++					dst0Asm[6] = srcAsm_uv[12];
++					dst0Asm[7] = srcAsm_uv[14];
++
++					dst0Asm[8] = srcAsm_uv[16];
++					dst0Asm[9] = srcAsm_uv[18];
++					dst0Asm[10] = srcAsm_uv[20];
++					dst0Asm[11] = srcAsm_uv[22];
++					dst0Asm[12] = srcAsm_uv[24];
++					dst0Asm[13] = srcAsm_uv[26];
++					dst0Asm[14] = srcAsm_uv[28];
++					dst0Asm[15] = srcAsm_uv[30];
++
++					dst1Asm[0] = srcAsm_uv[1];
++					dst1Asm[1] = srcAsm_uv[3];
++					dst1Asm[2] = srcAsm_uv[5];
++					dst1Asm[3] = srcAsm_uv[7];
++					dst1Asm[4] = srcAsm_uv[9];
++					dst1Asm[5] = srcAsm_uv[11];
++					dst1Asm[6] = srcAsm_uv[13];
++					dst1Asm[7] = srcAsm_uv[15];
++
++					dst1Asm[8] = srcAsm_uv[17];
++					dst1Asm[9] = srcAsm_uv[19];
++					dst1Asm[10] = srcAsm_uv[21];
++					dst1Asm[11] = srcAsm_uv[23];
++					dst1Asm[12] = srcAsm_uv[25];
++					dst1Asm[13] = srcAsm_uv[27];
++					dst1Asm[14] = srcAsm_uv[29];
++					dst1Asm[15] = srcAsm_uv[31];
++					ptr_uv += 32;
++
++					for (k = 0; k < 16; k++)
++					{
++						if (((j << 4) + k) >= nLineStride_uv)// j * 16
++						{
++							break;
++						}
++						pDstV[offset + k] = bufferV[k];
++						pDstU[offset + k] = bufferU[k];
++					}
++				}
++			}
++		}
++		bCnt2 = !bCnt2;
++	}
++}
++
+ void ConvertPixelFormat(VideoPicture* pPictureIn, VideoPicture* pPictureOut)
+ {
+     int   nMemSizeY = 0;
+@@ -584,6 +831,11 @@ void ConvertPixelFormat(VideoPicture* pPictureIn, VideoPicture* pPictureOut)
+ 
+     if(pPictureOut->ePixelFormat==PIXEL_FORMAT_YV12)
+     {
++		if(pPictureIn->ePixelFormat == PIXEL_FORMAT_YUV_MB32_420)
++		{
++			MB32_CVT_YV12(pPictureIn->pData0, pPictureIn->pData1, pPictureOut->pData0, \
++                    pPictureIn->nWidth, pPictureIn->nHeight);
++		}
+ #ifdef CEDARX_DECODER_ARM32
+         if(pPictureIn->ePixelFormat == PIXEL_FORMAT_YUV_MB32_420)
+         {
+-- 
+2.34.1
+
