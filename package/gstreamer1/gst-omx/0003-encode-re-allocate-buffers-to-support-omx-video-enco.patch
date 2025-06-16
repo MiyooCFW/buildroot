@@ -1,0 +1,71 @@
+From 927aa60219328fe75294bb1509402e14909b5438 Mon Sep 17 00:00:00 2001
+From: houxiaoni <houxiaoni@allwinnertech.com>
+Date: Wed, 14 Jul 2021 18:33:53 +0800
+Subject: [PATCH 3/7] encode: re-allocate buffers to support omx video
+ encoding.
+
+Signed-off-by: houxiaoni <houxiaoni@allwinnertech.com>
+---
+ omx/gstomxvideoenc.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+ mode change 100644 => 100755 omx/gstomxvideoenc.c
+
+diff --git a/omx/gstomxvideoenc.c b/omx/gstomxvideoenc.c
+old mode 100644
+new mode 100755
+index dfc03c5..69da66c
+--- a/omx/gstomxvideoenc.c
++++ b/omx/gstomxvideoenc.c
+@@ -1845,6 +1845,7 @@ gst_omx_video_enc_configure_input_buffer (GstOMXVideoEnc * self,
+ 
+   switch (port_def.format.video.eColorFormat) {
+     case OMX_COLOR_FormatYUV420Planar:
++    case OMX_COLOR_FormatYVU420Planar:
+     case OMX_COLOR_FormatYUV420PackedPlanar:
+ #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
+       /* Formats defined in extensions have their own enum so disable to -Wswitch warning */
+@@ -2251,6 +2252,9 @@ gst_omx_video_enc_set_format (GstVideoEncoder * encoder,
+       case GST_VIDEO_FORMAT_I420:
+         port_def.format.video.eColorFormat = OMX_COLOR_FormatYUV420Planar;
+         break;
++      case GST_VIDEO_FORMAT_YV12:
++        port_def.format.video.eColorFormat = OMX_COLOR_FormatYVU420Planar;
++        break;
+       case GST_VIDEO_FORMAT_NV12:
+         port_def.format.video.eColorFormat = OMX_COLOR_FormatYUV420SemiPlanar;
+         break;
+@@ -2343,8 +2347,11 @@ gst_omx_video_enc_set_format (GstVideoEncoder * encoder,
+   }
+ 
+   GST_DEBUG_OBJECT (self, "Updating ports definition");
++  gst_omx_port_get_port_definition (self->enc_out_port, &port_def);
++  port_def.format.video.nFrameWidth = info->width;
++  port_def.format.video.nFrameHeight = info->height;
+   if (gst_omx_port_update_port_definition (self->enc_out_port,
+-          NULL) != OMX_ErrorNone)
++          &port_def) != OMX_ErrorNone)
+     return FALSE;
+   if (gst_omx_port_update_port_definition (self->enc_in_port,
+           NULL) != OMX_ErrorNone)
+@@ -2483,7 +2490,7 @@ gst_omx_video_enc_fill_buffer (GstOMXVideoEnc * self, GstBuffer * inbuf,
+ {
+   GstVideoCodecState *state = gst_video_codec_state_ref (self->input_state);
+   GstVideoInfo *info = &state->info;
+-  OMX_PARAM_PORTDEFINITIONTYPE *port_def = &self->enc_in_port->port_def;
++  OMX_PARAM_PORTDEFINITIONTYPE *port_def = &self->enc_out_port->port_def;
+   gboolean ret = FALSE;
+   GstVideoFrame frame;
+ 
+@@ -2553,7 +2560,8 @@ gst_omx_video_enc_fill_buffer (GstOMXVideoEnc * self, GstBuffer * inbuf,
+   GST_LOG_OBJECT (self, "Mismatched strides - copying line-by-line");
+ 
+   switch (info->finfo->format) {
+-    case GST_VIDEO_FORMAT_I420:{
++    case GST_VIDEO_FORMAT_I420:
++    case GST_VIDEO_FORMAT_YV12:{
+       gint i, j, height, width;
+       guint8 *src, *dest;
+       gint src_stride, dest_stride;
+-- 
+2.29.0
+

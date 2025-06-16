@@ -1,0 +1,45 @@
+From c742685dc4f3d28270677f4ebbc4ccbe18021624 Mon Sep 17 00:00:00 2001
+From: houxiaoni <houxiaoni@allwinnertech.com>
+Date: Wed, 14 Jul 2021 18:36:59 +0800
+Subject: [PATCH 4/7] gstomx: drop 20 frames.
+
+Signed-off-by: houxiaoni <houxiaoni@allwinnertech.com>
+---
+ omx/gstomxvideodec.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+ mode change 100644 => 100755 omx/gstomxvideodec.c
+
+diff --git a/omx/gstomxvideodec.c b/omx/gstomxvideodec.c
+old mode 100644
+new mode 100755
+index abe6e30..5d879b3
+--- a/omx/gstomxvideodec.c
++++ b/omx/gstomxvideodec.c
+@@ -592,6 +592,7 @@ gst_omx_video_dec_fill_buffer (GstOMXVideoDec * self,
+         dst_width[0] = GST_VIDEO_INFO_WIDTH (vinfo);
+         break;
+       case GST_VIDEO_FORMAT_I420:
++      case GST_VIDEO_FORMAT_YV12:
+         dst_width[0] = GST_VIDEO_INFO_WIDTH (vinfo);
+         src_stride[1] = nstride / 2;
+         src_size[1] = (src_stride[1] * nslice) / 2;
+@@ -2749,6 +2750,7 @@ gst_omx_video_dec_handle_frame (GstVideoDecoder * decoder,
+   gboolean done = FALSE;
+   gboolean first_ouput_buffer = TRUE;
+   guint memory_idx = 0;         /* only used in dynamic buffer mode */
++  static int drop_num = 0;
+ 
+   self = GST_OMX_VIDEO_DEC (decoder);
+ 
+@@ -2760,7 +2762,7 @@ gst_omx_video_dec_handle_frame (GstVideoDecoder * decoder,
+   }
+ 
+   if (!self->started) {
+-    if (!GST_VIDEO_CODEC_FRAME_IS_SYNC_POINT (frame)) {
++    if (!GST_VIDEO_CODEC_FRAME_IS_SYNC_POINT (frame) && drop_num++ < 20) {
+       gst_video_decoder_drop_frame (GST_VIDEO_DECODER (self), frame);
+       return GST_FLOW_OK;
+     }
+-- 
+2.29.0
+

@@ -10,9 +10,14 @@ if len(sys.argv) < 2:
 
 filename = sys.argv[1]
 
-cmd = ['gst-launch-1.0', 'filesrc', 'location=' + filename, '!', 'qtdemux', 'name=demux',
-       'demux.audio_0', '!', 'queue', '!', 'decodebin', '!', 'audioconvert', '!', 'alsasink',
-       'demux.video_0', '!', 'queue', '!', 'decodebin', '!', 'autovideoconvert', '!', 'fbdevsink']
+cmd = [
+    'gst-launch-1.0',
+    'filesrc', 'location=' + filename,
+    '!', 'qtdemux', 'name=demux',
+    'demux.audio_0', '!', 'queue', '!', 'decodebin', '!', 'audioconvert', '!', 'alsasink',
+    'demux.video_0', '!', 'queue', '!', 'decodebin', '!', 'autovideoconvert', '!', 
+    'sunxifbsink', 'hardware-overlay=true', 'video-memory=1', 'buffer-pool=true'
+]
 
 proc = subprocess.Popen(cmd)
 
@@ -28,7 +33,7 @@ def get_key():
 
 _ = get_key()
 print("Key pressed, terminating gst-launch...")
-proc.terminate()
+proc.send_signal(signal.SIGINT)
 
 proc.wait()
 print("gst-launch stopped.")

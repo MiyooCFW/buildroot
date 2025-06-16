@@ -1,0 +1,99 @@
+From e9de3a7f6137089da77b3f555599f8b19a7ee019 Mon Sep 17 00:00:00 2001
+From: houxiaoni <houxiaoni@allwinnertech.com>
+Date: Wed, 14 Jul 2021 18:55:43 +0800
+Subject: [PATCH 5/7] omx: modify dec to adapt changed resolution video.
+
+Signed-off-by: houxiaoni <houxiaoni@allwinnertech.com>
+---
+ omx/gstomxvideodec.c | 23 ++++++++++++++++++-----
+ 1 file changed, 18 insertions(+), 5 deletions(-)
+
+diff --git a/omx/gstomxvideodec.c b/omx/gstomxvideodec.c
+index 5d879b3..12b2f30 100755
+--- a/omx/gstomxvideodec.c
++++ b/omx/gstomxvideodec.c
+@@ -2177,8 +2177,12 @@ gst_omx_video_dec_disable (GstOMXVideoDec * self)
+ 
+   GST_DEBUG_OBJECT (self, "Need to disable and drain decoder");
+ 
+-  gst_omx_video_dec_drain (GST_VIDEO_DECODER (self));
++  /*
++  gst_omx_video_dec_drain (decoder);
++  gst_omx_video_dec_flush (decoder);
+   gst_omx_port_set_flushing (out_port, 5 * GST_SECOND, TRUE);
++  */
++  gst_omx_video_dec_flush (GST_VIDEO_DECODER (self));
+ 
+   if (klass->cdata.hacks & GST_OMX_HACK_NO_COMPONENT_RECONFIGURE) {
+     GST_VIDEO_DECODER_STREAM_UNLOCK (self);
+@@ -2210,7 +2214,7 @@ gst_omx_video_dec_disable (GstOMXVideoDec * self)
+      * The exception is for buffer sharing above and the event
+      * OMX_EventPortNeedsDisable will be sent to request disabling the
+      * other port at the same time. */
+-    if (gst_omx_port_set_enabled (self->dec_in_port, FALSE) != OMX_ErrorNone)
++    /*if (gst_omx_port_set_enabled (self->dec_in_port, FALSE) != OMX_ErrorNone)
+       return FALSE;
+     if (gst_omx_port_wait_buffers_released (self->dec_in_port,
+             5 * GST_SECOND) != OMX_ErrorNone)
+@@ -2229,7 +2233,7 @@ gst_omx_video_dec_disable (GstOMXVideoDec * self)
+     if (!gst_omx_video_dec_deallocate_output_buffers (self))
+       return FALSE;
+     if (gst_omx_port_wait_enabled (out_port, 1 * GST_SECOND) != OMX_ErrorNone)
+-      return FALSE;
++      return FALSE;*/
+ 
+ #if defined (USE_OMX_TARGET_RPI) && defined (HAVE_GST_GL)
+     if (self->eglimage) {
+@@ -2270,6 +2274,9 @@ gst_omx_video_dec_disable (GstOMXVideoDec * self)
+   self->input_state = NULL;
+ 
+   GST_DEBUG_OBJECT (self, "Decoder drained and disabled");
++  /* The local port_def is now obsolete so get it again. */
++  /* if (!needs_disable)
++      gst_omx_port_get_port_definition (self->dec_in_port, &port_def); */
+   return TRUE;
+ }
+ 
+@@ -2383,15 +2390,17 @@ gst_omx_video_dec_enable (GstOMXVideoDec * self, GstBuffer * input)
+       return FALSE;
+     if (gst_omx_port_set_enabled (self->dec_in_port, TRUE) != OMX_ErrorNone)
+       return FALSE;
++    /*
+     if (!gst_omx_video_dec_allocate_in_buffers (self))
+       return FALSE;
+-
++    */
+     if ((klass->cdata.hacks & GST_OMX_HACK_NO_DISABLE_OUTPORT)) {
+       if (gst_omx_port_set_enabled (self->dec_out_port, TRUE) != OMX_ErrorNone)
+         return FALSE;
++    /*
+       if (gst_omx_port_allocate_buffers (self->dec_out_port) != OMX_ErrorNone)
+         return FALSE;
+-
++    */
+       if (gst_omx_port_wait_enabled (self->dec_out_port,
+               5 * GST_SECOND) != OMX_ErrorNone)
+         return FALSE;
+@@ -2676,7 +2685,9 @@ gst_omx_video_dec_flush (GstVideoDecoder * decoder)
+ 
+   /* 1) Flush the ports */
+   GST_DEBUG_OBJECT (self, "flushing ports");
++  /*
+   gst_omx_port_set_flushing (self->dec_in_port, 5 * GST_SECOND, TRUE);
++  */
+   gst_omx_port_set_flushing (self->dec_out_port, 5 * GST_SECOND, TRUE);
+ 
+ #if defined (USE_OMX_TARGET_RPI) && defined (HAVE_GST_GL)
+@@ -2705,7 +2716,9 @@ gst_omx_video_dec_flush (GstVideoDecoder * decoder)
+ #endif
+ 
+   /* 4) Unset flushing to allow ports to accept data again */
++  /*
+   gst_omx_port_set_flushing (self->dec_in_port, 5 * GST_SECOND, FALSE);
++  */
+   gst_omx_port_set_flushing (self->dec_out_port, 5 * GST_SECOND, FALSE);
+ 
+ #if defined (USE_OMX_TARGET_RPI) && defined (HAVE_GST_GL)
+-- 
+2.29.0
+
