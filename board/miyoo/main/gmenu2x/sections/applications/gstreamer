@@ -1,4 +1,0 @@
-title=Gstreamer HW
-description=Play a movie/audio file using HW decoder cedar
-exec=/mnt/apps/gstreamer/gst.sh
-selectordir=/mnt/output
