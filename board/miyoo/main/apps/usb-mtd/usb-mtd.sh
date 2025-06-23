@@ -2,6 +2,7 @@
 
 echo peripheral > /sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode
 modprobe -r g_serial
+modprobe usb_f_fs
 killall umtprd umtprd-debug
 /mnt/apps/usb-mtd/remove.sh g2
 mount none /sys/kernel/config -t configfs

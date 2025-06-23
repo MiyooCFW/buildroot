@@ -57,6 +57,9 @@ restore_temp_log_func(){
 
 # load kernel modules
 
+modprobe sunxi
+modprobe usb_f_fs
+
 # load usb gadget
 echo "Loading USB gadget" >> "${LOGS}"
 mount none /sys/kernel/config -t configfs 2>&1 | tee -a "${LOGS}"

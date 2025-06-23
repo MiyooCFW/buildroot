@@ -656,7 +656,7 @@ if ${CHANGE_FS_P4}; then
 		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p4\).*|\1 "${HOME}" -o rw,sync,exec|" /etc/inittab
 	elif test "${P4_FS_TYPE}" == "BTRFS" ; then
 		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p4\).*|\1 "${HOME}" -o commit=5,flushoncommit,noatime,nodiratime,exec|" /etc/inittab
-	fi	
+	fi
 	mount -o remount,ro / /
 	cat /etc/inittab >> ${LOG}
 fi

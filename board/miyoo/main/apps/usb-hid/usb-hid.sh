@@ -9,6 +9,9 @@ st_exec_func(){
 	killall umtprd umtprd-debug
 	/mnt/apps/usb-mtd/remove.sh g2
 	modprobe -r g_serial
+	modprobe usb_f_hid
+	modprobe evdev
+	modprobe uinput
 	mount none /sys/kernel/config -t configfs
 	gadget-hid
 	st_exec_func "\
