@@ -11,3 +11,6 @@ modprobe uinput
 modprobe psmouse
 modprobe synaptics_usb
 modprobe mousedev
+modprobe usbhid
+modprobe hid-generic
+modprobe hid

@@ -633,6 +633,7 @@ else
 		mount /dev/mmcblk0p4 "${HOME}" -o rw,sync,exec 2>&1 | tee -a ${LOG_TEMP}
 		CHANGE_FS_P4=true
 	elif test "${P4_FS_TYPE}" == "BTRFS"; then
+		modprobe -r btrfs 2>&1 | tee -a "${LOGS}"
 		mkfs.btrfs -r "${ROMS}"/backup/"${HOME}" -L "${P4_LABEL}" -v -f /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP}
 		btrfsck /dev/mmcblk0p4 2>&1 | tee -a ${LOG_TEMP} # does not repair FS, just check integrity as it is dengarous to do so
 		mount /dev/mmcblk0p4 "${HOME}" -o commit=5,flushoncommit,noatime,nodiratime,exec 2>&1 | tee -a ${LOG_TEMP}
@@ -654,7 +655,9 @@ if ${CHANGE_FS_P4}; then
 	done
 	if test "${P4_FS_TYPE}" == "EXT4" ; then
 		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p4\).*|\1 "${HOME}" -o rw,sync,exec|" /etc/inittab
+		sed -i 's|^::sysinit:/sbin/modprobe btrfs|#&|' /etc/inittab
 	elif test "${P4_FS_TYPE}" == "BTRFS" ; then
+		sed -i 's|^#::sysinit:/sbin/modprobe btrfs|::sysinit:/sbin/modprobe btrfs|' /etc/inittab
 		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p4\).*|\1 "${HOME}" -o commit=5,flushoncommit,noatime,nodiratime,exec|" /etc/inittab
 	fi
 	mount -o remount,ro / /
@@ -727,6 +730,7 @@ if $CHANGE_FS_P5; then
 			echo "\033[0;31mExtracting archive ${ROMS} from ${HOME}/backup${ROMS} failed with rsync exit code ${EXIT_CODE}\033[0m" | tee -a ${LOG}
 		fi
 	elif test "${P5_FS_TYPE}" == "BTRFS"; then
+		modprobe -r btrfs 2>&1 | tee -a "${LOGS}"
 		mkfs.btrfs -r "${HOME}"/backup"${ROMS}" -v -f -L ${P5_LABEL} /dev/mmcblk0p5 2>&1 | tee -a ${LOG}
 		sleep 2
 		btrfsck /dev/mmcblk0p5 2>&1 | tee -a ${LOG} # does not repair FS, just check integrity as it is dengarous to do so
@@ -752,12 +756,13 @@ if $CHANGE_FS_P5; then
 	if test "${P5_FS_TYPE}" == "VFAT"; then
 		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -t vfat -o rw,utf8|" /etc/inittab
 	elif test "${P5_FS_TYPE}" == "BTRFS"; then
+		sed -i 's|^#::sysinit:/sbin/modprobe btrfs|::sysinit:/sbin/modprobe btrfs|' /etc/inittab
 		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -o commit=5,flushoncommit,noatime,nodiratime|" /etc/inittab
 	elif test "${P5_FS_TYPE}" == "EXT4"; then
 		sed -i "s|\(::sysinit:/bin/mount /dev/mmcblk0p5\).*|\1 "${ROMS}" -o rw,noatime|" /etc/inittab
 	fi
-	mount -o remount,ro / /
-	cat /etc/inittab >> ${LOG}
+  mount -o remount,ro / /
+  cat /etc/inittab >> ${LOG}
 fi
 
 # Expand_ROMS_Partition-prompt for the p5 (ROMS) partition if requested

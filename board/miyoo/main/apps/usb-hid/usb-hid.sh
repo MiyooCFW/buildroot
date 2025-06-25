@@ -8,7 +8,6 @@ st_exec_func(){
 	echo peripheral > /sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode
 	killall umtprd umtprd-debug
 	/mnt/apps/usb-mtd/remove.sh g2
-	modprobe -r g_serial
 	modprobe usb_f_hid
 	modprobe evdev
 	modprobe uinput
@@ -20,3 +19,6 @@ st_exec_func(){
 	python /mnt/apps/usb-hid/usb-hid.py"
 
 	gadget-vid-pid-remove 0x1d6b:0x0104
+	modprobe -r usb_f_hid
+  modprobe -r evdev
+  modprobe -r uinput
