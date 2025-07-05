@@ -5,9 +5,9 @@ MAC_HOST="12:34:56:78:9a:bd"
 MAC_DEV="12:34:56:78:9a:bc"
 
 echo peripheral > /sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode
-modprobe -r g_serial
 killall umtprd umtprd-debug
 /mnt/apps/usb-mtd/remove.sh g2
+modprobe usb_f_rndis
 sleep 1
 
 mount none /sys/kernel/config -t configfs
