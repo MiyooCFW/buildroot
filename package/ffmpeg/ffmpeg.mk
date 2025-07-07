@@ -59,7 +59,7 @@ FFMPEG_CONF_OPTS = \
 	--disable-symver \
 	--disable-doc
 
-FFMPEG_DEPENDENCIES += $(if $(BR2_PACKAGE_LIBICONV),libiconv) host-pkgconf
+FFMPEG_DEPENDENCIES += $(if $(BR2_PACKAGE_LIBICONV),libiconv) host-pkgconf $(if $(BR2_PACKAGE_LIBCEDARC),libcedarc)
 
 ifeq ($(BR2_PACKAGE_FFMPEG_GPL),y)
 FFMPEG_CONF_OPTS += --enable-gpl
