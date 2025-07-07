@@ -60,9 +60,6 @@ export IMAGE_NAME="${BR2_VENDOR}-${CFW_TYPE}-${CFW_RELEASE}-${CFW_HASH}_${LIBC}-
 # Relocate board files for genimage-sdcard config to read (see last cmd)
 cp -r board/miyoo/boot "${BINARIES_DIR}"
 cp -r board/miyoo/main "${BINARIES_DIR}"
-if [ "${LIBC}" = "uClibc-ng" ]; then
-    rm -rf "${BINARIES_DIR}/main/apps/gstreamer"
-fi
 cp -r board/miyoo/roms "${BINARIES_DIR}"
 
 # Write CFW version to splash image

@@ -4,6 +4,7 @@
 #
 ################################################################################
 LIBCEDARC_VERSION = master
+LIBCEDARC_LICENSE = PROPRIETARY
 LIBCEDARC_SITE = $(call github,aodzip,libcedarc,$(LIBCEDARC_VERSION))
 LIBCEDARC_DEPENDENCIES = 
 LIBCEDARC_INSTALL_STAGING = YES
