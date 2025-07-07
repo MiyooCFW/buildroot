@@ -1,5 +1,5 @@
 title=Gstreamer HW raw
-description=Play a movie/audio file using HW decoder cedar
+description=Play a media file using raw/fast HW decoder
 exec=/usr/bin/python
-params=/mnt/apps/gstreamer/gst-raw.py
+params=/usr/share/gstreamer-1.0/scripts/gst-raw.py
 selectordir=/mnt
