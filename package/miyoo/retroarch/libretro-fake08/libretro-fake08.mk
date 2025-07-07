@@ -22,7 +22,7 @@ endef
 define LIBRETRO_FAKE08_INSTALL_TARGET_CMDS
     mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/platform/libretro/fake08_libretro.so \
-		$(TARGET_DIR)/usr/lib/libretro/fake08_libretro.so
+		${BINARIES_DIR}/retroarch/cores/fake08_libretro.so
 endef
 
 $(eval $(generic-package))
