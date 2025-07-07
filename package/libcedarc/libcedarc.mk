@@ -3,7 +3,7 @@
 # libcedarc
 #
 ################################################################################
-LIBCEDARC_VERSION = master
+LIBCEDARC_VERSION = e4246be521203adb2d93d52482239044a7f9b6fe
 LIBCEDARC_LICENSE = PROPRIETARY
 LIBCEDARC_SITE = $(call github,aodzip,libcedarc,$(LIBCEDARC_VERSION))
 LIBCEDARC_DEPENDENCIES = 
