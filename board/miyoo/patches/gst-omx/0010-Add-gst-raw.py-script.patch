@@ -1,4 +1,4 @@
-From 6469809b5745023b3ce87769d73a7e6012db1889 Mon Sep 17 00:00:00 2001
+From 4a082b6608509ae1300ca95fce2b22f0ddbbb5f0 Mon Sep 17 00:00:00 2001
 From: tiopxyz <tiopxyz@gmail.com>
 Date: Mon, 7 Jul 2025 13:45:56 +0200
 Subject: [PATCH] Add gst-raw.py script
@@ -10,7 +10,7 @@ Subject: [PATCH] Add gst-raw.py script
 
 diff --git a/config/miyoo/gst-raw.py b/config/miyoo/gst-raw.py
 new file mode 100644
-index 0000000..ab60290
+index 0000000..1afbdbf
 --- /dev/null
 +++ b/config/miyoo/gst-raw.py
 @@ -0,0 +1,41 @@
@@ -32,7 +32,7 @@ index 0000000..ab60290
 +    'filesrc', 'location=' + filename,
 +    '!', 'qtdemux', 'name=demux',
 +    'demux.audio_0', '!', 'queue', '!', 'decodebin', '!', 'audioconvert', '!', 'alsasink',
-+    'demux.video_0', '!', 'queue', '!', 'decodebin', '!', 'autovideoconvert', '!', 
++    'demux.video_0', '!', 'queue', '!', 'decodebin', '!', 'videoscale', 'method=0', '!', 'autovideoconvert', '!',
 +    'sunxifbsink', 'hardware-overlay=true', 'video-memory=1', 'buffer-pool=true'
 +]
 +
