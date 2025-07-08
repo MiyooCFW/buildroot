@@ -1,19 +1,20 @@
-From 18b4527d4ed064571666a487b076592673d3e6d9 Mon Sep 17 00:00:00 2001
+From 6469809b5745023b3ce87769d73a7e6012db1889 Mon Sep 17 00:00:00 2001
 From: tiopxyz <tiopxyz@gmail.com>
 Date: Mon, 7 Jul 2025 13:45:56 +0200
 Subject: [PATCH] Add gst-raw.py script
 
 ---
- config/miyoo/gst-raw.py | 40 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 40 insertions(+)
+ config/miyoo/gst-raw.py | 41 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
  create mode 100644 config/miyoo/gst-raw.py
 
 diff --git a/config/miyoo/gst-raw.py b/config/miyoo/gst-raw.py
 new file mode 100644
-index 0000000..f52edd1
+index 0000000..ab60290
 --- /dev/null
 +++ b/config/miyoo/gst-raw.py
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,41 @@
++#!/usr/bin/env python3
 +import subprocess
 +import sys
 +import termios

@@ -1,5 +1,4 @@
 title=Gstreamer HW raw
 description=Play a media file using raw/fast HW decoder
-exec=/usr/bin/python
-params=/usr/share/gstreamer-1.0/scripts/gst-raw.py
+exec=/usr/share/gstreamer-1.0/scripts/gst-raw.py
 selectordir=/mnt
