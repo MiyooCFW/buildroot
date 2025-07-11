@@ -1,7 +1,13 @@
 From ec3025abfdec1bdebe76a5f92cce8de3a73bff60 Mon Sep 17 00:00:00 2001
 From: tiopxyz <tiopxyz@gmail.com>
 Date: Fri, 11 Jul 2025 23:25:13 +0200
-Subject: [PATCH] f1c00s patch
+Subject: [PATCH] F1C100s: VDU supports only YUV_MB32_420; convert manually to YV12
+
+On F1C100s boards, the video decoder supports only the
+YUV_MB32_420 format, which is YUV420 stored in 32×32 macroblocks.
+
+This format is not natively supported in GStreamer, so manual conversion
+to standard YV12 is necessary for compatibility with existing video sinks.
 
 ---
  openmax/vdec/src/omx_vdec_aw_decoder_linux.c |  75 +++++-

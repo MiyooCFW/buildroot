@@ -33,7 +33,7 @@ index 0000000..4ccfb0f
 +    '!', 'qtdemux', 'name=demux',
 +    'demux.audio_0', '!', 'queue', '!', 'decodebin', '!', 'audioconvert', '!', 'alsasink',
 +    'demux.video_0', '!', 'queue', '!', 'decodebin', '!',
-+    'sunxifbsink', 'hardware-overlay=true', 'video-memory=2', 'buffer-pool=true', 'full-screen=true'
++    'sunxifbsink', 'hardware-overlay=true', 'video-memory=2', 'buffer-pool=true', 'full-screen=true', '-e', '-q', '-f'
 +]
 +
 +proc = subprocess.Popen(cmd)

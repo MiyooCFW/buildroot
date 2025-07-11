@@ -1,5 +1,5 @@
 diff --git a/arch/arm/configs/miyoo_defconfig b/arch/arm/configs/miyoo_defconfig
-index f9cb0790f..d9cc9fcaa 100644
+index f9cb0790f..625b5a30f 100644
 --- a/arch/arm/configs/miyoo_defconfig
 +++ b/arch/arm/configs/miyoo_defconfig
 @@ -83,6 +83,12 @@ CONFIG_SUNXI_WATCHDOG=y
@@ -26,12 +26,13 @@ index f9cb0790f..d9cc9fcaa 100644
  # CONFIG_IOMMU_SUPPORT is not set
  CONFIG_PWM=y
  CONFIG_PWM_SUNIV=y
-@@ -144,6 +154,8 @@ CONFIG_CRYPTO_DRBG_MENU=y
+@@ -144,6 +154,9 @@ CONFIG_CRYPTO_DRBG_MENU=y
  # CONFIG_CRYPTO_HW is not set
  CONFIG_LIBCRC32C=y
  CONFIG_XZ_DEC=y
 +CONFIG_DMA_PERNUMA_CMA=y
 +CONFIG_CMA_SIZE_MBYTES=12
++CONFIG_CMA_ALIGNMENT=4
  CONFIG_PRINTK_TIME=y
  CONFIG_CONSOLE_LOGLEVEL_DEFAULT=4
  # CONFIG_FTRACE is not set
