@@ -1,15 +1,15 @@
-From eb76610f359ab44cf3313004e97f6345725dbc2b Mon Sep 17 00:00:00 2001
-From: tiopex <tiopxyz@gmail.com>
-Date: Sun, 8 Jun 2025 22:26:58 +0200
+From ec3025abfdec1bdebe76a5f92cce8de3a73bff60 Mon Sep 17 00:00:00 2001
+From: tiopxyz <tiopxyz@gmail.com>
+Date: Fri, 11 Jul 2025 23:25:13 +0200
 Subject: [PATCH] f1c00s patch
 
 ---
  openmax/vdec/src/omx_vdec_aw_decoder_linux.c |  75 +++++-
- vdecoder/pixel_format.c                      | 252 +++++++++++++++++++
- 2 files changed, 324 insertions(+), 3 deletions(-)
+ vdecoder/pixel_format.c                      | 258 +++++++++++++++++++
+ 2 files changed, 330 insertions(+), 3 deletions(-)
 
 diff --git a/openmax/vdec/src/omx_vdec_aw_decoder_linux.c b/openmax/vdec/src/omx_vdec_aw_decoder_linux.c
-index 8a619ca..acc0332 100644
+index 8a619ca..2976fca 100644
 --- a/openmax/vdec/src/omx_vdec_aw_decoder_linux.c
 +++ b/openmax/vdec/src/omx_vdec_aw_decoder_linux.c
 @@ -71,6 +71,10 @@ typedef struct OmxAwDecoderContext
@@ -116,7 +116,7 @@ index 8a619ca..acc0332 100644
           pCtx->pPicture->nTopOffset,pCtx->pPicture->nBottomOffset,
           pCtx->pPicture->nLeftOffset,pCtx->pPicture->nRightOffset);
 +	RotatePicture(pCtx->decMemOps, pCtx->pPicture, &pCtx->CvtPicture, 0, 32, 32);
-+	yv12_align_fill(pCtx->CvtPicture.pData0, pCtx-> tWidth, pCtx-> tWidth, pCtx->mStreamInfo.nWidth, pCtx->mStreamInfo.nHeight);
++	yv12_align_fill(pCtx->CvtPicture.pData0, pCtx-> tWidth, pCtx-> tHeight, pCtx->mStreamInfo.nWidth, pCtx->mStreamInfo.nHeight);
      CdcMemFlushCache(pCtx->decMemOps, (void*)pCtx->pPicture->pData0,
               pCtx->pPicture->nLineStride * pCtx->pPicture->nHeight*3/2);
      OMX_PARAM_PORTDEFINITIONTYPE* outDef = getPortDef(pCtx->pOutPort);
@@ -149,10 +149,10 @@ index 8a619ca..acc0332 100644
  
  static inline void __liSetExtBufNum(OmxDecoder* pDec, OMX_S32 num)
 diff --git a/vdecoder/pixel_format.c b/vdecoder/pixel_format.c
-index 3d47e6a..25b9880 100755
+index 3d47e6a..3fda569 100755
 --- a/vdecoder/pixel_format.c
 +++ b/vdecoder/pixel_format.c
-@@ -556,6 +556,253 @@ void ConvertMb32422ToYv12C(char* pSrc,char* pDstU, char*pDstV,int nPicWidth, int
+@@ -556,6 +556,259 @@ void ConvertMb32422ToYv12C(char* pSrc,char* pDstU, char*pDstV,int nPicWidth, int
  //****************************************************************//
  //****************************************************************//
  
@@ -254,6 +254,12 @@ index 3d47e6a..25b9880 100755
 +
 +				if (bCnt2)
 +				{
++					if (((i << 4) + m) >= nHeight_uv)//i / 2 * 32
++					{
++						ptr_uv += 32;
++						ptr += 32;
++						continue;
++					}
 +					srcAsm_uv = ptr_uv;
 +					lineNum_uv = (i << 4) + m;           //line num i / 2 * 32
 +					offset_uv = lineNum_uv * nLineStride_uv + (j << 4);// * 16
@@ -406,7 +412,7 @@ index 3d47e6a..25b9880 100755
  void ConvertPixelFormat(VideoPicture* pPictureIn, VideoPicture* pPictureOut)
  {
      int   nMemSizeY = 0;
-@@ -584,6 +831,11 @@ void ConvertPixelFormat(VideoPicture* pPictureIn, VideoPicture* pPictureOut)
+@@ -584,6 +837,11 @@ void ConvertPixelFormat(VideoPicture* pPictureIn, VideoPicture* pPictureOut)
  
      if(pPictureOut->ePixelFormat==PIXEL_FORMAT_YV12)
      {
