@@ -33,6 +33,7 @@ GST_OMX_POST_PATCH_HOOKS += GST_OMX_FIXUP_CONFIG_PATHS
 ifeq ($(BR2_PACKAGE_GST_FBDEV2_PLUGINS),y)
 define GST_OMX_INSTALL_TARGET_CUSTOM
 	$(INSTALL) -m 0755 -D $(@D)/config/miyoo/gst-raw.py $(TARGET_DIR)/usr/share/gstreamer-1.0/scripts/gst-raw.py
+	$(INSTALL) -m 0755 -D $(@D)/player/gst-play $(TARGET_DIR)/usr/bin/gst-play
 endef
 GST_OMX_POST_INSTALL_TARGET_HOOKS += GST_OMX_INSTALL_TARGET_CUSTOM
 endif

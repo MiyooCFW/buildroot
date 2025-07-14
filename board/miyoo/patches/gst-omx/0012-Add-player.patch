@@ -1,0 +1,245 @@
+diff --git a/Makefile.am b/Makefile.am
+index 82affc6..e8c9581 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -1,4 +1,4 @@
+-SUBDIRS = common omx tools config m4
++SUBDIRS = common omx tools config m4 player
+ 
+ if BUILD_EXAMPLES
+ SUBDIRS += examples
+diff --git a/configure.ac b/configure.ac
+index b1ef5fa..f2a98ce 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -388,6 +388,7 @@ config/rpi/Makefile
+ examples/Makefile
+ examples/egl/Makefile
+ m4/Makefile
++player/Makefile
+ )
+ 
+ AC_OUTPUT
+diff --git a/player/Makefile.am b/player/Makefile.am
+new file mode 100644
+index 0000000..a8f7c4c
+--- /dev/null
++++ b/player/Makefile.am
+@@ -0,0 +1,5 @@
++bin_PROGRAMS = gst-play
++
++gst_play_SOURCES = gst-play.c
++gst_play_CFLAGS = $(GST_CFLAGS)
++gst_play_LDADD = $(GST_LIBS)
+diff --git a/player/gst-play.c b/player/gst-play.c
+new file mode 100644
+index 0000000..0975230
+--- /dev/null
++++ b/player/gst-play.c
+@@ -0,0 +1,206 @@
++#include <gst/gst.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <signal.h>
++#include <termios.h>
++#include <unistd.h>
++
++static gboolean running = TRUE;
++static GstElement *pipeline;
++static gboolean paused = FALSE;
++
++static struct termios orig_termios;
++
++void reset_terminal_mode() {
++	tcsetattr(STDIN_FILENO, TCSANOW, &orig_termios);
++}
++
++void set_conio_terminal_mode() {
++	struct termios new_termios;
++
++	tcgetattr(STDIN_FILENO, &orig_termios);
++	memcpy(&new_termios, &orig_termios, sizeof(new_termios));
++
++	new_termios.c_lflag &= ~(ICANON | ECHO);
++	new_termios.c_cc[VMIN] = 0;
++	new_termios.c_cc[VTIME] = 0;
++
++	tcsetattr(STDIN_FILENO, TCSANOW, &new_termios);
++
++	atexit(reset_terminal_mode);
++}
++
++int kbhit() {
++	unsigned char ch;
++	int nread;
++
++	nread = read(STDIN_FILENO, &ch, 1);
++	if (nread == 1) {
++
++		if (ch == 0x1B) { // ESC
++			unsigned char seq[2];
++			if (read(STDIN_FILENO, &seq[0], 1) == 0) return 27;
++			if (read(STDIN_FILENO, &seq[1], 1) == 0) return 27;
++
++			if (seq[0] == '[') {
++				switch (seq[1]) {
++					case 'D':
++						return 1000; // Left arrow
++					case 'C':
++						return 1001; // Right arrow
++					default:
++						return 27;    // ESC
++				}
++			}
++			return 27;
++		}
++		return ch;
++	}
++	return -1;
++}
++
++void int_handler(int dummy) {
++	running = FALSE;
++}
++
++int main(int argc, char *argv[]) {
++	if (argc < 2) {
++		g_printerr("Usage: %s <file-path>\n", argv[0]);
++		return -1;
++	}
++
++	gchar *file_path = argv[1];
++	gchar *pipeline_desc = g_strdup_printf(
++			"filesrc location=\"%s\" ! "
++			"qtdemux name=demux "
++			"demux.audio_0 ! queue ! decodebin ! audioconvert ! audioresample ! alsasink "
++			"demux.video_0 ! queue ! decodebin ! sunxifbsink hardware-overlay=true video-memory=2 buffer-pool=true full-screen=true",
++			file_path);
++
++	GError *error = NULL;
++	GstBus *bus;
++	GstMessage *msg;
++
++	gst_init(&argc, &argv);
++
++	pipeline = gst_parse_launch(pipeline_desc, &error);
++	g_free(pipeline_desc);
++
++	if (!pipeline) {
++		g_printerr("Failed to create pipeline: %s\n", error->message);
++		g_error_free(error);
++		return -1;
++	}
++
++	gst_element_set_state(pipeline, GST_STATE_PLAYING);
++	paused = FALSE;
++	g_print("Playing '%s'\n", file_path);
++	g_print("Controls: SPACE=play/pause, ESC=quit, LEFT/RIGHT=seek -/+5s\n");
++
++	signal(SIGINT, int_handler);
++	set_conio_terminal_mode();
++
++	while (running) {
++		int c = kbhit();
++
++		if (c != -1) {
++			switch (c) {
++				case ' ': // space - play/pause
++					if (paused) {
++						gst_element_set_state(pipeline, GST_STATE_PLAYING);
++						paused = FALSE;
++						g_print("Resumed\n");
++					} else {
++						gst_element_set_state(pipeline, GST_STATE_PAUSED);
++						paused = TRUE;
++						g_print("Paused\n");
++					}
++					break;
++
++				case 27: // ESC
++					g_print("Exiting...\n");
++					running = FALSE;
++					break;
++
++				case 1000: // Left arrow
++				case 1001: // Right arrow
++				{
++					gint64 current_pos = GST_CLOCK_TIME_NONE;
++					gint64 duration = GST_CLOCK_TIME_NONE;
++
++					if (!gst_element_query_position(pipeline, GST_FORMAT_TIME, &current_pos)) {
++						g_print("Cannot query position\n");
++						break;
++					}
++
++					if (!gst_element_query_duration(pipeline, GST_FORMAT_TIME, &duration)) {
++						g_print("Cannot query duration\n");
++						break;
++					}
++
++					gint64 seek_offset = 5 * GST_SECOND;
++					if (c == 1000)
++						seek_offset = -seek_offset;
++
++					gint64 new_pos = current_pos + seek_offset;
++
++					if (new_pos < 0)
++						new_pos = 0;
++					if (new_pos > duration)
++						new_pos = duration;
++
++					gboolean res = gst_element_seek_simple(
++							pipeline,
++							GST_FORMAT_TIME,
++							GST_SEEK_FLAG_FLUSH,
++							new_pos);
++
++					if (res) {
++						g_print("Seeked to %"
++						GST_TIME_FORMAT
++						"\n", GST_TIME_ARGS(new_pos));
++					} else {
++						g_print("Seek failed\n");
++					}
++					break;
++				}
++
++				default:
++					break;
++			}
++		}
++
++		bus = gst_element_get_bus(pipeline);
++		while ((msg = gst_bus_pop(bus)) != NULL) {
++			switch (GST_MESSAGE_TYPE(msg)) {
++				case GST_MESSAGE_EOS:
++					g_print("End of stream\n");
++					running = FALSE;
++					break;
++				case GST_MESSAGE_ERROR: {
++					GError *err;
++					gchar *dbg;
++					gst_message_parse_error(msg, &err, &dbg);
++					g_printerr("Error: %s\n", err->message);
++					g_error_free(err);
++					g_free(dbg);
++					running = FALSE;
++					break;
++				}
++				default:
++					break;
++			}
++			gst_message_unref(msg);
++		}
++		gst_object_unref(bus);
++
++		usleep(100 * 1000); // 100ms
++	}
++
++	gst_element_set_state(pipeline, GST_STATE_NULL);
++	gst_object_unref(pipeline);
++	g_print("Pipeline stopped\n");
++
++	return 0;
++}

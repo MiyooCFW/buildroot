@@ -1,5 +1,4 @@
 title=Gstreamer HW player
 description=Play a movie/audio file using HW decoder cedar
-exec=/usr/bin/gst-play-1.0
-params=--videosink="sunxifbsink hardware-overlay=true video-memory=4 buffer-pool=true overlay-format=YV12 full-screen=true" --audiosink=alsasink --flags=0x63 -q
+exec=/usr/bin/gst-play
 selectordir=/mnt/output
