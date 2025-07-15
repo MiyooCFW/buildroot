@@ -1,3 +1,17 @@
+From 4422f386b9dd03980f93563d57b1eaf9e72e1f0a Mon Sep 17 00:00:00 2001
+From: tiopex <tiopxyz@gmail.com>
+Date: Tue, 15 Jul 2025 11:24:51 +0200
+Subject: [PATCH] gst-play
+
+---
+ Makefile.am        |   2 +-
+ configure.ac       |   1 +
+ player/Makefile.am |   5 +
+ player/gst-play.c  | 257 +++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 264 insertions(+), 1 deletion(-)
+ create mode 100644 player/Makefile.am
+ create mode 100644 player/gst-play.c
+
 diff --git a/Makefile.am b/Makefile.am
 index 82affc6..e8c9581 100644
 --- a/Makefile.am
@@ -33,10 +47,10 @@ index 0000000..a8f7c4c
 +gst_play_LDADD = $(GST_LIBS)
 diff --git a/player/gst-play.c b/player/gst-play.c
 new file mode 100644
-index 0000000..0975230
+index 0000000..c1a5fa7
 --- /dev/null
 +++ b/player/gst-play.c
-@@ -0,0 +1,206 @@
+@@ -0,0 +1,257 @@
 +#include <gst/gst.h>
 +#include <stdio.h>
 +#include <stdlib.h>
@@ -45,17 +59,24 @@ index 0000000..0975230
 +#include <termios.h>
 +#include <unistd.h>
 +
++void reset_terminal_mode(void);
++void set_conio_terminal_mode(void);
++int kbhit(void);
++void int_handler(int dummy);
++static void on_pad_added(GstElement *src, GstPad *pad, gpointer user_data);
++
 +static gboolean running = TRUE;
 +static GstElement *pipeline;
++static GstElement *video_sink;
 +static gboolean paused = FALSE;
 +
 +static struct termios orig_termios;
 +
-+void reset_terminal_mode() {
++void reset_terminal_mode(void) {
 +	tcsetattr(STDIN_FILENO, TCSANOW, &orig_termios);
 +}
 +
-+void set_conio_terminal_mode() {
++void set_conio_terminal_mode(void) {
 +	struct termios new_termios;
 +
 +	tcgetattr(STDIN_FILENO, &orig_termios);
@@ -70,13 +91,12 @@ index 0000000..0975230
 +	atexit(reset_terminal_mode);
 +}
 +
-+int kbhit() {
++int kbhit(void) {
 +	unsigned char ch;
 +	int nread;
 +
 +	nread = read(STDIN_FILENO, &ch, 1);
 +	if (nread == 1) {
-+
 +		if (ch == 0x1B) { // ESC
 +			unsigned char seq[2];
 +			if (read(STDIN_FILENO, &seq[0], 1) == 0) return 27;
@@ -103,38 +123,91 @@ index 0000000..0975230
 +	running = FALSE;
 +}
 +
++static void on_pad_added(GstElement *src, GstPad *pad, gpointer user_data) {
++	GstCaps *caps;
++	const gchar *name;
++
++	caps = gst_pad_get_current_caps(pad);
++	name = gst_structure_get_name(gst_caps_get_structure(caps, 0));
++
++	if (g_str_has_prefix(name, "audio/")) {
++		GstElement *queue = gst_element_factory_make("queue", NULL);
++		GstElement *convert = gst_element_factory_make("audioconvert", NULL);
++		GstElement *sink = gst_element_factory_make("autoaudiosink", NULL);
++		GstPad *sinkpad;
++
++		gst_bin_add_many(GST_BIN(pipeline), queue, convert, sink, NULL);
++		gst_element_sync_state_with_parent(queue);
++		gst_element_sync_state_with_parent(convert);
++		gst_element_sync_state_with_parent(sink);
++
++		gst_element_link_many(queue, convert, sink, NULL);
++
++		sinkpad = gst_element_get_static_pad(queue, "sink");
++		if (gst_pad_link(pad, sinkpad) != GST_PAD_LINK_OK)
++			g_printerr("Failed to link audio pad\n");
++		gst_object_unref(sinkpad);
++	} else if (g_str_has_prefix(name, "video/")) {
++		GstElement *queue = gst_element_factory_make("queue", NULL);
++		GstElement *sink = video_sink;
++		GstPad *sinkpad;
++
++		gst_bin_add_many(GST_BIN(pipeline), queue, NULL);
++		gst_element_sync_state_with_parent(queue);
++
++		gst_element_link(queue, sink);
++
++		sinkpad = gst_element_get_static_pad(queue, "sink");
++		if (gst_pad_link(pad, sinkpad) != GST_PAD_LINK_OK)
++			g_printerr("Failed to link video pad\n");
++		gst_object_unref(sinkpad);
++	}
++
++	gst_caps_unref(caps);
++}
++
 +int main(int argc, char *argv[]) {
++	GstElement *src;
++	GstElement *demuxer;
++	GstBus *bus;
++	GstMessage *msg;
++
 +	if (argc < 2) {
 +		g_printerr("Usage: %s <file-path>\n", argv[0]);
 +		return -1;
 +	}
 +
-+	gchar *file_path = argv[1];
-+	gchar *pipeline_desc = g_strdup_printf(
-+			"filesrc location=\"%s\" ! "
-+			"qtdemux name=demux "
-+			"demux.audio_0 ! queue ! decodebin ! audioconvert ! audioresample ! alsasink "
-+			"demux.video_0 ! queue ! decodebin ! sunxifbsink hardware-overlay=true video-memory=2 buffer-pool=true full-screen=true",
-+			file_path);
-+
-+	GError *error = NULL;
-+	GstBus *bus;
-+	GstMessage *msg;
-+
 +	gst_init(&argc, &argv);
 +
-+	pipeline = gst_parse_launch(pipeline_desc, &error);
-+	g_free(pipeline_desc);
++	src = gst_element_factory_make("filesrc", "src");
++	demuxer = gst_element_factory_make("decodebin", "decoder");
++	video_sink = gst_element_factory_make("sunxifbsink", "sink");
 +
-+	if (!pipeline) {
-+		g_printerr("Failed to create pipeline: %s\n", error->message);
-+		g_error_free(error);
++	if (!src || !demuxer || !video_sink) {
++		g_printerr("Failed to create elements\n");
 +		return -1;
 +	}
 +
++	g_object_set(src, "location", argv[1], NULL);
++	g_object_set(video_sink, "hardware-overlay", TRUE,
++				 "video-memory", 2,
++				 "buffer-pool", TRUE,
++				 "full-screen", TRUE, NULL);
++
++	pipeline = gst_pipeline_new("player");
++
++	gst_bin_add_many(GST_BIN(pipeline), src, demuxer, video_sink, NULL);
++
++	if (!gst_element_link(src, demuxer)) {
++		g_printerr("Could not link src -> decoder\n");
++		return -1;
++	}
++
++	g_signal_connect(demuxer, "pad-added", G_CALLBACK(on_pad_added), NULL);
++
 +	gst_element_set_state(pipeline, GST_STATE_PLAYING);
 +	paused = FALSE;
-+	g_print("Playing '%s'\n", file_path);
++	g_print("Playing '%s'\n", argv[1]);
 +	g_print("Controls: SPACE=play/pause, ESC=quit, LEFT/RIGHT=seek -/+5s\n");
 +
 +	signal(SIGINT, int_handler);
@@ -144,69 +217,61 @@ index 0000000..0975230
 +		int c = kbhit();
 +
 +		if (c != -1) {
-+			switch (c) {
-+				case ' ': // space - play/pause
-+					if (paused) {
-+						gst_element_set_state(pipeline, GST_STATE_PLAYING);
-+						paused = FALSE;
-+						g_print("Resumed\n");
-+					} else {
-+						gst_element_set_state(pipeline, GST_STATE_PAUSED);
-+						paused = TRUE;
-+						g_print("Paused\n");
-+					}
-+					break;
++			if (c == ' ') {
++				if (paused) {
++					gst_element_set_state(pipeline, GST_STATE_PLAYING);
++					paused = FALSE;
++					g_print("Resumed\n");
++				} else {
++					gst_element_set_state(pipeline, GST_STATE_PAUSED);
++					paused = TRUE;
++					g_print("Paused\n");
++				}
++			} else if (c == 27) {
++				g_print("Exiting...\n");
++				running = FALSE;
++			} else if (c == 1000 || c == 1001) {
++				gint64 current_pos;
++				gint64 duration;
++				gint64 seek_offset;
++				gint64 new_pos;
++				gboolean res;
 +
-+				case 27: // ESC
-+					g_print("Exiting...\n");
-+					running = FALSE;
-+					break;
++				current_pos = GST_CLOCK_TIME_NONE;
++				duration = GST_CLOCK_TIME_NONE;
 +
-+				case 1000: // Left arrow
-+				case 1001: // Right arrow
-+				{
-+					gint64 current_pos = GST_CLOCK_TIME_NONE;
-+					gint64 duration = GST_CLOCK_TIME_NONE;
-+
-+					if (!gst_element_query_position(pipeline, GST_FORMAT_TIME, &current_pos)) {
-+						g_print("Cannot query position\n");
-+						break;
-+					}
-+
-+					if (!gst_element_query_duration(pipeline, GST_FORMAT_TIME, &duration)) {
-+						g_print("Cannot query duration\n");
-+						break;
-+					}
-+
-+					gint64 seek_offset = 5 * GST_SECOND;
-+					if (c == 1000)
-+						seek_offset = -seek_offset;
-+
-+					gint64 new_pos = current_pos + seek_offset;
-+
-+					if (new_pos < 0)
-+						new_pos = 0;
-+					if (new_pos > duration)
-+						new_pos = duration;
-+
-+					gboolean res = gst_element_seek_simple(
-+							pipeline,
-+							GST_FORMAT_TIME,
-+							GST_SEEK_FLAG_FLUSH,
-+							new_pos);
-+
-+					if (res) {
-+						g_print("Seeked to %"
-+						GST_TIME_FORMAT
-+						"\n", GST_TIME_ARGS(new_pos));
-+					} else {
-+						g_print("Seek failed\n");
-+					}
-+					break;
++				if (!gst_element_query_position(pipeline, GST_FORMAT_TIME, &current_pos)) {
++					g_print("Cannot query position\n");
++					continue;
 +				}
 +
-+				default:
-+					break;
++				if (!gst_element_query_duration(pipeline, GST_FORMAT_TIME, &duration)) {
++					g_print("Cannot query duration\n");
++					continue;
++				}
++
++				seek_offset = 5 * GST_SECOND;
++				if (c == 1000)
++					seek_offset = -seek_offset;
++
++				new_pos = current_pos + seek_offset;
++
++				if (new_pos < 0)
++					new_pos = 0;
++				if (new_pos > duration)
++					new_pos = duration;
++
++				res = gst_element_seek_simple(
++						pipeline,
++						GST_FORMAT_TIME,
++						GST_SEEK_FLAG_FLUSH,
++						new_pos);
++
++				if (res) {
++					g_print("Seeked to %" GST_TIME_FORMAT "\n", GST_TIME_ARGS(new_pos));
++				} else {
++					g_print("Seek failed\n");
++				}
 +			}
 +		}
 +
@@ -243,3 +308,6 @@ index 0000000..0975230
 +
 +	return 0;
 +}
+-- 
+2.34.1
+
