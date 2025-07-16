@@ -1,0 +1,60 @@
+From 50913a1d0fe6f3b074f1dd3847ed5ffb401284a9 Mon Sep 17 00:00:00 2001
+From: tiopxyz <tiopxyz@gmail.com>
+Date: Mon, 7 Jul 2025 13:45:56 +0200
+Subject: [PATCH] Add gst-raw.py script
+
+---
+ config/miyoo/gst-raw.py | 41 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
+ create mode 100644 config/miyoo/gst-raw.py
+
+diff --git a/config/miyoo/gst-raw.py b/config/miyoo/gst-raw.py
+new file mode 100644
+index 0000000..4ccfb0f
+--- /dev/null
++++ b/config/miyoo/gst-raw.py
+@@ -0,0 +1,41 @@
++#!/usr/bin/env python3
++import subprocess
++import sys
++import termios
++import tty
++import signal
++
++if len(sys.argv) < 2:
++    print("Usage: python3 p.py <filename>")
++    sys.exit(1)
++
++filename = sys.argv[1]
++
++cmd = [
++    'gst-launch-1.0',
++    'filesrc', 'location=' + filename,
++    '!', 'qtdemux', 'name=demux',
++    'demux.audio_0', '!', 'queue', '!', 'decodebin', '!', 'audioconvert', '!', 'alsasink',
++    'demux.video_0', '!', 'queue', '!', 'decodebin', '!',
++    'sunxifbsink', 'hardware-overlay=true', 'video-memory=2', 'buffer-pool=true', 'full-screen=true', '-e', '-q', '-f'
++]
++
++proc = subprocess.Popen(cmd)
++
++def get_key():
++    fd = sys.stdin.fileno()
++    old = termios.tcgetattr(fd)
++    try:
++        tty.setraw(fd)
++        ch = sys.stdin.read(1)
++    finally:
++        termios.tcsetattr(fd, termios.TCSADRAIN, old)
++    return ch
++
++_ = get_key()
++print("Key pressed, terminating gst-launch...")
++proc.send_signal(signal.SIGINT)
++
++proc.wait()
++print("gst-launch stopped.")
++
+-- 
+2.34.1
+

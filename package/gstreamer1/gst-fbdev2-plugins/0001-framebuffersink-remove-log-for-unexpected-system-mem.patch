@@ -1,0 +1,28 @@
+From 6b5a236aeaac29afa607ac84246c9f840a61f24a Mon Sep 17 00:00:00 2001
+From: tiopex <tiopxyz@gmail.com>
+Date: Fri, 20 Jun 2025 23:48:05 +0200
+Subject: [PATCH] framebuffersink: remove  log for unexpected system memory
+ overlay
+
+---
+ src/gstframebuffersink.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/gstframebuffersink.c b/src/gstframebuffersink.c
+index 934e6eb..a967cdb 100644
+--- a/src/gstframebuffersink.c
++++ b/src/gstframebuffersink.c
+@@ -2299,8 +2299,8 @@ GstBuffer * buf)
+          overlay frame from system memory (which shouldn't normally happen)
+          poses a bit of problem. We need to allocate a temporary video memory
+          area to store the overlay frame and show it. */
+-      GST_FRAMEBUFFERSINK_MESSAGE_OBJECT (framebuffersink,
+-          "Unexpected system memory overlay in buffer pool mode");
++//      GST_FRAMEBUFFERSINK_MESSAGE_OBJECT (framebuffersink,
++//          "Unexpected system memory overlay in buffer pool mode");
+ 
+       GstMemory *vmem;
+       vmem = gst_allocator_alloc(
+-- 
+2.34.1
+

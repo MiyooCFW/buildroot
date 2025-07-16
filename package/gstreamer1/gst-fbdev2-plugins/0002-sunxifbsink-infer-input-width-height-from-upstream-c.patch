@@ -1,0 +1,71 @@
+From c8cb9db356cb7edba473ecf58ddad1209b6fd5e2 Mon Sep 17 00:00:00 2001
+From: tiopxyz <tiopxyz@gmail.com>
+Date: Thu, 10 Jul 2025 15:08:29 +0200
+Subject: [PATCH] sunxifbsink: infer input width/height from upstream caps if
+ not set manually
+
+---
+ src/gstframebuffersink.c | 47 +++++++++++++++++++++++++---------------
+ 1 file changed, 30 insertions(+), 17 deletions(-)
+
+diff --git a/src/gstframebuffersink.c b/src/gstframebuffersink.c
+index a967cdb..9d43c24 100644
+--- a/src/gstframebuffersink.c
++++ b/src/gstframebuffersink.c
+@@ -1144,23 +1144,36 @@ gst_framebuffersink_caps_set_preferences (GstFramebufferSink *framebuffersink,
+   /* If hardware scaling is supported, and a specific video size is requested,
+      allow any reasonable size (except when the width/height_before_scaler
+      properties are set) and use the scaler. */
+-  if (framebuffersink->use_hardware_overlay &&
+-      (framebuffersink->requested_video_width != 0 ||
+-      framebuffersink->requested_video_height != 0)) {
+-    if (framebuffersink->width_before_scaling != 0)
+-      gst_caps_set_simple (caps, "width", G_TYPE_INT,
+-          framebuffersink->width_before_scaling, NULL);
+-    else
+-      gst_caps_set_simple (caps, "width", GST_TYPE_INT_RANGE, 1,
+-          GST_VIDEO_INFO_WIDTH (&framebuffersink->screen_info), NULL);
+-    if (framebuffersink->height_before_scaling != 0)
+-      gst_caps_set_simple (caps, "height", G_TYPE_INT,
+-          framebuffersink->height_before_scaling, NULL);
+-    else
+-      gst_caps_set_simple (caps, "height", GST_TYPE_INT_RANGE, 1,
+-          GST_VIDEO_INFO_HEIGHT (&framebuffersink->screen_info), NULL);
+-    goto skip_video_size_request;
+-  }
++	if (framebuffersink->use_hardware_overlay &&
++		(framebuffersink->requested_video_width != 0 ||
++		 framebuffersink->requested_video_height != 0)) {
++
++		gint upstream_width = 0;
++		gint upstream_height = 0;
++
++		GstStructure *structure = gst_caps_get_structure(caps, 0);
++		gst_structure_get_int(structure, "width", &upstream_width);
++		gst_structure_get_int(structure, "height", &upstream_height);
++
++		// width
++		if (framebuffersink->width_before_scaling != 0) {
++			gst_caps_set_simple(caps, "width", G_TYPE_INT,
++								framebuffersink->width_before_scaling, NULL);
++		} else if (upstream_width > 0) {
++			gst_caps_set_simple(caps, "width", G_TYPE_INT, upstream_width, NULL);
++		}
++
++		// height
++		if (framebuffersink->height_before_scaling != 0) {
++			gst_caps_set_simple(caps, "height", G_TYPE_INT,
++								framebuffersink->height_before_scaling, NULL);
++		} else if (upstream_height > 0) {
++			gst_caps_set_simple(caps, "height", G_TYPE_INT, upstream_height, NULL);
++		}
++
++		goto skip_video_size_request;
++	}
++
+ 
+   /* Honour video size requests, otherwise set the allowable range up to the
+      screen size. */
+-- 
+2.34.1
+
