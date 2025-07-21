@@ -1,0 +1,95 @@
+From 16996fbd2c84692c6bc8c426524e870a6c826550 Mon Sep 17 00:00:00 2001
+From: tiopex <tiopxyz@gmail.com>
+Date: Fri, 11 Jul 2025 23:57:28 +0200
+Subject: [PATCH] video: increase VRAM
+
+---
+ drivers/video/fbdev/gc9306fb.c    | 2 +-
+ drivers/video/fbdev/hx8347dfb.c   | 2 +-
+ drivers/video/fbdev/r61520fb.c    | 2 +-
+ drivers/video/fbdev/rm68090fb.c   | 2 +-
+ drivers/video/fbdev/st7789sTEfb.c | 2 +-
+ drivers/video/fbdev/st7789sfb.c   | 2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/video/fbdev/gc9306fb.c b/drivers/video/fbdev/gc9306fb.c
+index 4ecfbe9fb..f4cfef6a1 100644
+--- a/drivers/video/fbdev/gc9306fb.c
++++ b/drivers/video/fbdev/gc9306fb.c
+@@ -613,7 +613,7 @@ static int myfb_probe(struct platform_device *device)
+     par->bpp = 16;
+     fb_videomode_to_var(&myfb_var, mode);
+ 
+-    par->vram_size = 320 * 240 * 2 * 2;
++    par->vram_size = 640 * 480 * 2 * 2;
+     par->vram_virt = dma_alloc_coherent(par->dev, par->vram_size, (resource_size_t*)&par->vram_phys, GFP_KERNEL | GFP_DMA);
+     if(!par->vram_virt){
+         return -EINVAL;
+diff --git a/drivers/video/fbdev/hx8347dfb.c b/drivers/video/fbdev/hx8347dfb.c
+index c6b337999..80a0cc639 100644
+--- a/drivers/video/fbdev/hx8347dfb.c
++++ b/drivers/video/fbdev/hx8347dfb.c
+@@ -748,7 +748,7 @@ static int myfb_probe(struct platform_device *device)
+   par->bpp = 16;
+   fb_videomode_to_var(&myfb_var, mode);
+   
+-  par->vram_size = 320*240*2*2;
++  par->vram_size = 640*480*2*2;
+   par->vram_virt = dma_alloc_coherent(par->dev, par->vram_size, (resource_size_t*)&par->vram_phys, GFP_KERNEL | GFP_DMA);
+   if(!par->vram_virt){
+     dev_err(&device->dev, "%s, failed to allocate frame buffer(vram)\n", __func__);
+diff --git a/drivers/video/fbdev/r61520fb.c b/drivers/video/fbdev/r61520fb.c
+index ca1d8562f..c657efc70 100644
+--- a/drivers/video/fbdev/r61520fb.c
++++ b/drivers/video/fbdev/r61520fb.c
+@@ -1566,7 +1566,7 @@ static int myfb_probe(struct platform_device *device)
+   par->bpp = 16;
+   fb_videomode_to_var(&myfb_var, mode);
+ 
+-  par->vram_size = 320*240*2*2;
++  par->vram_size = 640*480*2*2;
+   par->vram_virt = dma_alloc_coherent(par->dev, par->vram_size, (resource_size_t*)&par->vram_phys, GFP_KERNEL | GFP_DMA);
+   if(!par->vram_virt){
+     dev_err(&device->dev, "%s, failed to allocate frame buffer(vram)\n", __func__);
+diff --git a/drivers/video/fbdev/rm68090fb.c b/drivers/video/fbdev/rm68090fb.c
+index b3dcbe48b..1cf7268a7 100644
+--- a/drivers/video/fbdev/rm68090fb.c
++++ b/drivers/video/fbdev/rm68090fb.c
+@@ -684,7 +684,7 @@ static int myfb_probe(struct platform_device *device)
+   par->bpp = 16;
+   fb_videomode_to_var(&myfb_var, mode);
+   
+-  par->vram_size = 320*240*2*2;
++  par->vram_size = 640*480*2*2;
+   par->vram_virt = dma_alloc_coherent(par->dev, par->vram_size, (resource_size_t*)&par->vram_phys, GFP_KERNEL | GFP_DMA);
+   if(!par->vram_virt){
+     dev_err(&device->dev, "%s, failed to allocate frame buffer(vram)\n", __func__);
+diff --git a/drivers/video/fbdev/st7789sTEfb.c b/drivers/video/fbdev/st7789sTEfb.c
+index ee895b575..176f11416 100644
+--- a/drivers/video/fbdev/st7789sTEfb.c
++++ b/drivers/video/fbdev/st7789sTEfb.c
+@@ -687,7 +687,7 @@ static int myfb_probe(struct platform_device *device)
+     par->bpp = 16;
+     fb_videomode_to_var(&myfb_var, mode);
+ 
+-    par->vram_size = (320 * 240 * 2 * 4) + 4096;
++    par->vram_size = (640 * 480 * 2 * 4) + 4096;
+     par->vram_virt = dma_alloc_coherent(par->dev, par->vram_size, (resource_size_t *)&par->vram_phys, GFP_KERNEL | GFP_DMA);
+     if(!par->vram_virt) {
+         return -EINVAL;
+diff --git a/drivers/video/fbdev/st7789sfb.c b/drivers/video/fbdev/st7789sfb.c
+index 28ef0ce8c..8867701ad 100644
+--- a/drivers/video/fbdev/st7789sfb.c
++++ b/drivers/video/fbdev/st7789sfb.c
+@@ -806,7 +806,7 @@ static int myfb_probe(struct platform_device *device)
+     par->bpp = 16;
+     fb_videomode_to_var(&myfb_var, mode);
+ 
+-    par->vram_size = (320 * 240 * 2 * 4) + 4096;
++    par->vram_size = (640 * 480 * 2 * 4) + 4096;
+     par->vram_virt = dma_alloc_coherent(par->dev, par->vram_size, (resource_size_t*)&par->vram_phys, GFP_KERNEL | GFP_DMA);
+     if (!par->vram_virt) {
+         return -EINVAL;
+-- 
+2.34.1
+

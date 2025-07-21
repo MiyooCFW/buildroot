@@ -1,0 +1,25 @@
+From 625e183efb5a59434c14b008696e54224014adda Mon Sep 17 00:00:00 2001
+From: tiopex <tiopxyz@gmail.com>
+Date: Fri, 20 Jun 2025 23:41:18 +0200
+Subject: [PATCH] omxvideodec: remove resolution check with goto in fill_buffer
+
+---
+ omx/gstomxvideodec.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/omx/gstomxvideodec.c b/omx/gstomxvideodec.c
+index e044c78..e441cd4 100755
+--- a/omx/gstomxvideodec.c
++++ b/omx/gstomxvideodec.c
+@@ -544,7 +544,7 @@ gst_omx_video_dec_fill_buffer (GstOMXVideoDec * self,
+         (guint) port_def->format.video.nFrameWidth,
+         (guint) port_def->format.video.nFrameHeight,
+         vinfo->width, vinfo->height);
+-    goto done;
++    //goto done;
+   }
+ 
+   /* Same strides and everything */
+-- 
+2.34.1
+

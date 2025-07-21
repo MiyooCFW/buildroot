@@ -1,11 +1,13 @@
 config BR2_PACKAGE_GST_OMX
 	bool "gst-omx"
-	depends on BR2_PACKAGE_HAS_LIBOPENMAX
+	depends on BR2_PACKAGE_HAS_LIBOPENMAX || \
+		BR2_PACKAGE_LIBCEDARC
 	select BR2_PACKAGE_GST1_PLUGINS_BASE
 	help
 	  GStreamer plug-in to use OpenMAX API.
 
 	  https://cgit.freedesktop.org/gstreamer/gst-omx
 
-comment "gst-omx requires a OpenMAX implementation"
-	depends on !BR2_PACKAGE_HAS_LIBOPENMAX
+comment "gst-omx requires a libopenmax or libcedarc implementation"
+	depends on !BR2_PACKAGE_HAS_LIBOPENMAX && \
+		!BR2_PACKAGE_LIBCEDARC
