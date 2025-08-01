@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-LIBRETRO_UAE4ALL_VERSION = 888d340e72cb80c169e8a949e08aed7e057e1544
+LIBRETRO_UAE4ALL_VERSION = cc26bf242e7e42f21790420d36c9c8569cc47904
 LIBRETRO_UAE4ALL_SITE = $(call github,Apaczer,uae4all,$(LIBRETRO_UAE4ALL_VERSION))
 #LIBRETRO_UAE4ALL_BRANCH = libretro
 LIBRETRO_UAE4ALL_LICENSE = GPL-2.0
