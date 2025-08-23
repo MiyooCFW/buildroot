@@ -1,0 +1,72 @@
+From 890efc2cd52b681ea43da1dc6d4be25ebcc9bcf0 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sat, 23 Aug 2025 22:11:35 +0200
+Subject: [PATCH] LIBRETRO: rm UNAI "Hi-Res Downscaling" option
+
+broken in RetroArch frontend (just use aspect-ratio instead)
+---
+ frontend/libretro.c              | 11 -----------
+ frontend/libretro_core_options.h | 18 ------------------
+ 2 files changed, 29 deletions(-)
+
+diff --git a/frontend/libretro.c b/frontend/libretro.c
+index 58f72299..38f3019c 100644
+--- a/frontend/libretro.c
++++ b/frontend/libretro.c
+@@ -926,7 +926,6 @@ static bool update_option_visibility(void)
+             "pcsx_rearmed_gpu_unai_interlace",
+             "pcsx_rearmed_gpu_unai_lighting",
+             "pcsx_rearmed_gpu_unai_fast_lighting",
+-            "pcsx_rearmed_gpu_unai_scale_hires",
+          };
+ 
+          option_display.visible = show_advanced_gpu_unai_settings;
+@@ -2700,16 +2699,6 @@ static void update_variables(bool in_flight)
+          pl_rearmed_cbs.gpu_unai.blending = 1;
+    }
+ 
+-   var.key = "pcsx_rearmed_gpu_unai_scale_hires";
+-   var.value = NULL;
+-
+-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+-   {
+-      if (strcmp(var.value, "disabled") == 0)
+-         pl_rearmed_cbs.gpu_unai.scale_hires = 0;
+-      else if (strcmp(var.value, "enabled") == 0)
+-         pl_rearmed_cbs.gpu_unai.scale_hires = 1;
+-   }
+ #endif // GPU_UNAI
+ 
+    var.value = NULL;
+diff --git a/frontend/libretro_core_options.h b/frontend/libretro_core_options.h
+index 118b8e96..782e4512 100644
+--- a/frontend/libretro_core_options.h
++++ b/frontend/libretro_core_options.h
+@@ -825,24 +825,6 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+       },
+       "enabled",
+    },
+-   {
+-      "pcsx_rearmed_gpu_unai_scale_hires",
+-      "(GPU) Hi-Res Downscaling",
+-      "Hi-Res Downscaling",
+-      "When enabled, games that run in high resolution video modes (480i, 512i) will be downscaled to 320x240. Can improve performance, and is recommended on devices with native 240p display resolutions.",
+-      NULL,
+-      "gpu_unai",
+-      {
+-         { "disabled", NULL },
+-         { "enabled",  NULL },
+-         { NULL, NULL},
+-      },
+-#ifdef _MIYOO
+-      "enabled",
+-#else
+-      "disabled",
+-#endif
+-   },
+ #endif /* GPU_UNAI */
+    {
+       "pcsx_rearmed_spu_reverb",
+-- 
+2.45.2.windows.1
+
