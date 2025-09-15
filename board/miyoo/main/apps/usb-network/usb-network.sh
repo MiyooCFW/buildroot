@@ -11,13 +11,13 @@ modprobe usb_f_rndis
 sleep 1
 
 mount none /sys/kernel/config -t configfs
-mkdir /sys/kernel/config/usb_gadget/g2
+mkdir -p /sys/kernel/config/usb_gadget/g2
 cd /sys/kernel/config/usb_gadget/g2
-mkdir configs/c.1
-mkdir strings/0x409
+mkdir -p configs/c.1
+mkdir -p strings/0x409
 
-mkdir functions/rndis.usb0
-mkdir configs/c.1/strings/0x409
+mkdir -p functions/rndis.usb0
+mkdir -p configs/c.1/strings/0x409
 
 echo 0x0104 > idProduct
 echo 0x1D6B > idVendor

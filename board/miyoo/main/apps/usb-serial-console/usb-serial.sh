@@ -6,13 +6,13 @@ killall umtprd umtprd-debug
 /mnt/apps/usb-mtd/remove.sh g2
 mount none /sys/kernel/config -t configfs
 
-mkdir /sys/kernel/config/usb_gadget/g2
+mkdir -p /sys/kernel/config/usb_gadget/g2
 cd /sys/kernel/config/usb_gadget/g2
 
-mkdir configs/c.1
-mkdir functions/acm.usb0
-mkdir strings/0x409
-mkdir configs/c.1/strings/0x409
+mkdir -p configs/c.1
+mkdir -p functions/acm.usb0
+mkdir -p strings/0x409
+mkdir -p configs/c.1/strings/0x409
 
 echo 0x0104 > idProduct                # Produkt: CDC ACM (Serial)
 echo 0x1D6B > idVendor                 # Producent: Linux Foundation
