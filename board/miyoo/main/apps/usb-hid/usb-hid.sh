@@ -17,7 +17,7 @@ st_exec_func "\
 	echo -e \"\e[32m\n\n\n\n\n\n               Starting USB-HID mode\e[0m\n\n\n\"; \
 	sleep 1; \
 	python /mnt/apps/usb-hid/usb-hid.py"
-gadget-vid-pid-remove 0x1d6b:0x0104
+#gadget-vid-pid-remove 0x1d6b:0x0104
 modprobe -r usb_f_hid
 modprobe -r evdev
 modprobe -r uinput

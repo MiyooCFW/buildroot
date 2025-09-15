@@ -1,5 +1,7 @@
 #!/bin/sh
 
+gadget-vid-pid-remove 0x1d6b:0x0104 # simply rm gadget-hid (g_hid/g_multi?) as it isn't part of FunctionFS 
+
 SYSDIR=/sys/kernel/config/usb_gadget/
 DEVDIR=$SYSDIR/$1
 
