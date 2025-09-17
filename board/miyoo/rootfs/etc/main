@@ -161,12 +161,8 @@ else
 	export CONSOLE_VARIANT="unknown"
 fi
 
-# load usb modules
-
+# load usb modules & gadget
 modprobe sunxi 2>&1 | tee -a "${LOGS}"
-modprobe usb_f_fs 2>&1 | tee -a "${LOGS}"
-
-# load usb gadget
 echo "Loading USB default MTP gadget" >> "${LOGS}"
 usb-mode mtp 2>&1 | tee -a "${LOGS}"
 if test "x${DEBUG_UMTPR}" == "xyes"; then
@@ -174,9 +170,6 @@ if test "x${DEBUG_UMTPR}" == "xyes"; then
 else
 	umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting so logging here to /dev/null
 fi
-
-sleep 1
-ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
 
 echo "Boot!" >> "${LOGS}"
 echo "Handheld type is ${CONSOLE_VARIANT}" >> "${LOGS}"

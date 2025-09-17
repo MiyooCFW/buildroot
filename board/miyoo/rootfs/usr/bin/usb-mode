@@ -1,8 +1,12 @@
 #!/bin/busybox sh
 
+# ARGS
 USB_MODE="${1}"
-
 MTP_APP="${2}"
+
+# Global variables
+SYSDIR=/sys/kernel/config/usb_gadget/
+DEVDIR=$SYSDIR/g2
 
 st_error_func(){
 	st -k -e "/bin/sh" "-c" "echo -e \"\e[31m${1}\e[0m\"; sleep 2"
@@ -17,9 +21,6 @@ st_exec_func(){
 rm_gadget_func(){
 	killall umtprd umtprd-debug
 	gadget-vid-pid-remove 0x1d6b:0x0104 # simply rm gadget-hid (g_hid/g_multi?) as it isn't part of FunctionFS 
-
-	SYSDIR=/sys/kernel/config/usb_gadget/
-	DEVDIR=$SYSDIR/g2
 
 	[ -d $DEVDIR ] || exit
 
@@ -70,21 +71,21 @@ rm_host_modules_func(){
 }
 
 usb_mode_func(){
-	local usb_mode_path="/sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode"
-	local usb_mode="$(cat ${usb_mode_path})"
-	test "${usb_mode}" == "host" \
+	_usb_mode_path_="/sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode"
+	_usb_mode_="$(cat ${_usb_mode_path_})"
+	test "${_usb_mode_}" == "host" \
 	 && rm_host_modules_func
-	echo ${1} > ${usb_mode_path}
+	echo ${1} > ${_usb_mode_path_}
 }
 
 usb_configs_func(){
 	mount none /sys/kernel/config -t configfs
-	mkdir -p /sys/kernel/config/usb_gadget/g2
-	cd /sys/kernel/config/usb_gadget/g2
+	mkdir -p ${DEVDIR}
+	cd ${DEVDIR} || echo "ERROR: couldn't enter ${DEVDIR}" && exit 1
 	mkdir -p configs/c.1
 	if test "${USB_MODE}" == "mtp"; then
 		mkdir -p functions/ffs.mtp # mtp
-	else if test "${USB_MODE}" == "serial"; then
+	elif test "${USB_MODE}" == "serial"; then
 		mkdir -p functions/acm.usb0 # serial
 	fi
 	mkdir -p strings/0x409
@@ -124,7 +125,7 @@ usb_configs_func(){
 		ln -s functions/ffs.mtp configs/c.1
 		mkdir -p /dev/ffs-mtp
 		mount -t functionfs mtp /dev/ffs-mtp
-	else if test "${USB_MODE}" == "serial"; then
+	elif test "${USB_MODE}" == "serial"; then
 		# serial
 		ln -s functions/acm.usb0 configs/c.1
 	else
@@ -135,9 +136,26 @@ usb_configs_func(){
 
 		echo "0x00" > bDeviceClass
 	fi
-	ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
+
+	sleep 1
+	ls /sys/class/udc/ > ${DEVDIR}/UDC
 }
 
+### MTP/MTD (default)###
+if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
+	usb_mode_func peripheral
+	modprobe usb_f_fs
+	rm_gadget_func
+	usb_configs_func
+	if test "${MTP_APP}" == "umtprd"; then
+		if (grep -q DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
+			umtprd-debug &
+		else
+			umtprd &
+		fi
+	fi
+	sleep 1
+fi
 
 ### HID ###
 if test "${USB_MODE}" == "hid"; then
@@ -155,22 +173,6 @@ if test "${USB_MODE}" == "hid"; then
 	modprobe -r usb_f_hid
 	modprobe -r evdev
 	modprobe -r uinput
-fi
-
-### MTP/MTD (default)###
-if test "${USB_MODE}" == "mtp"; then
-	usb_mode_func peripheral
-	modprobe usb_f_fs
-	rm_gadget_func
-	usb_configs_func
-	if test "${MTP_APP}" == "umtprd"; then
-		if (grep -q DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
-			umtprd-debug &
-		else
-			umtprd &
-		fi
-	fi
-	sleep 1
 fi
 
 ### Serial Console ###
