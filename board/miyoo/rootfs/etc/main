@@ -164,12 +164,16 @@ fi
 # load usb modules & gadget
 modprobe sunxi 2>&1 | tee -a "${LOGS}"
 echo "Loading USB default MTP gadget" >> "${LOGS}"
-usb-mode mtp 2>&1 | tee -a "${LOGS}"
+usb-mode 2>&1 | tee -a "${LOGS}"
 if test "x${DEBUG_UMTPR}" == "xyes"; then
 	umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
 else
 	umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting so logging here to /dev/null
 fi
+
+sleep 1
+ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
+echo "Current UDC list=$(cat /sys/kernel/config/usb_gadget/g2/UDC)" >> "${LOGS}"
 
 echo "Boot!" >> "${LOGS}"
 echo "Handheld type is ${CONSOLE_VARIANT}" >> "${LOGS}"
