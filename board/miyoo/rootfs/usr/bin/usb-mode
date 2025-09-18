@@ -1,0 +1,260 @@
+#!/bin/busybox sh
+
+# ARGS
+USB_MODE="${1}"
+MTP_APP="${2}"
+
+# Global variables
+SYSDIR=/sys/kernel/config/usb_gadget
+DEVDIR=$SYSDIR/g2
+MAC_HOST="12:34:56:78:9a:bd"
+MAC_DEV="12:34:56:78:9a:bc"
+
+st_error_func(){
+	st -k -e "/bin/sh" "-c" "echo -e \"\e[31m${1}\e[0m\"; sleep 2"
+}
+st_info_func(){
+	st -k -e "/bin/sh" "-c" "echo -e \"${1}\"; sleep 2"
+}
+st_exec_func(){
+	st -k -e "/bin/sh" "-c" "${1}"
+}
+
+rm_gadget_func(){
+	echo "Removing old gadgets"
+	if pgrep "umtprd"; then
+		killall umtprd
+	elif pgrep "umtprd-debug"; then
+		killall umtprd-debug
+	fi
+	gadget-vid-pid-remove 0x1d6b:0x0104 # simply rm gadget-hid (g_hid/g_multi?) as it isn't part of FunctionFS 
+
+	if ! test -d $DEVDIR; then
+		echo "ERROR: couldn't find ${DEVDIR}"
+		return
+	fi
+
+	echo '' > $DEVDIR/UDC
+
+	echo "Removing strings from configurations"
+	for dir in $DEVDIR/configs/*/strings/*; do
+		[ -d $dir ] && rmdir $dir
+	done
+
+	echo "Removing functions from configurations"
+	for func in $DEVDIR/configs/*.*/*.*; do
+		[ -e $func ] && rm $func
+	done
+
+	echo "Removing configurations"
+	for conf in $DEVDIR/configs/*; do
+		[ -d $conf ] && rmdir $conf
+	done
+
+	echo "Removing functions"
+	for func in $DEVDIR/functions/*.*; do
+		[ -d $func ] && rmdir $func
+	done
+
+	echo "Removing strings"
+	for str in $DEVDIR/strings/*; do
+		[ -d $str ] && rmdir $str
+	done
+
+	echo "Removing gadget"
+	rmdir $DEVDIR
+}
+
+rm_host_modules_func(){
+	echo "Removing USB HOST mode's all modules" 
+	modprobe -r evdev
+	modprobe -r joydev
+	modprobe -r analog
+	modprobe -r xpad
+	modprobe -r atkbd
+	modprobe -r uinput
+	modprobe -r psmouse
+	modprobe -r synaptics_usb
+	modprobe -r mousedev
+	modprobe -r usbhid
+	modprobe -r hid-generic
+	modprobe -r hid
+}
+
+usb_mode_func(){
+	test -z "${1}" \
+	 || echo "Suggesting USB mode in ../musb-hdrc.1.auto/mode"
+	_usb_mode_path_="/sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode"
+	_usb_mode_="$(cat ${_usb_mode_path_})"
+	echo "Current USB mode=${_usb_mode_}"
+	if (grep -q host "${_usb_mode_path_}" && ! test -z "${1}"); then
+		rm_host_modules_func
+	fi
+	test -z "${1}" \
+	 || echo "${1}" > ${_usb_mode_path_} # DOES THIS EVEN WORK?
+	sleep 1
+	# _usb_mode_="$(cat ${_usb_mode_path_})"
+	# echo "NEW usb_mode=${_usb_mode_}"
+}
+
+usb_configs_func(){
+	echo "Configuring FunctionFS gadget"
+	mount none /sys/kernel/config -t configfs
+	mkdir -p ${DEVDIR}
+	if ! cd ${DEVDIR}; then
+		echo "ERROR: couldn't enter ${DEVDIR}"
+		exit 1
+	fi
+	mkdir -p configs/c.1
+	if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
+		mkdir -p functions/ffs.mtp # mtp
+	elif test "${USB_MODE}" == "serial"; then
+		mkdir -p functions/acm.usb0 # serial
+	# else net
+	fi
+	mkdir -p strings/0x409
+	mkdir -p configs/c.1/strings/0x409
+	if test "${USB_MODE}" == "net"; then
+		mkdir -p functions/rndis.usb0
+	fi
+	if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
+		echo 0x0100 > idProduct # mtp gadget (ptp's extension)
+	else
+		echo 0x0104 > idProduct # serial,net (g_multi?), CDC ACM
+	fi
+	echo 0x1D6B > idVendor # Linux Foundation
+	if test "${USB_MODE}" == "net"; then
+		echo "0x0200" > bcdUSB
+		echo "0x02" > bDeviceClass
+		echo "0x00" > bDeviceSubClass
+		echo "0x3066" > bcdDevice
+		echo "1" > os_desc/use
+		echo "0xcd" > os_desc/b_vendor_code
+		echo "MSFT100" > os_desc/qw_sign
+		echo "RNDIS" > functions/rndis.usb0/os_desc/interface.rndis/compatible_id
+		echo "5162001" > functions/rndis.usb0/os_desc/interface.rndis/sub_compatible_id
+		echo $MAC_HOST > functions/rndis.usb0/host_addr
+		echo $MAC_DEV > functions/rndis.usb0/dev_addr
+	fi
+	echo "Miyoo Handheld" > strings/0x409/manufacturer
+	echo "MiyooCFW 2.0" > strings/0x409/product
+	if test "${USB_MODE}" == "serial"; then
+		echo "deadbeef12345678" > strings/0x409/serialnumber
+	fi
+
+	echo "Conf 1" > configs/c.1/strings/0x409/configuration
+	echo 120 > configs/c.1/MaxPower
+	if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
+		# mtp
+		ln -s functions/ffs.mtp configs/c.1
+		mkdir -p /dev/ffs-mtp
+		mount -t functionfs mtp /dev/ffs-mtp
+	elif test "${USB_MODE}" == "serial"; then
+		# serial
+		ln -s functions/acm.usb0 configs/c.1
+	elif test "${USB_MODE}" == "net"; then
+		# net
+		ln -s functions/rndis.usb0 configs/c.1
+		ln -s configs/c.1 os_desc
+		sleep 1
+
+		echo "0x00" > bDeviceClass
+	else
+		echo "ERROR: Unknown USB_MODE=${USB_MODE}"
+	fi
+}
+
+### MTP/MTD (default)###
+if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
+	echo "Starting USB-MTP mode"
+	test -z $USB_MODE \
+	 || usb_mode_func peripheral
+	modprobe usb_f_fs
+	if ! test -z $USB_MODE; then
+	# omit removing gadgets in default non-arg run
+		rm_gadget_func
+	fi
+
+	usb_configs_func
+	if test "${MTP_APP}" == "umtprd"; then
+		echo "Launching uMTP-Responder app"
+		if (grep -q DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
+			umtprd-debug &
+		else
+			umtprd &
+		fi
+	fi
+	sleep 1
+	ls /sys/class/udc/ > ${DEVDIR}/UDC
+	
+	usb_mode_func
+	sleep 1
+fi
+
+### HID ###
+if test "${USB_MODE}" == "hid"; then
+	echo "Starting USB-HID mode"
+	usb_mode_func peripheral
+	rm_gadget_func
+	modprobe usb_f_hid
+	modprobe evdev
+	modprobe uinput
+	mount none /sys/kernel/config -t configfs
+	gadget-hid
+	usb_mode_func
+	st_exec_func "\
+		echo -e \"\e[32m\n\n\n\n\n\n               Starting USB-HID mode\e[0m\n\n\n\"; \
+		sleep 1; \
+		python /usr/bin/usb-hid.py"
+	modprobe -r usb_f_hid
+	modprobe -r evdev
+	modprobe -r uinput
+fi
+
+### Serial Console ###
+if test "${USB_MODE}" == "serial"; then
+	echo "Starting USB-Serial mode"
+	usb_mode_func peripheral
+	rm_gadget_func
+	usb_configs_func
+	sleep 1
+	ls /sys/class/udc/ > ${DEVDIR}/UDC
+	usb_mode_func
+fi
+
+### Networking ###
+if test "${USB_MODE}" == "net"; then
+	st_info_func "Starting USB-Network mode"
+	rm_gadget_func
+	modprobe usb_f_rndis
+	sleep 1
+	usb_configs_func
+	sleep 1
+	ls /sys/class/udc/ > ${DEVDIR}/UDC
+	ifconfig usb0 up 192.168.137.1
+	sleep 10
+	/etc/init.d/S80dhcp-server restart
+fi
+
+### Host ##
+if test "${USB_MODE}" == "host"; then
+	echo "Starting USB in HOST state mode"
+	usb_mode_func host
+	sleep 2
+
+	modprobe evdev
+	modprobe joydev
+	modprobe analog
+	modprobe xpad
+	modprobe atkbd
+	modprobe uinput
+	modprobe psmouse
+	modprobe synaptics_usb
+	modprobe mousedev
+	modprobe usbhid
+	modprobe hid-generic
+	modprobe hid
+	usb_mode_func
+fi
+
+echo "Exiting USB mode configuration..."

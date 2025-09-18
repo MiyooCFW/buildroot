@@ -1,3 +1,4 @@
 title=USB Network
 description=IP:192.168.137.1
-exec=/mnt/apps/usb-network/usb-network.sh
+exec=/usr/bin/usb-mode
+params=net

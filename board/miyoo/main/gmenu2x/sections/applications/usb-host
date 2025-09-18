@@ -1,3 +1,4 @@
 title=USB Host
 description=USB Host mode
-exec=/mnt/apps/usb-host/usb-host.sh
+exec=/usr/bin/usb-mode
+params=host

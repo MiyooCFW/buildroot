@@ -1,3 +1,5 @@
 title=USB HID
 description=USB HID PC gamepad
-exec=/mnt/apps/usb-hid/usb-hid.sh
+exec=/usr/bin/usb-mode
+params=hid
+manual=/mnt/manuals/usb-hid.man.txt

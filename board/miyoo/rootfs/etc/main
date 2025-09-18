@@ -161,32 +161,10 @@ else
 	export CONSOLE_VARIANT="unknown"
 fi
 
-# load usb modules
-
+# load usb modules & gadget
 modprobe sunxi 2>&1 | tee -a "${LOGS}"
-modprobe usb_f_fs 2>&1 | tee -a "${LOGS}"
-
-# load usb gadget
-echo "Loading USB gadget" >> "${LOGS}"
-mount none /sys/kernel/config -t configfs 2>&1 | tee -a "${LOGS}"
-mkdir -p /sys/kernel/config/usb_gadget/g2 >> "${LOGS}" 2>&1
-cd /sys/kernel/config/usb_gadget/g2 || echo "Failed to cd into /sys/kernel/config/usb_gadget/g2" >> "${LOGS}" 2>&1
-mkdir -p configs/c.1 >> "${LOGS}" 2>&1
-mkdir -p functions/ffs.mtp >> "${LOGS}" 2>&1
-mkdir -p strings/0x409 >> "${LOGS}" 2>&1
-mkdir -p configs/c.1/strings/0x409 >> "${LOGS}" 2>&1
-
-echo 0x0100 > idProduct
-echo 0x1D6B > idVendor
-
-echo "Miyoo Handheld" > strings/0x409/manufacturer
-echo "Miyoo CFW 2.0" > strings/0x409/product
-
-echo "Conf 1" > configs/c.1/strings/0x409/configuration
-echo 120 > configs/c.1/MaxPower
-ln -s functions/ffs.mtp configs/c.1 2>&1 | tee -a "${LOGS}"
-mkdir -p /dev/ffs-mtp >> "${LOGS}" 2>&1
-mount -t functionfs mtp /dev/ffs-mtp 2>&1 | tee -a "${LOGS}"
+echo "Loading USB default MTP gadget" >> "${LOGS}"
+usb-mode 2>&1 | tee -a "${LOGS}"
 if test "x${DEBUG_UMTPR}" == "xyes"; then
 	umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
 else
@@ -195,6 +173,7 @@ fi
 
 sleep 1
 ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
+echo "Current UDC list=$(cat /sys/kernel/config/usb_gadget/g2/UDC)" >> "${LOGS}"
 
 echo "Boot!" >> "${LOGS}"
 echo "Handheld type is ${CONSOLE_VARIANT}" >> "${LOGS}"
