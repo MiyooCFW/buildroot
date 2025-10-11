@@ -1,8 +1,8 @@
 #!/bin/busybox sh
 
 # ARGS
-USB_MODE="${1}"
-MTP_APP="${2}"
+USB_MODE="${1}" # mtp(default no-arg); hid; serial; net; host
+MTP_APP="${2}" # umtprd
 
 # Global variables
 SYSDIR=/sys/kernel/config/usb_gadget
@@ -164,7 +164,7 @@ usb_configs_func(){
 	fi
 }
 
-### MTP/MTD (default)###
+### MTP/MTD (default) ###
 if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
 	echo "Starting USB-MTP mode"
 	test -z $USB_MODE \
@@ -173,6 +173,9 @@ if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
 	if ! test -z $USB_MODE; then
 	# omit removing gadgets in default non-arg run
 		rm_gadget_func
+	else
+	# define envar if empty
+		USB_MODE="mtp"
 	fi
 
 	usb_configs_func
@@ -183,16 +186,20 @@ if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
 		else
 			umtprd &
 		fi
+	elif test -z ${MTP_APP}; then
+		echo "Please run uMTP-Responder in bg for working MTP"
+	else
+		echo "ERROR: Unknown MTP_APP=${MTP_APP} in 2nd arg"
+		exit 1
 	fi
 	sleep 1
 	ls /sys/class/udc/ > ${DEVDIR}/UDC
-	
+
 	usb_mode_func
 	sleep 1
-fi
 
 ### HID ###
-if test "${USB_MODE}" == "hid"; then
+elif test "${USB_MODE}" == "hid"; then
 	echo "Starting USB-HID mode"
 	usb_mode_func peripheral
 	rm_gadget_func
@@ -209,10 +216,9 @@ if test "${USB_MODE}" == "hid"; then
 	modprobe -r usb_f_hid
 	modprobe -r evdev
 	modprobe -r uinput
-fi
 
 ### Serial Console ###
-if test "${USB_MODE}" == "serial"; then
+elif test "${USB_MODE}" == "serial"; then
 	echo "Starting USB-Serial mode"
 	usb_mode_func peripheral
 	rm_gadget_func
@@ -220,11 +226,10 @@ if test "${USB_MODE}" == "serial"; then
 	sleep 1
 	ls /sys/class/udc/ > ${DEVDIR}/UDC
 	usb_mode_func
-fi
 
 ### Networking ###
-if test "${USB_MODE}" == "net"; then
-	st_info_func "Starting USB-Network mode"
+elif test "${USB_MODE}" == "net"; then
+	echo "Starting USB-Network mode"
 	rm_gadget_func
 	modprobe usb_f_rndis
 	sleep 1
@@ -234,10 +239,9 @@ if test "${USB_MODE}" == "net"; then
 	ifconfig usb0 up 192.168.137.1
 	sleep 10
 	/etc/init.d/S80dhcp-server restart
-fi
 
 ### Host ##
-if test "${USB_MODE}" == "host"; then
+elif test "${USB_MODE}" == "host"; then
 	echo "Starting USB in HOST state mode"
 	usb_mode_func host
 	sleep 2
@@ -255,6 +259,13 @@ if test "${USB_MODE}" == "host"; then
 	modprobe hid-generic
 	modprobe hid
 	usb_mode_func
+
+### UNKNOWN ##
+else
+	echo "ERROR: Unknown USB_MODE=${USB_MODE} in 1st arg"
+	exit 1
 fi
 
-echo "Exiting USB mode configuration..."
+# Export envar & exit successfully app
+export USB_MODE
+echo "Finished USB ${USB_MODE} mode configuration..."
