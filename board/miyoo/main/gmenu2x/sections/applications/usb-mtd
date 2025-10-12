@@ -1,4 +1,0 @@
-title=USB MTD
-description=USB MTD mass storage
-exec=/usr/bin/usb-mode
-params=mtp umtprd
