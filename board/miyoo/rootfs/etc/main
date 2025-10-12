@@ -165,6 +165,12 @@ fi
 modprobe sunxi 2>&1 | tee -a "${LOGS}"
 echo "Loading USB default MTP gadget" >> "${LOGS}"
 usb-mode 2>&1 | tee -a "${LOGS}"
+if test -r "${HOME}/.usbmode"; then
+	source ${HOME}/.usbmode
+else
+	USB_MODE="unknown"
+fi
+export USB_MODE
 if test "x${DEBUG_UMTPR}" == "xyes"; then
 	umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
 else
@@ -214,6 +220,8 @@ do
 		else
 			./gmenu2x >> "${GMENU2X_LOGS}" 2>&1
 		fi
+		test -r "${BOOTDIR}/.usbmode"\
+		 && source ${HOME}/.usbmode
 		test "x${DEBUG_UMTPR}" == "xyes"\
 		 && restore_temp_log_func
 	fi

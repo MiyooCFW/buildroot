@@ -267,5 +267,5 @@ else
 fi
 
 # Export envar & exit successfully app
-export USB_MODE
+echo "USB_MODE=${USB_MODE}" > ${HOME}/.usbmode
 echo "Finished USB ${USB_MODE} mode configuration..."
