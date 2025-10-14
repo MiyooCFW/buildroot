@@ -172,11 +172,7 @@ if test "${USB_MODE}" == "mtp"; then
 	echo "Starting USB-MTP mode"
 	if ! ${USB_MAIN}; then
 		usb_mode_func peripheral
-	fi
-	modprobe usb_f_fs
-	if ! ${USB_MAIN}; then
-	# omit removing gadgets in main run
-		rm_gadget_func
+		rm_gadget_func # omit removing gadgets in main run
 	fi
 
 	usb_configs_func
@@ -192,11 +188,9 @@ if test "${USB_MODE}" == "mtp"; then
 			echo "uMTP-Responder in already running in bg for working MTP"
 		fi
 	fi
-	sleep 1
 	ls /sys/class/udc/ > ${DEVDIR}/UDC
 
 	usb_mode_func
-	sleep 1
 
 ### HID ###
 elif test "${USB_MODE}" == "hid"; then
@@ -227,7 +221,6 @@ elif test "${USB_MODE}" == "serial"; then
 		rm_gadget_func
 	fi
 	usb_configs_func
-	sleep 1
 	ls /sys/class/udc/ > ${DEVDIR}/UDC
 	usb_mode_func
 
@@ -240,7 +233,6 @@ elif test "${USB_MODE}" == "net"; then
 	modprobe usb_f_rndis
 	sleep 1
 	usb_configs_func
-	sleep 1
 	ls /sys/class/udc/ > ${DEVDIR}/UDC
 	ifconfig usb0 up 192.168.137.1
 	sleep 10
