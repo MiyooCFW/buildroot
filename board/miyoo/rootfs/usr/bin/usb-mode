@@ -1,8 +1,11 @@
 #!/bin/busybox sh
 
 # ARGS
-USB_MODE="${1}" # mtp(default no-arg); hid; serial; net; host
-MTP_APP="${2}" # umtprd
+USB_MODE="${1}" # mtp(default); hid; serial; net; host
+test "${2}" == "main" \
+ && USB_MAIN=true \
+ || USB_MAIN=false
+echo "USB main run status: ${USB_MAIN}"
 
 # Global variables
 SYSDIR=/sys/kernel/config/usb_gadget
@@ -106,7 +109,7 @@ usb_configs_func(){
 		exit 1
 	fi
 	mkdir -p configs/c.1
-	if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
+	if test "${USB_MODE}" == "mtp"; then
 		mkdir -p functions/ffs.mtp # mtp
 	elif test "${USB_MODE}" == "serial"; then
 		mkdir -p functions/acm.usb0 # serial
@@ -117,7 +120,7 @@ usb_configs_func(){
 	if test "${USB_MODE}" == "net"; then
 		mkdir -p functions/rndis.usb0
 	fi
-	if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
+	if test "${USB_MODE}" == "mtp"; then
 		echo 0x0100 > idProduct # mtp gadget (ptp's extension)
 	else
 		echo 0x0104 > idProduct # serial,net (g_multi?), CDC ACM
@@ -144,7 +147,7 @@ usb_configs_func(){
 
 	echo "Conf 1" > configs/c.1/strings/0x409/configuration
 	echo 120 > configs/c.1/MaxPower
-	if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
+	if test "${USB_MODE}" == "mtp"; then
 		# mtp
 		ln -s functions/ffs.mtp configs/c.1
 		mkdir -p /dev/ffs-mtp
@@ -165,32 +168,29 @@ usb_configs_func(){
 }
 
 ### MTP/MTD (default) ###
-if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
+if test "${USB_MODE}" == "mtp"; then
 	echo "Starting USB-MTP mode"
-	test -z $USB_MODE \
-	 || usb_mode_func peripheral
+	if ! ${USB_MAIN}; then
+		usb_mode_func peripheral
+	fi
 	modprobe usb_f_fs
-	if ! test -z $USB_MODE; then
-	# omit removing gadgets in default non-arg run
+	if ! ${USB_MAIN}; then
+	# omit removing gadgets in main run
 		rm_gadget_func
-	else
-	# define envar if empty
-		USB_MODE="mtp"
 	fi
 
 	usb_configs_func
-	if test "${MTP_APP}" == "umtprd"; then
-		echo "Launching uMTP-Responder app"
-		if (grep -q DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
-			umtprd-debug &
+	if ! ${USB_MAIN}; then
+		if ! (pgrep "umtprd" || pgrep "umtprd-debug"); then
+			echo "Launching uMTP-Responder app for usb-mtp mode"
+			if (grep -q DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
+				umtprd-debug &
+			else
+				umtprd &
+			fi
 		else
-			umtprd &
+			echo "uMTP-Responder in already running in bg for working MTP"
 		fi
-	elif test -z ${MTP_APP}; then
-		echo "Please run uMTP-Responder in bg for working MTP"
-	else
-		echo "ERROR: Unknown MTP_APP=${MTP_APP} in 2nd arg"
-		exit 1
 	fi
 	sleep 1
 	ls /sys/class/udc/ > ${DEVDIR}/UDC
@@ -201,8 +201,10 @@ if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
 ### HID ###
 elif test "${USB_MODE}" == "hid"; then
 	echo "Starting USB-HID mode"
-	usb_mode_func peripheral
-	rm_gadget_func
+	if ! ${USB_MAIN}; then
+		usb_mode_func peripheral
+		rm_gadget_func
+	fi
 	modprobe usb_f_hid
 	modprobe evdev
 	modprobe uinput
@@ -220,8 +222,10 @@ elif test "${USB_MODE}" == "hid"; then
 ### Serial Console ###
 elif test "${USB_MODE}" == "serial"; then
 	echo "Starting USB-Serial mode"
-	usb_mode_func peripheral
-	rm_gadget_func
+	if ! ${USB_MAIN}; then
+		usb_mode_func peripheral
+		rm_gadget_func
+	fi
 	usb_configs_func
 	sleep 1
 	ls /sys/class/udc/ > ${DEVDIR}/UDC
@@ -230,7 +234,9 @@ elif test "${USB_MODE}" == "serial"; then
 ### Networking ###
 elif test "${USB_MODE}" == "net"; then
 	echo "Starting USB-Network mode"
-	rm_gadget_func
+	if ! ${USB_MAIN}; then
+		rm_gadget_func
+	fi
 	modprobe usb_f_rndis
 	sleep 1
 	usb_configs_func
