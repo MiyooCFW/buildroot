@@ -12,6 +12,7 @@ SYSDIR=/sys/kernel/config/usb_gadget
 DEVDIR=$SYSDIR/g2
 MAC_HOST="12:34:56:78:9a:bd"
 MAC_DEV="12:34:56:78:9a:bc"
+USB_MODE_PATH="/sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode"
 
 st_error_func(){
 	st -k -e "/bin/sh" "-c" "echo -e \"\e[31m${1}\e[0m\"; sleep 2"
@@ -26,11 +27,14 @@ st_exec_func(){
 rm_gadget_func(){
 	echo "Removing old gadgets"
 	if pgrep "umtprd"; then
+		echo "Shutting existing umtprd app"
 		killall umtprd
 	elif pgrep "umtprd-debug"; then
+		echo "Shutting existing umtprd-debug app"
 		killall umtprd-debug
 	fi
 	if (grep -q hid "${HOME}/.usbmode"); then
+		echo "Removing gadget HID"
 		gadget-vid-pid-remove 0x1d6b:0x0104 # rm gadget-hid (g_multi) - idProduct serial,net
 	fi
 
@@ -56,6 +60,10 @@ rm_gadget_func(){
 		[ -d $conf ] && rmdir $conf
 	done
 
+	echo "exiting Remove gadget process..."
+	return
+
+	# TODO: see why we need to disable below cmds for switching USB mode from HOST (main run) to other
 	echo "Removing functions"
 	for func in $DEVDIR/functions/*.*; do
 		[ -d $func ] && rmdir $func
@@ -89,16 +97,15 @@ rm_host_modules_func(){
 usb_mode_func(){
 	test -z "${1}" \
 	 || echo "Suggesting USB mode in ../musb-hdrc.1.auto/mode"
-	_usb_mode_path_="/sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode"
-	_usb_mode_="$(cat ${_usb_mode_path_})"
+	_usb_mode_="$(cat ${USB_MODE_PATH})"
 	echo "Current USB mode=${_usb_mode_}"
-	if (grep -q host "${_usb_mode_path_}" && ! test -z "${1}"); then
+	if (grep -Eq 'host|wait_vrise|wait_bcon' "${USB_MODE_PATH}" || grep -q host "${HOME}/.usbmode" && ! test -z "${1}"); then
 		rm_host_modules_func
 	fi
 	test -z "${1}" \
-	 || echo "${1}" > ${_usb_mode_path_} # DOES THIS EVEN WORK?
+	 || echo "${1}" > ${USB_MODE_PATH} # DOES THIS EVEN WORK?
 	sleep 1
-	# _usb_mode_="$(cat ${_usb_mode_path_})"
+	# _usb_mode_="$(cat ${USB_MODE_PATH})"
 	# echo "NEW usb_mode=${_usb_mode_}"
 }
 
@@ -173,11 +180,16 @@ usb_configs_func(){
 if test "${USB_MODE}" == "mtp"; then
 	echo "Starting USB-MTP mode"
 	if ! ${USB_MAIN}; then
-		usb_mode_func peripheral
 		rm_gadget_func # omit removing gadgets in main run
+		usb_mode_func peripheral
 	fi
 
 	usb_configs_func
+	# TODO: see why we need to perform MTP setup twice if switching from host mode
+	if (grep -Eq 'host|wait_vrise|wait_bcon' "${USB_MODE_PATH}" || grep -q host "${HOME}/.usbmode"); then
+		rm_gadget_func
+		usb_configs_func
+	fi
 	if ! ${USB_MAIN}; then
 		if ! (pgrep "umtprd" || pgrep "umtprd-debug"); then
 			echo "Launching uMTP-Responder app for usb-mtp mode"
@@ -199,8 +211,8 @@ if test "${USB_MODE}" == "mtp"; then
 elif test "${USB_MODE}" == "hid"; then
 	echo "Starting USB-HID mode"
 	if ! ${USB_MAIN}; then
-		usb_mode_func peripheral
 		rm_gadget_func
+		usb_mode_func peripheral
 	fi
 	modprobe usb_f_hid
 	modprobe evdev
@@ -227,8 +239,8 @@ elif test "${USB_MODE}" == "hid"; then
 elif test "${USB_MODE}" == "serial"; then
 	echo "Starting USB-Serial mode"
 	if ! ${USB_MAIN}; then
-		usb_mode_func peripheral
 		rm_gadget_func
+		usb_mode_func peripheral
 	fi
 	usb_configs_func
 	ls /sys/class/udc/ > ${DEVDIR}/UDC
@@ -239,6 +251,7 @@ elif test "${USB_MODE}" == "net"; then
 	echo "Starting USB-Network mode"
 	if ! ${USB_MAIN}; then
 		rm_gadget_func
+		usb_mode_func peripheral
 	fi
 	modprobe usb_f_rndis
 	sleep 1
