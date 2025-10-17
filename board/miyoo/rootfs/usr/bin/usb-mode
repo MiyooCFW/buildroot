@@ -30,7 +30,9 @@ rm_gadget_func(){
 	elif pgrep "umtprd-debug"; then
 		killall umtprd-debug
 	fi
-	gadget-vid-pid-remove 0x1d6b:0x0104 # simply rm gadget-hid (g_hid/g_multi?) as it isn't part of FunctionFS 
+	if (grep -q hid "${HOME}/.usbmode"); then
+		gadget-vid-pid-remove 0x1d6b:0x0104 # rm gadget-hid (g_multi) - idProduct serial,net
+	fi
 
 	if ! test -d $DEVDIR; then
 		echo "ERROR: couldn't find ${DEVDIR}"
