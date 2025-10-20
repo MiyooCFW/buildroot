@@ -1,12 +1,19 @@
-Index: examples/gadget-acm-ecm.c
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
+From 722fdafab080f0b8377b0bff3f4d02a07cd65756 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Mon, 20 Oct 2025 18:47:56 +0200
+Subject: [PATCH] custom acm & ms gadget creation
+
+Co-Authored-By: tiopex <67048640+tiopex@users.noreply.github.com>
+---
+ examples/gadget-acm-ecm.c | 36 ++----------------------------------
+ examples/gadget-ms.c      | 24 ++++++++++++++++++++----
+ 2 files changed, 22 insertions(+), 38 deletions(-)
+
 diff --git a/examples/gadget-acm-ecm.c b/examples/gadget-acm-ecm.c
---- a/examples/gadget-acm-ecm.c	(revision 721e3a1cbd7e2b6361bb439d3959e7403e4f0092)
-+++ b/examples/gadget-acm-ecm.c	(date 1679314494083)
-@@ -38,7 +38,7 @@
+index 29360da..52e4c8a 100644
+--- a/examples/gadget-acm-ecm.c
++++ b/examples/gadget-acm-ecm.c
+@@ -38,7 +38,7 @@ int main(void)
  	usbg_state *s;
  	usbg_gadget *g;
  	usbg_config *c;
@@ -15,7 +22,7 @@ diff --git a/examples/gadget-acm-ecm.c b/examples/gadget-acm-ecm.c
  	int ret = -EINVAL;
  	int usbg_ret;
  
-@@ -60,7 +60,7 @@
+@@ -60,7 +60,7 @@ int main(void)
  	};
  
  	struct usbg_config_strs c_strs = {
@@ -24,11 +31,10 @@ diff --git a/examples/gadget-acm-ecm.c b/examples/gadget-acm-ecm.c
  	};
  
  	usbg_ret = usbg_init("/sys/kernel/config", &s);
-@@ -86,22 +86,6 @@
- 				usbg_strerror(usbg_ret));
+@@ -87,22 +87,6 @@ int main(void)
  		goto out2;
  	}
--
+ 
 -	usbg_ret = usbg_create_function(g, USBG_F_ACM, "usb1", NULL, &f_acm1);
 -	if (usbg_ret != USBG_SUCCESS) {
 -		fprintf(stderr, "Error creating acm1 function\n");
@@ -44,14 +50,14 @@ diff --git a/examples/gadget-acm-ecm.c b/examples/gadget-acm-ecm.c
 -				usbg_strerror(usbg_ret));
 -		goto out2;
 -	}
- 
+-
  	/* NULL can be passed to use kernel defaults */
  	usbg_ret = usbg_create_config(g, 1, "The only one", NULL, &c_strs, &c);
-@@ -119,22 +103,6 @@
- 				usbg_strerror(usbg_ret));
+ 	if (usbg_ret != USBG_SUCCESS) {
+@@ -120,22 +104,6 @@ int main(void)
  		goto out2;
  	}
--
+ 
 -	usbg_ret = usbg_add_config_function(c, "acm.GS1", f_acm1);
 -	if (usbg_ret != USBG_SUCCESS) {
 -		fprintf(stderr, "Error adding acm.GS1\n");
@@ -67,18 +73,15 @@ diff --git a/examples/gadget-acm-ecm.c b/examples/gadget-acm-ecm.c
 -				usbg_strerror(usbg_ret));
 -		goto out2;
 -	}
- 
+-
  	usbg_ret = usbg_enable_gadget(g, DEFAULT_UDC);
  	if (usbg_ret != USBG_SUCCESS) {
-Index: examples/gadget-ms.c
-IDEA additional info:
-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
-<+>UTF-8
-===================================================================
+ 		fprintf(stderr, "Error enabling gadget\n");
 diff --git a/examples/gadget-ms.c b/examples/gadget-ms.c
---- a/examples/gadget-ms.c	(revision 721e3a1cbd7e2b6361bb439d3959e7403e4f0092)
-+++ b/examples/gadget-ms.c	(date 1679314494093)
-@@ -36,7 +36,7 @@
+index 09fd212..bed37fd 100644
+--- a/examples/gadget-ms.c
++++ b/examples/gadget-ms.c
+@@ -36,7 +36,7 @@ int main(int argc, char **argv)
  	usbg_state *s;
  	usbg_gadget *g;
  	usbg_config *c;
@@ -87,7 +90,7 @@ diff --git a/examples/gadget-ms.c b/examples/gadget-ms.c
  	int ret = -EINVAL;
  	int usbg_ret;
  
-@@ -60,18 +60,18 @@
+@@ -60,11 +60,11 @@ int main(int argc, char **argv)
  	struct usbg_f_ms_lun_attrs f_ms_luns_array[] = {
  		{
  			.id = -1, /* allows to place in any position */
@@ -98,18 +101,19 @@ diff --git a/examples/gadget-ms.c b/examples/gadget-ms.c
  			.removable = 1,
 -			.file = "",
 +			.file = argv[1],
+ 			.inquiry_string = "Empty"
  		}, {
  			.id = -1, /* allows to place in any position */
- 			.cdrom = 0,
+@@ -72,7 +72,7 @@ int main(int argc, char **argv)
  			.ro = 0,
  			.nofua = 0,
  			.removable = 1,
 -			.file = argv[1],
 +			.file = argv[2],
+ 			.inquiry_string = "Non-empty"
  		}
  	};
- 
-@@ -116,6 +116,14 @@
+@@ -118,6 +118,14 @@ int main(int argc, char **argv)
  		goto out2;
  	}
  
@@ -124,11 +128,10 @@ diff --git a/examples/gadget-ms.c b/examples/gadget-ms.c
  	usbg_ret = usbg_create_function(g, USBG_F_MASS_STORAGE, "my_reader",
  					&f_attrs, &f_ms);
  	if (usbg_ret != USBG_SUCCESS) {
-@@ -133,6 +141,14 @@
- 				usbg_strerror(usbg_ret));
+@@ -136,6 +144,14 @@ int main(int argc, char **argv)
  		goto out2;
  	}
-+
+ 
 +    usbg_ret = usbg_add_config_function(c, "acm.GS0", f_acm0);
 +    if (usbg_ret != USBG_SUCCESS) {
 +        fprintf(stderr, "Error adding acm.GS0\n");
@@ -136,6 +139,10 @@ diff --git a/examples/gadget-ms.c b/examples/gadget-ms.c
 +                usbg_strerror(usbg_ret));
 +        goto out2;
 +    }
- 
++
  	usbg_ret = usbg_add_config_function(c, "some_name_here", f_ms);
  	if (usbg_ret != USBG_SUCCESS) {
+ 		fprintf(stderr, "Error adding ms function\n");
+-- 
+2.45.2.windows.1
+
