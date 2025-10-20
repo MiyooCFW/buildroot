@@ -162,25 +162,27 @@ else
 fi
 
 # load usb modules & gadget
-modprobe sunxi 2>&1 | tee -a "${LOGS}"
-modprobe usb_f_fs 2>&1 | tee -a "${LOGS}"
-if test -r "${HOME}/.usbmode"; then
-	source ${HOME}/.usbmode
-else
-	USB_MODE="mtp"
-fi
-echo "Loading USB ${USB_MODE} default gadget" >> "${LOGS}"
-usb-mode ${USB_MODE} main 2>&1 | tee -a "${LOGS}"
-export USB_MODE
-if test "x${DEBUG_UMTPR}" == "xyes"; then
-	umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
-else
-	umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting so logging here to /dev/null
-fi
+if (!(grep -sq USB_OTG\=\0 "${HOME}/options.cfg")); then
+	modprobe sunxi 2>&1 | tee -a "${LOGS}"
+	modprobe usb_f_fs 2>&1 | tee -a "${LOGS}"
+	if test -r "${HOME}/.usbmode"; then
+		source ${HOME}/.usbmode
+	else
+		USB_MODE="mtp"
+	fi
+	echo "Loading USB ${USB_MODE} default gadget" >> "${LOGS}"
+	usb-mode ${USB_MODE} main 2>&1 | tee -a "${LOGS}"
+	export USB_MODE
+	if test "x${DEBUG_UMTPR}" == "xyes"; then
+		umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
+	else
+		umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting so logging here to /dev/null
+	fi
 
-sleep 1
-ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
-echo "Current UDC list=$(cat /sys/kernel/config/usb_gadget/g2/UDC)" >> "${LOGS}"
+	sleep 1
+	ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
+	echo "Current UDC list=$(cat /sys/kernel/config/usb_gadget/g2/UDC)" >> "${LOGS}"
+fi
 
 echo "Boot!" >> "${LOGS}"
 echo "Handheld type is ${CONSOLE_VARIANT}" >> "${LOGS}"
