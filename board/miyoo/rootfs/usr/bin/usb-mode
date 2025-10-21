@@ -2,10 +2,10 @@
 
 # ARGS
 USB_MODE="${1}" # mtp(default); hid; serial; net; host
-test "${2}" == "main" \
- && USB_MAIN=true \
- || USB_MAIN=false
-echo "USB main run status: ${USB_MAIN}"
+test -f /tmp/usbmode.active \
+ && USB_ACTIVE=true \
+ || USB_ACTIVE=false
+echo "USB active status: ${USB_ACTIVE}"
 
 # Global variables
 SYSDIR=/sys/kernel/config/usb_gadget
@@ -63,7 +63,7 @@ rm_gadget_func(){
 	echo "exiting Remove gadget process..."
 	return
 
-	# TODO: see why we need to disable below cmds for switching USB mode from HOST (main run) to other
+	# TODO: see why we need to disable below cmds for switching USB mode from HOST (firstrun) to other
 	echo "Removing functions"
 	for func in $DEVDIR/functions/*.*; do
 		[ -d $func ] && rmdir $func
@@ -176,11 +176,17 @@ usb_configs_func(){
 	fi
 }
 
+# load necessary kernel modules
+if ! ${USB_ACTIVE}; then
+	modprobe sunxi
+	modprobe usb_f_fs
+fi
+
 ### MTP/MTD (default) ###
 if test "${USB_MODE}" == "mtp"; then
 	echo "Starting USB-MTP mode"
-	if ! ${USB_MAIN}; then
-		rm_gadget_func # omit removing gadgets in main run
+	if ${USB_ACTIVE}; then
+		rm_gadget_func # omit removing gadgets in firstrun run
 		usb_mode_func peripheral
 	fi
 
@@ -190,7 +196,7 @@ if test "${USB_MODE}" == "mtp"; then
 		rm_gadget_func
 		usb_configs_func
 	fi
-	if ! ${USB_MAIN}; then
+	if ${USB_ACTIVE}; then
 		if ! (pgrep "umtprd" || pgrep "umtprd-debug"); then
 			echo "Launching uMTP-Responder app for usb-mtp mode"
 			if (grep -q DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
@@ -210,7 +216,7 @@ if test "${USB_MODE}" == "mtp"; then
 ### HID ###
 elif test "${USB_MODE}" == "hid"; then
 	echo "Starting USB-HID mode"
-	if ! ${USB_MAIN}; then
+	if ${USB_ACTIVE}; then
 		rm_gadget_func
 		usb_mode_func peripheral
 	fi
@@ -220,7 +226,7 @@ elif test "${USB_MODE}" == "hid"; then
 	mount none /sys/kernel/config -t configfs
 	gadget-hid
 	usb_mode_func
-	if ! ${USB_MAIN}; then
+	if ${USB_ACTIVE}; then
 		st_exec_func "\
 			echo -e \"\e[32m\n\n\n\n\n\n               Starting USB-HID mode\e[0m\n\n\n\"; \
 			sleep 1; \
@@ -238,7 +244,7 @@ elif test "${USB_MODE}" == "hid"; then
 ### Serial Console ###
 elif test "${USB_MODE}" == "serial"; then
 	echo "Starting USB-Serial mode"
-	if ! ${USB_MAIN}; then
+	if ${USB_ACTIVE}; then
 		rm_gadget_func
 		usb_mode_func peripheral
 	fi
@@ -249,7 +255,7 @@ elif test "${USB_MODE}" == "serial"; then
 ### Networking ###
 elif test "${USB_MODE}" == "net"; then
 	echo "Starting USB-Network mode"
-	if ! ${USB_MAIN}; then
+	if ${USB_ACTIVE}; then
 		rm_gadget_func
 		usb_mode_func peripheral
 	fi
@@ -264,7 +270,7 @@ elif test "${USB_MODE}" == "net"; then
 ### Host ##
 elif test "${USB_MODE}" == "host"; then
 	echo "Starting USB in HOST state mode"
-	if ! ${USB_MAIN}; then
+	if ${USB_ACTIVE}; then
 		usb_mode_func host
 	else
 		usb_configs_func # run similary to serial
@@ -283,7 +289,7 @@ elif test "${USB_MODE}" == "host"; then
 	modprobe usbhid
 	modprobe hid-generic
 	modprobe hid
-	if ! ${USB_MAIN}; then
+	if ${USB_ACTIVE}; then
 		usb_mode_func
 	else
 		sleep 1
@@ -299,4 +305,5 @@ fi
 
 # Export envar & exit successfully app
 echo "USB_MODE=${USB_MODE}" > ${HOME}/.usbmode
+touch /tmp/usbmode.active
 echo "Finished USB ${USB_MODE} mode configuration..."
