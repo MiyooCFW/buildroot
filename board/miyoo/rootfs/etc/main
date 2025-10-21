@@ -171,10 +171,12 @@ if (!(grep -sq USB_OTG\=\0 "${HOME}/options.cfg")); then
 	echo "Loading USB ${USB_MODE} default gadget" >> "${LOGS}"
 	usb-mode ${USB_MODE} 2>&1 | tee -a "${LOGS}"
 	export USB_MODE
-	if test "x${DEBUG_UMTPR}" == "xyes"; then
-		umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
-	else
-		umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting so logging here to /dev/null
+	if test "${USB_MODE}" == "mtp"; then
+		if test "x${DEBUG_UMTPR}" == "xyes"; then
+			umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
+		else
+			umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting so logging here to /dev/null
+		fi
 	fi
 	echo "Current UDC list=$(cat /sys/kernel/config/usb_gadget/g2/UDC)" >> "${LOGS}"
 fi
@@ -218,8 +220,10 @@ do
 		else
 			./gmenu2x >> "${GMENU2X_LOGS}" 2>&1
 		fi
-		test -r "${BOOTDIR}/.usbmode"\
-		 && source ${HOME}/.usbmode
+		if (test -r "${HOME}/.usbmode" && !(grep -sq USB_OTG\=\0 "${HOME}/options.cfg")); then
+		 	source ${HOME}/.usbmode
+			export USB_MODE
+		fi
 		test "x${DEBUG_UMTPR}" == "xyes"\
 		 && restore_temp_log_func
 	fi
