@@ -178,7 +178,6 @@ if (!(grep -sq USB_OTG\=\0 "${HOME}/options.cfg")); then
 			umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting so logging here to /dev/null
 		fi
 	fi
-	echo "Current UDC list=$(cat /sys/kernel/config/usb_gadget/g2/UDC)" >> "${LOGS}"
 fi
 
 echo "Boot!" >> "${LOGS}"

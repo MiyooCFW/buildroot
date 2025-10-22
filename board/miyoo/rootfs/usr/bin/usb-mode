@@ -13,6 +13,7 @@ DEVDIR=$SYSDIR/g2
 MAC_HOST="12:34:56:78:9a:bd"
 MAC_DEV="12:34:56:78:9a:bc"
 USB_MODE_PATH="/sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode"
+UDC_GADGET=${DEVDIR}/UDC
 
 st_error_func(){
 	st -k -e "/bin/sh" "-c" "echo -e \"\e[31m${1}\e[0m\"; sleep 2"
@@ -76,6 +77,15 @@ rm_gadget_func(){
 
 	echo "Removing gadget"
 	rmdir $DEVDIR
+}
+
+udc_gadget_func(){
+	echo "Linking UDC in ${UDC_GADGET} to existing musb gadget"
+	while [ -z "$(cat ${UDC_GADGET})" ]
+	do
+		sleep 1
+		ls /sys/class/udc/ > ${UDC_GADGET}
+	done
 }
 
 rm_host_modules_func(){
@@ -208,9 +218,7 @@ if test "${USB_MODE}" == "mtp"; then
 			echo "uMTP-Responder in already running in bg for working MTP"
 		fi
 	fi
-	sleep 1
-	ls /sys/class/udc/ > ${DEVDIR}/UDC
-
+	udc_gadget_func
 	usb_mode_func
 
 ### HID ###
@@ -249,7 +257,7 @@ elif test "${USB_MODE}" == "serial"; then
 		usb_mode_func peripheral
 	fi
 	usb_configs_func
-	ls /sys/class/udc/ > ${DEVDIR}/UDC
+	udc_gadget_func
 	usb_mode_func
 
 ### Networking ###
@@ -262,7 +270,7 @@ elif test "${USB_MODE}" == "net"; then
 	modprobe usb_f_rndis
 	sleep 1
 	usb_configs_func
-	ls /sys/class/udc/ > ${DEVDIR}/UDC
+	udc_gadget_func
 	ifconfig usb0 up 192.168.137.1
 	sleep 10
 	/etc/init.d/S80dhcp-server restart
@@ -292,8 +300,7 @@ elif test "${USB_MODE}" == "host"; then
 	if ${USB_ACTIVE}; then
 		usb_mode_func
 	else
-		sleep 1
-		ls /sys/class/udc/ > ${DEVDIR}/UDC
+		udc_gadget_func
 		usb_mode_func host
 	fi
 
@@ -306,4 +313,10 @@ fi
 # Export envar & exit successfully app
 echo "USB_MODE=${USB_MODE}" > ${HOME}/.usbmode
 touch /tmp/usbmode.active
+if ! test -z "${UDC_GADGET}"; then
+	echo "UDC activated via ${UDC_GADGET}"
+else
+	echo "ERROR: Failed to bind usb gadget to UDC"
+	exit 1
+fi
 echo "Finished USB ${USB_MODE} mode configuration..."
