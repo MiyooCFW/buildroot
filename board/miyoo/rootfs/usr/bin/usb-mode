@@ -13,6 +13,7 @@ DEVDIR=$SYSDIR/g2
 MAC_HOST="12:34:56:78:9a:bd"
 MAC_DEV="12:34:56:78:9a:bc"
 USB_MODE_PATH="/sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode"
+USB_MODE_CFG=${HOME}/.usbmode
 UDC_GADGET=${DEVDIR}/UDC
 
 # Externall variables
@@ -39,7 +40,7 @@ rm_gadget_func(){
 		echo "Shutting existing umtprd-debug app"
 		killall umtprd-debug
 	fi
-	if (grep -q hid "${HOME}/.usbmode"); then
+	if (test -r "${USB_MODE_CFG}" && grep -q hid "${USB_MODE_CFG}"); then
 		echo "Removing gadget HID"
 		gadget-vid-pid-remove 0x1d6b:0x0104 # rm gadget-hid (g_multi) - idProduct serial,net
 	fi
@@ -88,7 +89,7 @@ udc_gadget_func(){
 	echo "Linking UDC in ${UDC_GADGET} to existing musb gadget"
 	while [ -z "$(cat ${UDC_GADGET})" ]
 	do
-		sleep 1
+		sleep 0.1
 		ls /sys/class/udc/ > ${UDC_GADGET}
 	done
 }
@@ -114,7 +115,7 @@ usb_mode_func(){
 	 || echo "Suggesting USB mode in ../musb-hdrc.1.auto/mode"
 	_usb_mode_="$(cat ${USB_MODE_PATH})"
 	echo "Current USB mode=${_usb_mode_}"
-	if (grep -Eq 'host|wait_vrise|wait_bcon' "${USB_MODE_PATH}" || grep -q host "${HOME}/.usbmode" && ! test -z "${1}"); then
+	if (grep -Eq 'host|wait_vrise|wait_bcon' "${USB_MODE_PATH}" || (test -r "${USB_MODE_CFG}" && grep -q host "${USB_MODE_CFG}") && ! test -z "${1}"); then
 		rm_host_modules_func
 	fi
 	test -z "${1}" \
@@ -207,7 +208,7 @@ if test "${USB_MODE}" == "mtp"; then
 
 	usb_configs_func
 	# TODO: see why we need to perform MTP setup twice if switching from host mode
-	if (grep -Eq 'host|wait_vrise|wait_bcon' "${USB_MODE_PATH}" || grep -q host "${HOME}/.usbmode"); then
+	if (grep -Eq 'host|wait_vrise|wait_bcon' "${USB_MODE_PATH}" || (test -r "${USB_MODE_CFG}" && grep -q host "${USB_MODE_CFG}")); then
 		rm_gadget_func
 		usb_configs_func
 	fi
@@ -222,6 +223,7 @@ if test "${USB_MODE}" == "mtp"; then
 	else
 		echo "uMTP-Responder in already running in bg for working MTP"
 	fi
+	sleep 1
 	udc_gadget_func
 	usb_mode_func
 
@@ -249,7 +251,7 @@ elif test "${USB_MODE}" == "hid"; then
 		echo -e "\e[32m\n\n     Press RESET after 5s to exit...\e[0m" &>$(tty)
 		python /usr/bin/usb-hid.py
 	fi
-	modprobe -r usb_f_hid
+	modprobe -r usb_f_hid # does't unload, cuz it's binded to libcomposite with other usb_f* modules
 	modprobe -r evdev
 	modprobe -r uinput
 
@@ -304,6 +306,7 @@ elif test "${USB_MODE}" == "host"; then
 	if ${USB_ACTIVE}; then
 		usb_mode_func
 	else
+		sleep 1
 		udc_gadget_func
 		usb_mode_func host
 	fi
@@ -315,7 +318,7 @@ else
 fi
 
 # Export envar & exit successfully app
-echo "USB_MODE=${USB_MODE}" > ${HOME}/.usbmode
+echo "USB_MODE=${USB_MODE}" > ${USB_MODE_CFG}
 touch /tmp/usbmode.active
 if ! test -z "${UDC_GADGET}"; then
 	echo "UDC activated via ${UDC_GADGET}"
