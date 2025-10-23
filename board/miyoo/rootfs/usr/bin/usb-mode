@@ -15,6 +15,11 @@ MAC_DEV="12:34:56:78:9a:bc"
 USB_MODE_PATH="/sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode"
 UDC_GADGET=${DEVDIR}/UDC
 
+# Externall variables
+test -z "${LOGS_TEMP}" && LOGS_TEMP=/dev/null
+test -z "${UMTPR_LOGS}" && UMTPR_LOGS=/dev/null
+#test "x${DEBUG_UMTPR}" == "xyes" && echo "Debugging umtprd mode is active"
+
 st_error_func(){
 	st -k -e "/bin/sh" "-c" "echo -e \"\e[31m${1}\e[0m\"; sleep 2"
 }
@@ -206,17 +211,16 @@ if test "${USB_MODE}" == "mtp"; then
 		rm_gadget_func
 		usb_configs_func
 	fi
-	if ${USB_ACTIVE}; then
-		if ! (pgrep "umtprd" || pgrep "umtprd-debug"); then
-			echo "Launching uMTP-Responder app for usb-mtp mode"
-			if (grep -q DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
-				umtprd-debug &
-			else
-				umtprd &
-			fi
+	if ! (pgrep "umtprd" || pgrep "umtprd-debug"); then
+		echo "Launching uMTP-Responder app for usb-mtp mode"
+		if test "x${DEBUG_UMTPR}" == "xyes" ; then
+			echo "Starting umtprd in debug mode"
+			umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
 		else
-			echo "uMTP-Responder in already running in bg for working MTP"
+			umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's bg process the stdout/err is constantly active, may brake cmds in upper shell (like mounting) so logging here to /dev/null
 		fi
+	else
+		echo "uMTP-Responder in already running in bg for working MTP"
 	fi
 	udc_gadget_func
 	usb_mode_func

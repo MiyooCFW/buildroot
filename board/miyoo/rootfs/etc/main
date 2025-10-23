@@ -32,9 +32,9 @@ if test "x${DEBUG_MSG}" == "xyes" || test "x${DEBUG_GMENU2X}" == "xyes" || test 
 	LOGS_TEMP=$(mktemp)
 fi
 
-export LOGS # so that subshells can use this as well
-export LOGS_TEMP
-export GMENU2X_LOGS
+export LOGS LOGS_TEMP # so that subshells can use this as well
+export UMTPR_LOGS GMENU2X_LOGS
+export DEBUG_MSG DEBUG_UMTPR DEBUG_GMENU2X
 
 if test "x${DEBUG_MSG}" == "xyes"; then
 	echo -e "\e[0m"    # normal foreground color
@@ -50,6 +50,7 @@ restore_temp_log_func(){
 		cat ${LOGS_TEMP} >> ${LOGS}
 	fi
 	LOGS_TEMP=$(mktemp)
+	export LOGS_TEMP
 }
 
 ! test -r "${HOME}/options.cfg"\
@@ -166,18 +167,11 @@ if (!(grep -sq USB_OTG\=\0 "${HOME}/options.cfg")); then
 	if test -r "${HOME}/.usbmode"; then
 		source ${HOME}/.usbmode
 	else
-		USB_MODE="mtp"
+		USB_MODE="mtp" # default setup
 	fi
 	echo "Loading USB ${USB_MODE} default gadget" >> "${LOGS}"
 	usb-mode ${USB_MODE} 2>&1 | tee -a "${LOGS}"
 	export USB_MODE
-	if test "${USB_MODE}" == "mtp"; then
-		if test "x${DEBUG_UMTPR}" == "xyes"; then
-			umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
-		else
-			umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting so logging here to /dev/null
-		fi
-	fi
 fi
 
 echo "Boot!" >> "${LOGS}"
