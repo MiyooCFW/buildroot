@@ -28,7 +28,7 @@ if (grep -sq DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
 	UMTPR_LOGS="${HOME}/log_umtpr.txt"
 fi
 
-if test "x${DEBUG_MSG}" == "xyes" || test "x${DEBUG_GMENU2X}" == "xyes" || test "x${DEBUG_UMTPR}" == "xyes"; then
+if test "x${DEBUG_MSG}" == "xyes" || test "x${DEBUG_GMENU2X}" == "xyes"; then
 	LOGS_TEMP=$(mktemp)
 fi
 
@@ -44,11 +44,7 @@ else
 fi
 
 restore_temp_log_func(){
-	if test "x${DEBUG_UMTPR}" == "xyes"; then
-		cat ${LOGS_TEMP} >> ${UMTPR_LOGS}
-	else
-		cat ${LOGS_TEMP} >> ${LOGS}
-	fi
+	cat ${LOGS_TEMP} >> ${LOGS}
 	LOGS_TEMP=$(mktemp)
 	export LOGS_TEMP
 }
@@ -217,7 +213,7 @@ do
 		 	source ${HOME}/.usbmode
 			export USB_MODE
 		fi
-		test "x${DEBUG_UMTPR}" == "xyes"\
+		test "x${DEBUG_MSG}" == "xyes"\
 		 && restore_temp_log_func
 	fi
 	clear

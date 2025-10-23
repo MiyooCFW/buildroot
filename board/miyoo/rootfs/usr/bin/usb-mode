@@ -215,7 +215,7 @@ if test "${USB_MODE}" == "mtp"; then
 		echo "Launching uMTP-Responder app for usb-mtp mode"
 		if test "x${DEBUG_UMTPR}" == "xyes" ; then
 			echo "Starting umtprd in debug mode"
-			umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
+			umtprd-debug >> "${UMTPR_LOGS}" 2>&1 &
 		else
 			umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's bg process the stdout/err is constantly active, may brake cmds in upper shell (like mounting) so logging here to /dev/null
 		fi
