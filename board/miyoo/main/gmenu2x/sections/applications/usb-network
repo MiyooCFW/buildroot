@@ -1,4 +1,0 @@
-title=USB Network
-description=IP:192.168.137.1
-exec=/usr/bin/usb-mode
-params=net

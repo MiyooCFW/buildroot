@@ -28,13 +28,13 @@ if (grep -sq DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
 	UMTPR_LOGS="${HOME}/log_umtpr.txt"
 fi
 
-if test "x${DEBUG_MSG}" == "xyes" || test "x${DEBUG_GMENU2X}" == "xyes" || test "x${DEBUG_UMTPR}" == "xyes"; then
+if test "x${DEBUG_MSG}" == "xyes" || test "x${DEBUG_GMENU2X}" == "xyes"; then
 	LOGS_TEMP=$(mktemp)
 fi
 
-export LOGS # so that subshells can use this as well
-export LOGS_TEMP
-export GMENU2X_LOGS
+export LOGS LOGS_TEMP # so that subshells can use this as well
+export UMTPR_LOGS GMENU2X_LOGS
+export DEBUG_MSG DEBUG_UMTPR DEBUG_GMENU2X
 
 if test "x${DEBUG_MSG}" == "xyes"; then
 	echo -e "\e[0m"    # normal foreground color
@@ -44,12 +44,9 @@ else
 fi
 
 restore_temp_log_func(){
-	if test "x${DEBUG_UMTPR}" == "xyes"; then
-		cat ${LOGS_TEMP} >> ${UMTPR_LOGS}
-	else
-		cat ${LOGS_TEMP} >> ${LOGS}
-	fi
+	cat ${LOGS_TEMP} >> ${LOGS}
 	LOGS_TEMP=$(mktemp)
+	export LOGS_TEMP
 }
 
 ! test -r "${HOME}/options.cfg"\
@@ -82,11 +79,11 @@ if test -r "${HOME}/tvout"; then
 	echo 1 > /sys/class/vtconsole/vtcon1/bind
 	modprobe -r $video 2>&1 | tee -a "${LOGS}"
 else
-	if ((test -r "${HOME}/.backlight.bak")); then
+	if (test -r "${HOME}/.backlight.bak"); then
 		mv ${HOME}/.backlight.bak ${HOME}/.backlight.conf
 	fi
 	# MODULES_CUSTOM scripting
-	if (!(test -r "${BOOTDIR}/modules.custom.sh") || !(grep -sq MODULES_CUSTOM\=\1 "${HOME}/options.cfg")); then
+	if ( ! (test -r "${BOOTDIR}/modules.custom.sh") || ! (grep -sq MODULES_CUSTOM\=\1 "${HOME}/options.cfg")); then
 		# Load video module read from uEnv.txt & defined by variant in console.cfg
 		#FLIP & INVERT options.cfg setting
 		flip=$(grep -o FLIP=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
@@ -117,7 +114,7 @@ elif test -r "${HOME}/firstboot.completed"; then
 	rm "${HOME}/firstboot.completed"
 fi
 
-if !(grep -sq FS_CHECK\=\0 "${HOME}/options.cfg"); then
+if ! (grep -sq FS_CHECK\=\0 "${HOME}/options.cfg"); then
 ##Check if BOOT (FAT16) is flagged as "dirty", and if so unmount, repair, remount
 	if dmesg | grep "mmcblk0p1" > /dev/null;  then
 		echo -e "\e[31mDirty sectors detected.\e[0m" | tee -a "${LOGS}"
@@ -162,18 +159,16 @@ else
 fi
 
 # load usb modules & gadget
-modprobe sunxi 2>&1 | tee -a "${LOGS}"
-echo "Loading USB default MTP gadget" >> "${LOGS}"
-usb-mode 2>&1 | tee -a "${LOGS}"
-if test "x${DEBUG_UMTPR}" == "xyes"; then
-	umtprd-debug >> "${LOGS_TEMP}" 2>&1 &
-else
-	umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's running in bg the stdout/stderr redirecction is constantly active, may brake unmounting so logging here to /dev/null
+if ! (grep -sq USB_OTG\=\0 "${HOME}/options.cfg"); then
+	if test -r "${HOME}/.usbmode"; then
+		source ${HOME}/.usbmode
+	else
+		USB_MODE="mtp" # default setup
+	fi
+	echo "Loading USB ${USB_MODE} default gadget" >> "${LOGS}"
+	usb-mode ${USB_MODE} 2>&1 | tee -a "${LOGS}"
+	export USB_MODE
 fi
-
-sleep 1
-ls /sys/class/udc/ > /sys/kernel/config/usb_gadget/g2/UDC
-echo "Current UDC list=$(cat /sys/kernel/config/usb_gadget/g2/UDC)" >> "${LOGS}"
 
 echo "Boot!" >> "${LOGS}"
 echo "Handheld type is ${CONSOLE_VARIANT}" >> "${LOGS}"
@@ -187,7 +182,7 @@ else
 fi
 
 # run boot logo animation
-if (!(grep -sq BOOT_LOGO\=\0 "${HOME}/options.cfg")); then
+if ! (grep -sq BOOT_LOGO\=\0 "${HOME}/options.cfg"); then
 	${BOOTLOGO} >> "${LOGS}" 2>&1
 fi
 
@@ -214,7 +209,11 @@ do
 		else
 			./gmenu2x >> "${GMENU2X_LOGS}" 2>&1
 		fi
-		test "x${DEBUG_UMTPR}" == "xyes"\
+		if (test -r "${HOME}/.usbmode" && ! (grep -sq USB_OTG\=\0 "${HOME}/options.cfg")); then
+		 	source ${HOME}/.usbmode
+			export USB_MODE
+		fi
+		test "x${DEBUG_MSG}" == "xyes"\
 		 && restore_temp_log_func
 	fi
 	clear

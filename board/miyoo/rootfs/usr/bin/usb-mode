@@ -1,14 +1,25 @@
 #!/bin/busybox sh
 
 # ARGS
-USB_MODE="${1}"
-MTP_APP="${2}"
+USB_MODE="${1}" # mtp(default); hid; serial; net; host
+test -f /tmp/usbmode.active \
+ && USB_ACTIVE=true \
+ || USB_ACTIVE=false
+echo "USB active status: ${USB_ACTIVE}"
 
 # Global variables
 SYSDIR=/sys/kernel/config/usb_gadget
 DEVDIR=$SYSDIR/g2
 MAC_HOST="12:34:56:78:9a:bd"
 MAC_DEV="12:34:56:78:9a:bc"
+USB_MODE_PATH="/sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode"
+USB_MODE_CFG=${HOME}/.usbmode
+UDC_GADGET=${DEVDIR}/UDC
+
+# Externall variables
+test -z "${LOGS_TEMP}" && LOGS_TEMP=/dev/null
+test -z "${UMTPR_LOGS}" && UMTPR_LOGS=/dev/null
+#test "x${DEBUG_UMTPR}" == "xyes" && echo "Debugging umtprd mode is active"
 
 st_error_func(){
 	st -k -e "/bin/sh" "-c" "echo -e \"\e[31m${1}\e[0m\"; sleep 2"
@@ -23,11 +34,16 @@ st_exec_func(){
 rm_gadget_func(){
 	echo "Removing old gadgets"
 	if pgrep "umtprd"; then
+		echo "Shutting existing umtprd app"
 		killall umtprd
 	elif pgrep "umtprd-debug"; then
+		echo "Shutting existing umtprd-debug app"
 		killall umtprd-debug
 	fi
-	gadget-vid-pid-remove 0x1d6b:0x0104 # simply rm gadget-hid (g_hid/g_multi?) as it isn't part of FunctionFS 
+	if (test -r "${USB_MODE_CFG}" && grep -q hid "${USB_MODE_CFG}"); then
+		echo "Removing gadget HID"
+		gadget-vid-pid-remove 0x1d6b:0x0104 # rm gadget-hid (g_multi) - idProduct serial,net
+	fi
 
 	if ! test -d $DEVDIR; then
 		echo "ERROR: couldn't find ${DEVDIR}"
@@ -51,6 +67,10 @@ rm_gadget_func(){
 		[ -d $conf ] && rmdir $conf
 	done
 
+	echo "exiting Remove gadget process..."
+	return
+
+	# TODO: see why we need to disable below cmds for switching USB mode from HOST (firstrun) to other
 	echo "Removing functions"
 	for func in $DEVDIR/functions/*.*; do
 		[ -d $func ] && rmdir $func
@@ -63,6 +83,15 @@ rm_gadget_func(){
 
 	echo "Removing gadget"
 	rmdir $DEVDIR
+}
+
+udc_gadget_func(){
+	echo "Linking UDC in ${UDC_GADGET} to existing musb gadget"
+	while [ -z "$(cat ${UDC_GADGET})" ]
+	do
+		sleep 0.1
+		ls /sys/class/udc/ > ${UDC_GADGET}
+	done
 }
 
 rm_host_modules_func(){
@@ -84,16 +113,15 @@ rm_host_modules_func(){
 usb_mode_func(){
 	test -z "${1}" \
 	 || echo "Suggesting USB mode in ../musb-hdrc.1.auto/mode"
-	_usb_mode_path_="/sys/devices/platform/soc/1c13000.usb/musb-hdrc.1.auto/mode"
-	_usb_mode_="$(cat ${_usb_mode_path_})"
+	_usb_mode_="$(cat ${USB_MODE_PATH})"
 	echo "Current USB mode=${_usb_mode_}"
-	if (grep -q host "${_usb_mode_path_}" && ! test -z "${1}"); then
+	if (grep -Eq 'host|wait_vrise|wait_bcon' "${USB_MODE_PATH}" || (test -r "${USB_MODE_CFG}" && grep -q host "${USB_MODE_CFG}") && ! test -z "${1}"); then
 		rm_host_modules_func
 	fi
 	test -z "${1}" \
-	 || echo "${1}" > ${_usb_mode_path_} # DOES THIS EVEN WORK?
+	 || echo "${1}" > ${USB_MODE_PATH} # DOES THIS EVEN WORK?
 	sleep 1
-	# _usb_mode_="$(cat ${_usb_mode_path_})"
+	# _usb_mode_="$(cat ${USB_MODE_PATH})"
 	# echo "NEW usb_mode=${_usb_mode_}"
 }
 
@@ -106,9 +134,9 @@ usb_configs_func(){
 		exit 1
 	fi
 	mkdir -p configs/c.1
-	if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
+	if test "${USB_MODE}" == "mtp"; then
 		mkdir -p functions/ffs.mtp # mtp
-	elif test "${USB_MODE}" == "serial"; then
+	elif test "${USB_MODE}" == "serial" || test "${USB_MODE}" == "host"; then
 		mkdir -p functions/acm.usb0 # serial
 	# else net
 	fi
@@ -117,7 +145,7 @@ usb_configs_func(){
 	if test "${USB_MODE}" == "net"; then
 		mkdir -p functions/rndis.usb0
 	fi
-	if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
+	if test "${USB_MODE}" == "mtp"; then
 		echo 0x0100 > idProduct # mtp gadget (ptp's extension)
 	else
 		echo 0x0104 > idProduct # serial,net (g_multi?), CDC ACM
@@ -138,18 +166,18 @@ usb_configs_func(){
 	fi
 	echo "Miyoo Handheld" > strings/0x409/manufacturer
 	echo "MiyooCFW 2.0" > strings/0x409/product
-	if test "${USB_MODE}" == "serial"; then
+	if test "${USB_MODE}" == "serial" || test "${USB_MODE}" == "host"; then
 		echo "deadbeef12345678" > strings/0x409/serialnumber
 	fi
 
 	echo "Conf 1" > configs/c.1/strings/0x409/configuration
 	echo 120 > configs/c.1/MaxPower
-	if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
+	if test "${USB_MODE}" == "mtp"; then
 		# mtp
 		ln -s functions/ffs.mtp configs/c.1
 		mkdir -p /dev/ffs-mtp
 		mount -t functionfs mtp /dev/ffs-mtp
-	elif test "${USB_MODE}" == "serial"; then
+	elif test "${USB_MODE}" == "serial" || test "${USB_MODE}" == "host"; then
 		# serial
 		ln -s functions/acm.usb0 configs/c.1
 	elif test "${USB_MODE}" == "net"; then
@@ -164,82 +192,103 @@ usb_configs_func(){
 	fi
 }
 
-### MTP/MTD (default)###
-if test "${USB_MODE}" == "mtp" || test -z $USB_MODE; then
-	echo "Starting USB-MTP mode"
-	test -z $USB_MODE \
-	 || usb_mode_func peripheral
+# load necessary kernel modules
+if ! ${USB_ACTIVE}; then
+	modprobe sunxi
 	modprobe usb_f_fs
-	if ! test -z $USB_MODE; then
-	# omit removing gadgets in default non-arg run
-		rm_gadget_func
+fi
+
+### MTP/MTD (default) ###
+if test "${USB_MODE}" == "mtp"; then
+	echo "Starting USB-MTP mode"
+	if ${USB_ACTIVE}; then
+		rm_gadget_func # omit removing gadgets in firstrun run
+		usb_mode_func peripheral
 	fi
 
 	usb_configs_func
-	if test "${MTP_APP}" == "umtprd"; then
-		echo "Launching uMTP-Responder app"
-		if (grep -q DEBUG_UMTPR\=\1 "${HOME}/options.cfg"); then
-			umtprd-debug &
+	# TODO: see why we need to perform MTP setup twice if switching from host mode
+	if (grep -Eq 'host|wait_vrise|wait_bcon' "${USB_MODE_PATH}" || (test -r "${USB_MODE_CFG}" && grep -q host "${USB_MODE_CFG}")); then
+		rm_gadget_func
+		usb_configs_func
+	fi
+	if ! (pgrep "umtprd" || pgrep "umtprd-debug"); then
+		echo "Launching uMTP-Responder app for usb-mtp mode"
+		if test "x${DEBUG_UMTPR}" == "xyes" ; then
+			echo "Starting umtprd in debug mode"
+			umtprd-debug >> "${UMTPR_LOGS}" 2>&1 &
 		else
-			umtprd &
+			umtprd >> ${UMTPR_LOGS} 2>&1 & # since it's bg process the stdout/err is constantly active, may brake cmds in upper shell (like mounting) so logging here to /dev/null
 		fi
+	else
+		echo "uMTP-Responder in already running in bg for working MTP"
 	fi
 	sleep 1
-	ls /sys/class/udc/ > ${DEVDIR}/UDC
-	
+	udc_gadget_func
 	usb_mode_func
-	sleep 1
-fi
 
 ### HID ###
-if test "${USB_MODE}" == "hid"; then
+elif test "${USB_MODE}" == "hid"; then
 	echo "Starting USB-HID mode"
-	usb_mode_func peripheral
-	rm_gadget_func
+	if ${USB_ACTIVE}; then
+		rm_gadget_func
+		usb_mode_func peripheral
+	fi
 	modprobe usb_f_hid
 	modprobe evdev
 	modprobe uinput
 	mount none /sys/kernel/config -t configfs
 	gadget-hid
 	usb_mode_func
-	st_exec_func "\
-		echo -e \"\e[32m\n\n\n\n\n\n               Starting USB-HID mode\e[0m\n\n\n\"; \
-		sleep 1; \
-		python /usr/bin/usb-hid.py"
-	modprobe -r usb_f_hid
+	if ${USB_ACTIVE}; then
+		st_exec_func "\
+			echo -e \"\e[32m\n\n\n\n\n\n               Starting USB-HID mode\e[0m\n\n\n\"; \
+			sleep 1; \
+			python /usr/bin/usb-hid.py"
+	else
+		echo -e "\e[32m\n\n\n\n\n\n        Starting USB-HID mode\e[0m\n\n\n" &>$(tty)
+		sleep 1
+		echo -e "\e[32m\n\n     Press RESET after 5s to exit...\e[0m" &>$(tty)
+		python /usr/bin/usb-hid.py
+	fi
+	modprobe -r usb_f_hid # does't unload, cuz it's binded to libcomposite with other usb_f* modules
 	modprobe -r evdev
 	modprobe -r uinput
-fi
 
 ### Serial Console ###
-if test "${USB_MODE}" == "serial"; then
+elif test "${USB_MODE}" == "serial"; then
 	echo "Starting USB-Serial mode"
-	usb_mode_func peripheral
-	rm_gadget_func
+	if ${USB_ACTIVE}; then
+		rm_gadget_func
+		usb_mode_func peripheral
+	fi
 	usb_configs_func
-	sleep 1
-	ls /sys/class/udc/ > ${DEVDIR}/UDC
+	udc_gadget_func
 	usb_mode_func
-fi
 
 ### Networking ###
-if test "${USB_MODE}" == "net"; then
-	st_info_func "Starting USB-Network mode"
-	rm_gadget_func
+elif test "${USB_MODE}" == "net"; then
+	echo "Starting USB-Network mode"
+	if ${USB_ACTIVE}; then
+		rm_gadget_func
+		usb_mode_func peripheral
+	fi
 	modprobe usb_f_rndis
 	sleep 1
 	usb_configs_func
-	sleep 1
-	ls /sys/class/udc/ > ${DEVDIR}/UDC
+	udc_gadget_func
 	ifconfig usb0 up 192.168.137.1
 	sleep 10
 	/etc/init.d/S80dhcp-server restart
-fi
 
 ### Host ##
-if test "${USB_MODE}" == "host"; then
+elif test "${USB_MODE}" == "host"; then
 	echo "Starting USB in HOST state mode"
-	usb_mode_func host
+	if ${USB_ACTIVE}; then
+		usb_mode_func host
+	else
+		usb_configs_func # run similary to serial
+	fi
 	sleep 2
 
 	modprobe evdev
@@ -254,7 +303,27 @@ if test "${USB_MODE}" == "host"; then
 	modprobe usbhid
 	modprobe hid-generic
 	modprobe hid
-	usb_mode_func
+	if ${USB_ACTIVE}; then
+		usb_mode_func
+	else
+		sleep 1
+		udc_gadget_func
+		usb_mode_func host
+	fi
+
+### UNKNOWN ##
+else
+	echo "ERROR: Unknown USB_MODE=${USB_MODE} in 1st arg"
+	exit 1
 fi
 
-echo "Exiting USB mode configuration..."
+# Export envar & exit successfully app
+echo "USB_MODE=${USB_MODE}" > ${USB_MODE_CFG}
+touch /tmp/usbmode.active
+if ! test -z "${UDC_GADGET}"; then
+	echo "UDC activated via ${UDC_GADGET}"
+else
+	echo "ERROR: Failed to bind usb gadget to UDC"
+	exit 1
+fi
+echo "Finished USB ${USB_MODE} mode configuration..."

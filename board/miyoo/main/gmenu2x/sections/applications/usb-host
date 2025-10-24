@@ -1,4 +1,0 @@
-title=USB Host
-description=USB Host mode
-exec=/usr/bin/usb-mode
-params=host

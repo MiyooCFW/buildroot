@@ -1,4 +1,0 @@
-title=USB serial console
-description=USB Serial console
-exec=/usr/bin/usb-mode
-params=serial
