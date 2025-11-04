@@ -102,16 +102,17 @@ fi
 export TVOUT
 
 # Load sound modules
-
 if cmdline=$(cat /proc/cmdline 2>/dev/null | tee -a "${LOGS}"); then
 	snd_val=$(echo "$cmdline" | sed -n 's/.*miyoo\.miyoo_snd=\([0-9]\+\).*/\1/p')
+	test -z "$snd_val" && snd_val=1 # default to 1 from kernel, otherwise module fails to load
 	tvjack_val=$(echo "$cmdline" | sed -n 's/.*miyoo\.miyoo_tvjack=\([0-9]\+\).*/\1/p')
+	test -z "$tvjack_val" && tvjack_val=0 # default to 0 from kernel, otherwise module fails to load
 	echo "Loding sound module miyoo with args miyoo_snd=${snd_val} miyoo_tvjack=${tvjack_val} " >> "${LOGS}"
+	modprobe miyoo miyoo_snd="$snd_val" miyoo_tvjack="$tvjack_val" 2>&1 | tee -a "${LOGS}"
 else
 	echo "Couldn't read /proc/cmdline, loading miyoo_snd with default args"
+	modprobe miyoo 2>&1 | tee -a "${LOGS}"
 fi
-
-modprobe miyoo miyoo_snd="$snd_val" miyoo_tvjack="$tvjack_val" 2>&1 | tee -a "${LOGS}"
 
 # check if it's first boot and defer to the firstboot script if yes
 if grep -sq FIRSTBOOT\=\1 "${HOME}/options.cfg"; then
