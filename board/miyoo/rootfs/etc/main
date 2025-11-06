@@ -66,7 +66,10 @@ test -r "${HOME}/.backlight.conf" \
 
 # TVout scripting backend
 TVOUT="OFF"
-if test -r "${HOME}/tvout"; then
+test -r "${HOME}/.tvmode" \
+	|| echo "0" > ${HOME}/.tvmode #default is OFF thus "0" (NTSC=1, PAL!=1)
+tvmode=$(cat ${HOME}/.tvmode)
+if test $tvmode -ne 0 || test -z "$tvmode" ; then
 	TVOUT="ON"
 	echo "Starting TVout video." >> "${LOGS}"
 	echo 0 > /sys/class/backlight/backlight/brightness
@@ -75,19 +78,15 @@ if test -r "${HOME}/tvout"; then
 		cp ${HOME}/.backlight.conf ${HOME}/.backlight.bak 2>&1 | tee -a "${LOGS}"
 	fi
 	echo 0 > ${HOME}/.backlight.conf
-	#TVMODE PAL/NTSC setting 
-	test -r "${HOME}/.tvmode" \
-	 || echo "0" > ${HOME}/.tvmode #default is NTSC thus "0"
-	tvmode=$(cat ${HOME}/.tvmode)
 	echo "Loding TV module miyoo-tvout with args tvmode=${tvmode}" >> "${LOGS}"
 	modprobe miyoo-tvout $tvmode 2>&1 | tee -a "${LOGS}"
 	echo 1 > /sys/class/vtconsole/vtcon1/bind
 else
-	if (test -r "${HOME}/.backlight.bak"); then
+	if test -r "${HOME}/.backlight.bak"; then
 		mv ${HOME}/.backlight.bak ${HOME}/.backlight.conf
 	fi
 	# MODULES_CUSTOM scripting
-	if ( ! (test -r "${BOOTDIR}/modules.custom.sh") || ! (grep -sq MODULES_CUSTOM\=\1 "${HOME}/options.cfg")); then
+	if ( ! test -r "${BOOTDIR}/modules.custom.sh" || ! grep -sq MODULES_CUSTOM\=\1 "${HOME}/options.cfg"); then
 		# Load video module read from uEnv.txt & defined by variant in console.cfg
 		#FLIP & INVERT options.cfg setting
 		flip=$(grep -o FLIP=[0-1] "${HOME}/options.cfg" | tr '[:upper:]' '[:lower:]')
