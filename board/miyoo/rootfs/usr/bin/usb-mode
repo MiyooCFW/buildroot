@@ -116,7 +116,8 @@ usb_mode_func(){
 	_usb_mode_="$(cat ${USB_MODE_PATH})"
 	echo "Current USB mode=${_usb_mode_}"
 	if (grep -Eq 'host|wait_vrise|wait_bcon' "${USB_MODE_PATH}" || (test -r "${USB_MODE_CFG}" && grep -q host "${USB_MODE_CFG}") && ! test -z "${1}"); then
-		rm_host_modules_func
+		test ${USB_ACTIVE} == true \
+		 && rm_host_modules_func
 	fi
 	test -z "${1}" \
 	 || echo "${1}" > ${USB_MODE_PATH} # DOES THIS EVEN WORK?
