@@ -121,8 +121,9 @@ console_var_func(){
 	if (test -r "${CONSOLE_CFG}"); then
 		source "${CONSOLE_CFG}"
 	else 
-		export CONSOLE_VARIANT="unknown"
+		CONSOLE_VARIANT="unknown"
 	fi
+	export CONSOLE_VARIANT
 }
 
 detect_console_func(){

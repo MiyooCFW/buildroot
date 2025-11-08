@@ -167,8 +167,9 @@ clear
 if test -r "${BOOTDIR}/console.cfg"; then
 	source "${BOOTDIR}/console.cfg"
 else
-	export CONSOLE_VARIANT="unknown"
+	CONSOLE_VARIANT="unknown"
 fi
+export CONSOLE_VARIANT
 
 # load usb modules & gadget
 if ! (grep -sq USB_OTG\=\0 "${OPTIONS_CFG}"); then
