@@ -218,7 +218,7 @@ do
 		echo "Starting GMenu2x" >> "${LOGS}"
 		cd "${HOME}"/gmenu2x || { echo "Failed to cd into ${HOME}/gmenu2x" >> "${LOGS}" ; exit; }
 		if test "x${DEBUG_GMENU2X}" == "xyes"; then
-			gdb -ex="set confirm off" -ex=run -ex="bt full" -ex=q ./gmenu2x-debug >> "${GMENU2X_LOGS}" 2>&1
+			gdb -ex="set confirm off" -ex=run -ex="bt full" -ex=q ./gmenu2x-debug 2>&1 | tee -a "${GMENU2X_LOGS}"
 		else
 			./gmenu2x >> "${GMENU2X_LOGS}" 2>&1
 		fi
