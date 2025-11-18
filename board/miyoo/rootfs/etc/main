@@ -74,10 +74,16 @@ if ! $FRONTEND_ACTIVE; then
 	# TVout scripting backend
 	TVOUT="OFF"
 	test -r "${HOME}/.tvmode" \
-		|| echo "0" > ${HOME}/.tvmode #default is OFF thus "0" (NTSC=1, PAL!=1)
+		|| echo "0" > ${HOME}/.tvmode #default is OFF thus "0" this is inline with frontend (NTSC!=1, PAL=1 - in kernel) 
 	tvmode=$(cat ${HOME}/.tvmode)
-	if test $tvmode -ne 0 || test -z "$tvmode" ; then
-		TVOUT="ON"
+	if test $tvmode -ne 0 && ! test -z "$tvmode" \
+		&& ! grep -sq TV_OUT\=\0 "${OPTIONS_CFG}" || grep -sq TV_OUT\=\1 "${OPTIONS_CFG}" #ovewrite TV_OUT from options
+		then
+		if (grep -sq TV_OUT\=\0 "${OPTIONS_CFG}" || grep -sq TV_OUT\=\1 "${OPTIONS_CFG}"); then
+			unset TVOUT #since we have no real idea what video backend should be running
+		else
+			TVOUT="ON"
+		fi
 		echo "Starting TVout video." >> "${LOGS}"
 		echo 0 > /sys/class/backlight/backlight/brightness 2>>"$LOGS"
 		echo 0 > /sys/class/vtconsole/vtcon1/bind 2>>"$LOGS"
@@ -86,8 +92,8 @@ if ! $FRONTEND_ACTIVE; then
 		fi
 		echo 0 > ${HOME}/.backlight.conf
 		echo "Loading TV module miyoo-tvout with args tvmode=${tvmode}" >> "${LOGS}"
-		if (modprobe miyoo-tvout $tvmode 2>&1 | tee -a "${LOGS}"); then
-			echo "Loaded TV-out with tvmode=${tvmode}"
+		if (modprobe miyoo-tvout $tvmode >> "${LOGS}" 2>&1); then
+			echo "Loaded TV-out with tvmode=${tvmode}" | tee -a "${LOGS}"
 		fi
 		echo 1 > /sys/class/vtconsole/vtcon1/bind 2>>"$LOGS"
 	else
@@ -101,8 +107,8 @@ if ! $FRONTEND_ACTIVE; then
 			flip=$(grep -o FLIP=[0-1] "${OPTIONS_CFG}" | tr '[:upper:]' '[:lower:]')
 			invert=$(grep -o INVERT=[0-1] "${OPTIONS_CFG}" | tr '[:upper:]' '[:lower:]')
 			echo "Loading video module ${video} with args flip=${flip} invert=${invert}" >> "${LOGS}"
-			if (modprobe $video $flip $invert 2>&1 | tee -a "${LOGS}"); then
-				echo "Loaded video with flip=${flip} invert=${invert}"
+			if (modprobe $video $flip $invert >> "${LOGS}" 2>&1); then
+				echo "Loaded video with flip=${flip} invert=${invert}" | tee -a "${LOGS}"
 			fi
 		else
 			echo "Loading custom modules." | tee -a "${LOGS}"
