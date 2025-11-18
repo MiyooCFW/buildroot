@@ -48,7 +48,6 @@ export DEBUG_MSG DEBUG_UMTPR DEBUG_GMENU2X
 
 if test "x${DEBUG_MSG}" == "xyes"; then
 	echo -e "\e[0m"    # normal foreground color
-	export DEBUG_MSG   # set it globally for further programs
 else
 	echo -e "\e[30m"   # black foreground color
 fi
@@ -80,15 +79,17 @@ if ! $FRONTEND_ACTIVE; then
 	if test $tvmode -ne 0 || test -z "$tvmode" ; then
 		TVOUT="ON"
 		echo "Starting TVout video." >> "${LOGS}"
-		echo 0 > /sys/class/backlight/backlight/brightness
-		echo 0 > /sys/class/vtconsole/vtcon1/bind
+		echo 0 > /sys/class/backlight/backlight/brightness 2>>"$LOGS"
+		echo 0 > /sys/class/vtconsole/vtcon1/bind 2>>"$LOGS"
 		if test $BACKLIGHT -ne 0; then
 			cp ${HOME}/.backlight.conf ${HOME}/.backlight.bak 2>&1 | tee -a "${LOGS}"
 		fi
 		echo 0 > ${HOME}/.backlight.conf
-		echo "Loding TV module miyoo-tvout with args tvmode=${tvmode}" >> "${LOGS}"
-		modprobe miyoo-tvout $tvmode 2>&1 | tee -a "${LOGS}"
-		echo 1 > /sys/class/vtconsole/vtcon1/bind
+		echo "Loading TV module miyoo-tvout with args tvmode=${tvmode}" >> "${LOGS}"
+		if (modprobe miyoo-tvout $tvmode 2>&1 | tee -a "${LOGS}"); then
+			echo "Loaded TV-out with tvmode=${tvmode}"
+		fi
+		echo 1 > /sys/class/vtconsole/vtcon1/bind 2>>"$LOGS"
 	else
 		if test -r "${HOME}/.backlight.bak"; then
 			mv ${HOME}/.backlight.bak ${HOME}/.backlight.conf
@@ -99,10 +100,12 @@ if ! $FRONTEND_ACTIVE; then
 			#FLIP & INVERT options.cfg setting
 			flip=$(grep -o FLIP=[0-1] "${OPTIONS_CFG}" | tr '[:upper:]' '[:lower:]')
 			invert=$(grep -o INVERT=[0-1] "${OPTIONS_CFG}" | tr '[:upper:]' '[:lower:]')
-			echo "Loding video module ${video} with args flip=${flip} invert=${invert}" >> "${LOGS}"
-			modprobe $video $flip $invert 2>&1 | tee -a "${LOGS}"
+			echo "Loading video module ${video} with args flip=${flip} invert=${invert}" >> "${LOGS}"
+			if (modprobe $video $flip $invert 2>&1 | tee -a "${LOGS}"); then
+				echo "Loaded video with flip=${flip} invert=${invert}"
+			fi
 		else
-			echo "Loding custom modules." >> "${LOGS}"
+			echo "Loading custom modules." | tee -a "${LOGS}"
 			(cd "${BOOTDIR}" && sh modules.custom.sh ) >> "${LOGS}" 2>&1
 		fi
 	fi
@@ -114,10 +117,10 @@ if ! $FRONTEND_ACTIVE; then
 		test -z "$snd_val" && snd_val=1 # default to 1 from kernel, otherwise module fails to load
 		tvjack_val=$(echo "$cmdline" | sed -n 's/.*miyoo\.miyoo_tvjack=\([0-9]\+\).*/\1/p')
 		test -z "$tvjack_val" && tvjack_val=0 # default to 0 from kernel, otherwise module fails to load
-		echo "Loding sound module miyoo with args miyoo_snd=${snd_val} miyoo_tvjack=${tvjack_val} " >> "${LOGS}"
+		echo "Loading sound module miyoo with args miyoo_snd=${snd_val} miyoo_tvjack=${tvjack_val} " | tee -a "${LOGS}"
 		modprobe miyoo miyoo_snd="$snd_val" miyoo_tvjack="$tvjack_val" 2>&1 | tee -a "${LOGS}"
 	else
-		echo "Couldn't read /proc/cmdline, loading miyoo_snd with default args"
+		echo "Couldn't read /proc/cmdline, loading miyoo_snd with default args" | tee -a "${LOGS}"
 		modprobe miyoo 2>&1 | tee -a "${LOGS}"
 	fi
 
@@ -169,7 +172,6 @@ if ! $FRONTEND_ACTIVE; then
 		fi
 	fi
 
-	clear
 	# try to read what handheld we're on
 	if test -r "${BOOTDIR}/console.cfg"; then
 		source "${BOOTDIR}/console.cfg"
@@ -185,13 +187,13 @@ if ! $FRONTEND_ACTIVE; then
 		else
 			USB_MODE="mtp" # default setup
 		fi
-		echo "Loading USB ${USB_MODE} default gadget" >> "${LOGS}"
+		echo "Loading USB ${USB_MODE} default gadget" | tee -a "${LOGS}"
 		usb-mode ${USB_MODE} 2>&1 | tee -a "${LOGS}"
 		export USB_MODE
 	fi
 
-	echo "Boot!" >> "${LOGS}"
-	echo "Handheld type is ${CONSOLE_VARIANT}" >> "${LOGS}"
+	echo "Boot!" | tee -a "${LOGS}"
+	echo "Handheld type is ${CONSOLE_VARIANT}" | tee -a "${LOGS}"
 
 	# run any custom commands ('daemon' expected to be run from there)
 	if test -r "${BOOTDIR}/normalboot.custom.sh" ; then
@@ -218,8 +220,9 @@ if ! $FRONTEND_ACTIVE; then
 	fi
 fi
 
+clear
 if test -f "${START}"; then
-	echo "Starting ${START} script." >> "${LOGS}"
+	echo "Starting ${START} script." | tee -a "${LOGS}"
 	source "${START}" >> "${LOGS}" 2>&1
 else
 	echo "Starting GMenu2x" >> "${LOGS}"
