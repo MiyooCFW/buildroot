@@ -72,17 +72,17 @@ if ! $FRONTEND_ACTIVE; then
 	&& BACKLIGHT=$(cat ${HOME}/.backlight.conf) 
 
 	# TVout scripting backend
-	TVOUT="OFF"
-	test -r "${HOME}/.tvmode" \
-		|| echo "0" > ${HOME}/.tvmode #default is OFF thus "0" this is inline with frontend (NTSC!=1, PAL=1 - in kernel) 
+	if ! test -r "${HOME}/.tvmode" || grep -sq TV_OUT\=\0 "${OPTIONS_CFG}"; then
+		echo "0" > ${HOME}/.tvmode #default is OFF thus "0" this is inline with frontend (NTSC!=1, PAL=1 - in kernel)
+	fi
 	tvmode=$(cat ${HOME}/.tvmode)
-	if test $tvmode -ne 0 && ! test -z "$tvmode" \
-		&& ! grep -sq TV_OUT\=\0 "${OPTIONS_CFG}" || grep -sq TV_OUT\=\1 "${OPTIONS_CFG}" #ovewrite TV_OUT from options
-		then
-		if (grep -sq TV_OUT\=\0 "${OPTIONS_CFG}" || grep -sq TV_OUT\=\1 "${OPTIONS_CFG}"); then
-			unset TVOUT #since we have no real idea what video backend should be running
-		else
-			TVOUT="ON"
+	if test $tvmode -eq 0 && grep -sq TV_OUT\=\1 "${OPTIONS_CFG}"; then
+		tvmode=1;
+	fi
+	if test $tvmode -ne 0 && ! test -z "$tvmode"; then
+		TVOUT="ON"
+		if grep -sq TV_OUT\=\0 "${OPTIONS_CFG}" || grep -sq TV_OUT\=\1 "${OPTIONS_CFG}"; then
+			unset TVOUT #since we have no real idea what video backend should be running when forcing TVout
 		fi
 		echo "Starting TVout video." >> "${LOGS}"
 		echo 0 > /sys/class/backlight/backlight/brightness 2>>"$LOGS"
@@ -97,6 +97,7 @@ if ! $FRONTEND_ACTIVE; then
 		fi
 		echo 1 > /sys/class/vtconsole/vtcon1/bind 2>>"$LOGS"
 	else
+		TVOUT="OFF"
 		if test -r "${HOME}/.backlight.bak"; then
 			mv ${HOME}/.backlight.bak ${HOME}/.backlight.conf
 		fi
