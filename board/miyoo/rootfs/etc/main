@@ -20,7 +20,7 @@ test -f /tmp/frontend.active \
 echo "FRONTEND active status: ${FRONTEND_ACTIVE}" >> ${LOGS}
 
 ! test -r "${OPTIONS_CFG}"\
- && echo "Did not find valid ${OPTIONS_CFG} file, using default configuration." >> ${LOGS}
+ && echo "Did not find valid ${OPTIONS_CFG} file, using default configuration." | tee -a "${LOGS}"
 
 # check if it's first boot and turn on messages if yes
 if (grep -sq DEBUG\=\1 "${OPTIONS_CFG}" || test -r "${BOOTDIR}/firstboot" || test -r "${HOME}/firstboot.completed" || grep -sq FIRSTBOOT\=\1 "${OPTIONS_CFG}"); then
@@ -179,28 +179,16 @@ if ! $FRONTEND_ACTIVE; then
 		fi
 	fi
 
-	# try to read what handheld we're on
-	if test -r "${BOOTDIR}/console.cfg"; then
-		source "${BOOTDIR}/console.cfg"
-	else
-		CONSOLE_VARIANT="unknown"
-	fi
-	export CONSOLE_VARIANT
+	# we could unmount /boot here but since it's read-only it doesn't hurt to leave it running
+	## umount /dev/mmcblk0p1
 
-	# load usb modules & gadget
-	if ! (grep -sq USB_OTG\=\0 "${OPTIONS_CFG}"); then
-		if test -r "${HOME}/.usbmode"; then
-			source ${HOME}/.usbmode
-		else
-			USB_MODE="mtp" # default setup
-		fi
-		echo "Loading USB ${USB_MODE} default gadget" | tee -a "${LOGS}"
-		usb-mode ${USB_MODE} 2>&1 | tee -a "${LOGS}"
-		export USB_MODE
+	# Writes dmesg after firstboot procedure or if DEBUG_MSG=yes + restor temp logs from fsck
+	if test "x${DEBUG_MSG}" == "xyes"; then
+		sleep 1
+		echo -en "\n\nNew DMESG log:\n" >> ${HOME}/dmesg.txt
+		dmesg >> ${HOME}/dmesg.txt
+		restore_temp_log_func
 	fi
-
-	echo "Boot!" | tee -a "${LOGS}"
-	echo "Handheld type is ${CONSOLE_VARIANT}" | tee -a "${LOGS}"
 
 	# run any custom commands ('daemon' expected to be run from there)
 	if test -r "${BOOTDIR}/normalboot.custom.sh" ; then
@@ -209,31 +197,59 @@ if ! $FRONTEND_ACTIVE; then
 		# at least run 'daemon'
 		daemon >> "${LOGS}" 2>&1
 	fi
+	echo "Boot!" | tee -a "${LOGS}"
+fi
 
-	# run boot logo animation
-	if ! (grep -sq BOOT_LOGO\=\0 "${OPTIONS_CFG}"); then
-		${BOOTLOGO} >> "${LOGS}" 2>&1
+# try to read if TVOUT is active
+if test -z "${TVOUT}"; then
+	if test -f /tmp/tvout.enabled; then
+		export TVOUT="ON"
+	elif test -f /tmp/tvout.disabled; then
+		export TVOUT="OFF"
+	else
+		echo "TVOUT module disabled, or with no hot-plugin detection" | tee -a "${LOGS}"
 	fi
+elif test "${TVOUT}" == "ON"; then
+	touch /tmp/tvout.enabled 2>&1 | tee -a "${LOGS}"
+	#echo "TVOUT module enabled" | tee -a "${LOGS}"
+elif test "${TVOUT}" == "OFF"; then
+	touch /tmp/tvout.disabled 2>&1 | tee -a "${LOGS}"
+	#echo "TVOUT module disabled" | tee -a "${LOGS}"
+fi
 
-	# we could unmount /boot here but since it's read-only it doesn't hurt to leave it running
-	## umount /dev/mmcblk0p1
+# try to read what handheld we're on
+if test -r "${BOOTDIR}/console.cfg"; then
+	source "${BOOTDIR}/console.cfg"
+else
+	CONSOLE_VARIANT="unknown"
+fi
+export CONSOLE_VARIANT
+echo "Handheld type is ${CONSOLE_VARIANT}" | tee -a "${LOGS}"
 
-	# Writes dmesg after firstboot procedure or if DEBUG_MSG=yes
-	if test "x${DEBUG_MSG}" == "xyes"; then
-		sleep 1
-		echo -en "\n\nNew DMESG log:\n" >> ${HOME}/dmesg.txt
-		dmesg >> ${HOME}/dmesg.txt
-		restore_temp_log_func
+# load usb modules & gadget
+if ! (grep -sq USB_OTG\=\0 "${OPTIONS_CFG}"); then
+	if test -r "${HOME}/.usbmode"; then
+		source ${HOME}/.usbmode
+	else
+		USB_MODE="mtp" # default setup
 	fi
+	echo "Loading USB ${USB_MODE} default gadget" | tee -a "${LOGS}"
+	usb-mode ${USB_MODE} 2>&1 | tee -a "${LOGS}"
+	export USB_MODE
+fi
+
+# run boot logo animation
+if ! (grep -sq BOOT_LOGO\=\0 "${OPTIONS_CFG}" || $FRONTEND_ACTIVE); then
+	${BOOTLOGO} 2>&1 | tee -a "${LOGS}"
 fi
 
 clear
 if test -f "${START}"; then
-	echo "Starting ${START} script." | tee -a "${LOGS}"
+	echo "Starting ${START} script." >> "${LOGS}"
 	source "${START}" >> "${LOGS}" 2>&1
 else
 	echo "Starting GMenu2x" >> "${LOGS}"
-	cd "${HOME}"/gmenu2x || { echo "Failed to cd into ${HOME}/gmenu2x" >> "${LOGS}" ; exit; }
+	cd "${HOME}"/gmenu2x || { echo -en "Failed to cd into ${HOME}/gmenu2x, no frontend to launch.\n\nPOWEROFF..." >> "${LOGS}" ; sync; poweroff; }
 	if test "x${DEBUG_GMENU2X}" == "xyes"; then
 		gdb -ex="set confirm off" -ex=run -ex="bt full" -ex=q ./gmenu2x-debug 2>&1 | tee -a "${GMENU2X_LOGS}"
 	else
