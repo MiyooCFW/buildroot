@@ -23,7 +23,6 @@ define LIBRETRO_POKEMINI_INSTALL_TARGET_CMDS
     mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/pokemini_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/pokemini_libretro.so
-	mkdir -p $(TARGET_DIR)/recalbox/share_upgrade/bios/pokemini
 endef
 
 $(eval $(generic-package))
