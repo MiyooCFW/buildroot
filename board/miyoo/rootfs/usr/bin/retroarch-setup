@@ -1,0 +1,49 @@
+#!/bin/sh
+
+RA_MODE="${1}" # (default=menu); history; kiosk; minimal;
+FRONTEND_ALIVE="${FRONTEND}" # (default=gmenu2x)
+
+ra_path="${HOME}/emus/retroarch"
+ra_config_path="${HOME}/.retroarch"
+history_path="${ra_config_path}/playlists/builtin/content_history.lpl" ## RA ver. >1.22.2
+
+cd "${ra_path}" || { echo -en "Failed to cd into ${ra_path}, no RetroArch to launch.\n\nEXITING..." ; exit; }
+
+if test ${RA_MODE} == "history"; then
+  if test -f "${history_path}"; then
+    rom_path="$(head -n20 "${history_path}" | grep -Eo -m1 '/roms/[^"]+')"
+    core_path="$(head -n20 "${history_path}" | grep -Eo -m1 "${ra_config_path}/cores/.+\.so")"
+    if test -f "${core_path}" -a -f "${rom_path}"; then
+      ./retroarch --libretro "${core_path}" "${rom_path}"
+    else
+      echo -e "ERROR: ROM file in $rom_path or libretro CORE in $core_path does not exist"
+    fi
+  else
+    echo -e "ERROR: history file $history_path does not exist"
+  fi
+else
+  if test "${RA_MODE}" == "kiosk"; then
+     ra_append_cfg="retroarch_kiosk.cfg"
+  elif test "${RA_MODE}" == "minimal"; then
+    ra_append_cfg="retroarch_minimal.cfg"
+  elif ! test -z "${RA_MODE}"; then
+    echo -e "ERROR: wrong option ${RA_MODE} argument passed"
+    exit 1;
+  else #menu
+    ra_append_cfg="retroarch_menu.cfg"
+  fi
+  #Apply new setting to frontend
+  if test "${FRONTEND_ALIVE}" == "gmenu2x"; then
+    for file in "${HOME}"/gmenu2x/sections/cores/*; do
+      grep -q '^params=' "$file" &&
+        sed -i '/^params=/d' "$file" # TODO: this consider there is no extra parameters in ra links
+        #&& sed -i "/^params=/ s|\$| --appendconfig ${ra_path}/${ra_append_cfg}|" "$file" \
+      echo "params=--appendconfig ${ra_path}/${ra_append_cfg}" >> "$file"
+    done
+# elif test "${FRONTEND_ALIVE}" == "some_frontend"; then
+  else
+    #Assuming you have "config_save_on_exit=true" set in RA config file
+    (sleep 6; killall retroarch) &
+    ./retroarch --appendconfig ${ra_append_cfg}
+  fi
+fi
