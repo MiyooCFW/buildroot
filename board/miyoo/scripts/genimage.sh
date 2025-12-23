@@ -81,7 +81,7 @@ if test -d "${BINARIES_DIR}/retroarch"; then
 			CORE_NAME="$(echo "${CORE_FILE}" | sed 's/_libretro.so//g')"
 			CORE_SCRIPT="${CORE_NAME}.sh"
 			touch $RA_WDIR/"${CORE_SCRIPT}"
-			echo -e "#!/bin/sh\n/mnt/emus/retroarch/retroarch -L ${CORE_FILE} \"\$1\"" > $RA_WDIR/"${CORE_SCRIPT}"
+			echo -e "#!/bin/sh\n/mnt/emus/retroarch/retroarch -L ${CORE_FILE} \"\$1\" \"\$2\"" > $RA_WDIR/"${CORE_SCRIPT}"
 			chmod +x $RA_WDIR/"${CORE_SCRIPT}"
 			# RA_LDIR="${BINARIES_DIR}/main/gmenu2x/sections/cores"
 			# CORE_LINK="zblank.${CORE_NAME}.ra"
