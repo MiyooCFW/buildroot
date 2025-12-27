@@ -23,27 +23,35 @@ if test ${RA_MODE} == "history"; then
   fi
 else
   if test "${RA_MODE}" == "kiosk"; then
-     ra_append_cfg="retroarch_kiosk.cfg"
+     ra_append_cfg="${ra_path}/retroarch_kiosk.cfg"
   elif test "${RA_MODE}" == "minimal"; then
-    ra_append_cfg="retroarch_minimal.cfg"
+    ra_append_cfg="${ra_path}/retroarch_minimal.cfg"
   elif ! test -z "${RA_MODE}"; then
     echo -e "ERROR: wrong option ${RA_MODE} argument passed"
     exit 1;
   else #menu
-    ra_append_cfg="retroarch_menu.cfg"
+    ra_append_cfg="${ra_path}/retroarch_menu.cfg"
   fi
+
+  test "${RA_REWIND}" == "true" &&
+   ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_rewind.cfg"
   #Apply new setting to frontend
   if test "${FRONTEND_ALIVE}" == "gmenu2x"; then
-    for file in "${HOME}"/gmenu2x/sections/cores/*; do
-      grep -q '^params=' "$file" &&
-        sed -i '/^params=/d' "$file" # TODO: this consider there is no extra parameters in ra links
-        #&& sed -i "/^params=/ s|\$| --appendconfig ${ra_path}/${ra_append_cfg}|" "$file" \
-      echo "params=--appendconfig ${ra_path}/${ra_append_cfg}" >> "$file"
-    done
+    cores_path="${HOME}/gmenu2x/sections/cores"
+    if test -d "${cores_path}"; then
+      for file in "${cores_path}"/*; do
+        grep -q '^params=' "$file" &&
+         sed -i '/^params=/d' "$file" # TODO: this consider there is no extra parameters in ra links
+         #&& sed -i "/^params=/ s|\$| --appendconfig ${ra_path}/${ra_append_cfg}|" "$file" \
+        echo "params=--appendconfig=${ra_append_cfg}" >> "$file"
+      done
+    else
+      echo "No \"cores\" section in GMenu2X to apply config for libretro implementation."
+    fi
 # elif test "${FRONTEND_ALIVE}" == "some_frontend"; then
   else
-    #Assuming you have "config_save_on_exit=true" set in RA config file
+    #Assuming you have "config_save_on_exit=true" set in your custom RA config file
     (sleep 6; killall retroarch) &
-    ./retroarch --appendconfig ${ra_append_cfg}
+    ./retroarch --appendconfig "${ra_append_cfg}"
   fi
 fi
