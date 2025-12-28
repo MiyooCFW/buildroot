@@ -1,7 +1,27 @@
 #!/bin/sh
 
-RA_MODE="${1}" # (default=menu); history; kiosk; minimal;
-FRONTEND_ALIVE="${FRONTEND}" # (default=gmenu2x)
+while getopts "rc:" opt; do
+  case "$opt" in
+    r)
+      #Option -r for Rewind
+      ra_rewind="true"
+      ;;
+    c)
+      #Option -c for Custom *.cfg with parsed value"
+      ra_custom_cfg="$OPTARG"
+      ;;
+    \?)
+      echo "Usage: $0 [-r] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history>" >&2
+      exit 1
+      ;;
+  esac
+done
+
+shift $((OPTIND - 1))
+
+#First argument is a non-option value"
+ra_mode="${1}" # (default=menu); history; kiosk; minimal;
+frontend_alive="${FRONTEND}" # (default=gmenu2x)
 
 ra_path="${HOME}/emus/retroarch"
 ra_config_path="${HOME}/.retroarch"
@@ -9,7 +29,7 @@ history_path="${ra_config_path}/playlists/builtin/content_history.lpl" ## RA ver
 
 cd "${ra_path}" || { echo -en "Failed to cd into ${ra_path}, no RetroArch to launch.\n\nEXITING..." ; exit; }
 
-if test ${RA_MODE} == "history"; then
+if test "${ra_mode}" == "history"; then
   if test -f "${history_path}"; then
     rom_path="$(head -n20 "${history_path}" | grep -Eo -m1 '/roms/[^"]+')"
     core_path="$(head -n20 "${history_path}" | grep -Eo -m1 "${ra_config_path}/cores/.+\.so")"
@@ -22,21 +42,23 @@ if test ${RA_MODE} == "history"; then
     echo -e "ERROR: history file $history_path does not exist"
   fi
 else
-  if test "${RA_MODE}" == "kiosk"; then
-     ra_append_cfg="${ra_path}/retroarch_kiosk.cfg"
-  elif test "${RA_MODE}" == "minimal"; then
+  if test "${ra_mode}" == "kiosk"; then
+    ra_append_cfg="${ra_path}/retroarch_kiosk.cfg"
+  elif test "${ra_mode}" == "minimal"; then
     ra_append_cfg="${ra_path}/retroarch_minimal.cfg"
-  elif ! test -z "${RA_MODE}"; then
-    echo -e "ERROR: wrong option ${RA_MODE} argument passed"
+  elif ! test -z "${ra_mode}"; then
+    echo -e "ERROR: wrong option ${ra_mode} argument passed"
     exit 1;
   else #menu
     ra_append_cfg="${ra_path}/retroarch_menu.cfg"
   fi
 
-  test "${RA_REWIND}" == "true" &&
+  test "${ra_rewind}" == "true" &&
    ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_rewind.cfg"
+  test -f "${ra_custom_cfg}" &&
+   ra_append_cfg="${ra_append_cfg}\|${ra_custom_cfg}"
   #Apply new setting to frontend
-  if test "${FRONTEND_ALIVE}" == "gmenu2x"; then
+  if test "${frontend_alive}" == "gmenu2x"; then
     cores_path="${HOME}/gmenu2x/sections/cores"
     if test -d "${cores_path}"; then
       for file in "${cores_path}"/*; do
@@ -48,7 +70,7 @@ else
     else
       echo "No \"cores\" section in GMenu2X to apply config for libretro implementation."
     fi
-# elif test "${FRONTEND_ALIVE}" == "some_frontend"; then
+# elif test "${frontend_alive}" == "some_frontend"; then
   else
     #Assuming you have "config_save_on_exit=true" set in your custom RA config file
     (sleep 6; killall retroarch) &
