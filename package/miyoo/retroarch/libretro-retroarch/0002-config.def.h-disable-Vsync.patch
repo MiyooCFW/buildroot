@@ -1,4 +1,4 @@
-From ca93a57b99cc028d2870a95ac81163335c84481e Mon Sep 17 00:00:00 2001
+From 32558e1816d75d795ff3f03f3250d5b5d41b3db4 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Mon, 10 Mar 2025 20:40:29 +0100
 Subject: [PATCH] config.def.h: disable Vsync
@@ -10,7 +10,7 @@ Makefile.miyoo: add optimize flags
  2 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/Makefile.miyoo b/Makefile.miyoo
-index 68e047898c..a026317e6a 100644
+index 8876292bd4..95cc30d856 100644
 --- a/Makefile.miyoo
 +++ b/Makefile.miyoo
 @@ -124,7 +124,7 @@ DEF_FLAGS += -I. -Ideps -Ideps/stb -DMIYOO=1 -DDINGUX -MMD
@@ -23,10 +23,10 @@ index 68e047898c..a026317e6a 100644
  ASFLAGS :=
  LDFLAGS := -Wl,--gc-sections
 diff --git a/config.def.h b/config.def.h
-index 0eea764ee3..6c0d0abcd9 100644
+index 85164ea788..dd21de39e5 100644
 --- a/config.def.h
 +++ b/config.def.h
-@@ -364,7 +364,7 @@
+@@ -367,7 +367,7 @@
  #define DEFAULT_DISABLE_COMPOSITION false
  
  /* Video VSYNC (recommended) */
@@ -35,7 +35,7 @@ index 0eea764ee3..6c0d0abcd9 100644
  
  /* Vulkan specific */
  #define DEFAULT_MAX_SWAPCHAIN_IMAGES 3
-@@ -541,7 +541,7 @@
+@@ -548,7 +548,7 @@
  #if defined(DINGUX)
  /* Enables aspect ratio correction (1:1 PAR) when
   * using the IPU hardware scaler in Dingux devices */

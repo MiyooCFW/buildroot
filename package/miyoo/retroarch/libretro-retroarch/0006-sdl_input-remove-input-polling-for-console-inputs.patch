@@ -1,4 +1,4 @@
-From f9f4635e7c5c19cd703ba687d649effe2666dcbd Mon Sep 17 00:00:00 2001
+From bb054791d9040f6d3dedb3c691e825178af98724 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Wed, 30 Apr 2025 23:13:22 +0200
 Subject: [PATCH] sdl_input: remove input polling for console inputs
@@ -9,10 +9,10 @@ fix double events register in e.g. on screen keyboard (osk), when using handheld
  1 file changed, 19 insertions(+)
 
 diff --git a/input/drivers/sdl_input.c b/input/drivers/sdl_input.c
-index 169e92bffa..e491e5497d 100644
+index 1b4a6c09c4..919eb45dd7 100644
 --- a/input/drivers/sdl_input.c
 +++ b/input/drivers/sdl_input.c
-@@ -446,6 +446,25 @@ static void sdl_input_poll(void *data)
+@@ -518,6 +518,25 @@ static void sdl_input_poll(void *data)
           if (event.key.keysym.mod & 0x8000 /*KMOD_SCROLL*/)
              mod |= RETROKMOD_SCROLLOCK;
  

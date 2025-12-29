@@ -1,4 +1,4 @@
-From a8707d43317491e1ebb8954875642db3a2880100 Mon Sep 17 00:00:00 2001
+From e621668ad2ac66e5769c82780206b66588368a60 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Wed, 30 Apr 2025 22:54:35 +0200
 Subject: [PATCH] input_driver: hack for swapped OK/CANCEL in OSK
@@ -11,10 +11,10 @@ ok - add sign
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/input/input_driver.c b/input/input_driver.c
-index a7f930f86d..fb064cc513 100644
+index d202b68eae..adf6c6cbe3 100644
 --- a/input/input_driver.c
 +++ b/input/input_driver.c
-@@ -7194,6 +7194,7 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
+@@ -7018,6 +7018,7 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
           {
  #ifdef MIYOO
              {RETROK_LALT,     RETRO_DEVICE_ID_JOYPAD_A      },
@@ -22,7 +22,7 @@ index a7f930f86d..fb064cc513 100644
  #else
              {RETROK_LCTRL,     RETRO_DEVICE_ID_JOYPAD_A      },
  #endif
-@@ -7207,7 +7208,10 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
+@@ -7031,7 +7032,10 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
           };
  
           if (settings->bools.input_menu_swap_ok_cancel_buttons)

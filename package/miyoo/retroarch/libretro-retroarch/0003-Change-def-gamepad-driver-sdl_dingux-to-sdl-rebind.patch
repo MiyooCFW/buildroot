@@ -1,4 +1,4 @@
-From 3cbcc816cb4840d60b2cfe7620364c4fe4fc0cd1 Mon Sep 17 00:00:00 2001
+From fb0bfee46c19c60c72572d606e6241324bce6d48 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Mon, 10 Mar 2025 20:42:53 +0100
 Subject: [PATCH] Change def gamepad driver (sdl_dingux  to sdl) & rebind
@@ -6,18 +6,18 @@ Subject: [PATCH] Change def gamepad driver (sdl_dingux  to sdl) & rebind
 add -DMIYOO flag
 ---
  Makefile.miyoo        |  2 +-
- config.def.h          |  4 ++-
- config.def.keybinds.h | 60 +++++++++++++++++++++----------------------
- configuration.c       | 12 ++++-----
- 4 files changed, 40 insertions(+), 38 deletions(-)
+ config.def.h          |  4 +++-
+ config.def.keybinds.h | 54 +++++++++++++++++++++----------------------
+ configuration.c       | 12 +++++-----
+ 4 files changed, 37 insertions(+), 35 deletions(-)
 
 diff --git a/Makefile.miyoo b/Makefile.miyoo
-index a026317e6a..4c4d92b208 100644
+index 95cc30d856..ca93214ffa 100644
 --- a/Makefile.miyoo
 +++ b/Makefile.miyoo
 @@ -120,7 +120,7 @@ OBJ :=
  LINK := $(CXX)
- DEF_FLAGS := -march=armv5te -mtune=arm926ej-s -ffast-math -fomit-frame-pointer
+ DEF_FLAGS := -march=armv5te -mtune=arm926ej-s -fomit-frame-pointer
  DEF_FLAGS += -ffunction-sections -fdata-sections
 -DEF_FLAGS += -I. -Ideps -Ideps/stb -DMIYOO=1 -DDINGUX -MMD
 +DEF_FLAGS += -I. -Ideps -Ideps/stb -DMIYOO=1 -DMIYOO -DDINGUX -MMD
@@ -25,10 +25,10 @@ index a026317e6a..4c4d92b208 100644
  DEF_FLAGS += -std=gnu99 -D_GNU_SOURCE
  LIBS := -ldl -lz -lrt -pthread -lasound
 diff --git a/config.def.h b/config.def.h
-index 6c0d0abcd9..6b67763eae 100644
+index dd21de39e5..c7aec5febe 100644
 --- a/config.def.h
 +++ b/config.def.h
-@@ -1605,8 +1605,10 @@
+@@ -1640,8 +1640,10 @@
  #define DEFAULT_INPUT_DESCRIPTOR_LABEL_SHOW true
  #define DEFAULT_INPUT_DESCRIPTOR_HIDE_UNBOUND false
  
@@ -41,13 +41,13 @@ index 6c0d0abcd9..6b67763eae 100644
  #define DEFAULT_INPUT_MAX_USERS 8
  #endif
 diff --git a/config.def.keybinds.h b/config.def.keybinds.h
-index d86c8b6413..6be1e223ad 100644
+index 0450af305f..37e04d3181 100644
 --- a/config.def.keybinds.h
 +++ b/config.def.keybinds.h
-@@ -661,167 +661,167 @@ static const struct retro_keybind retro_keybinds_1[] = {
+@@ -686,146 +686,146 @@ static const struct retro_keybind retro_keybinds_1[] = {
     { 
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
 -      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_B, RETROK_LALT,
 -      RETRO_DEVICE_ID_JOYPAD_B, NO_BTN, NO_BTN, 0,
 +      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_B, RETROK_LCTRL,
@@ -56,7 +56,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     { 
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_Y, RETROK_LSHIFT,
 -      RETRO_DEVICE_ID_JOYPAD_Y, NO_BTN, NO_BTN, 0,
 +      RETRO_DEVICE_ID_JOYPAD_Y, NO_BTN, 0, 0,
@@ -64,7 +64,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     { 
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_SELECT, RETROK_ESCAPE,
 -      RETRO_DEVICE_ID_JOYPAD_SELECT, NO_BTN, NO_BTN, 0,
 +      RETRO_DEVICE_ID_JOYPAD_SELECT, NO_BTN, 8, 0,
@@ -72,7 +72,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     { 
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_START, RETROK_RETURN,
 -      RETRO_DEVICE_ID_JOYPAD_START, NO_BTN, NO_BTN, 0,
 +      RETRO_DEVICE_ID_JOYPAD_START, NO_BTN, 9, 0,
@@ -80,7 +80,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_UP, RETROK_UP,
 -      RETRO_DEVICE_ID_JOYPAD_UP, NO_BTN, NO_BTN, 0,
 +      RETRO_DEVICE_ID_JOYPAD_UP, NO_BTN, HAT_UP_MASK, 0,
@@ -88,7 +88,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_DOWN, RETROK_DOWN,
 -      RETRO_DEVICE_ID_JOYPAD_DOWN, NO_BTN, NO_BTN, 0,
 +      RETRO_DEVICE_ID_JOYPAD_DOWN, NO_BTN, HAT_DOWN_MASK, 0,
@@ -96,7 +96,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_LEFT, RETROK_LEFT,
 -      RETRO_DEVICE_ID_JOYPAD_LEFT, NO_BTN, NO_BTN, 0,
 +      RETRO_DEVICE_ID_JOYPAD_LEFT, NO_BTN, HAT_LEFT_MASK, 0,
@@ -104,7 +104,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_RIGHT, RETROK_RIGHT,
 -      RETRO_DEVICE_ID_JOYPAD_RIGHT, NO_BTN, NO_BTN, 0,
 +      RETRO_DEVICE_ID_JOYPAD_RIGHT, NO_BTN, HAT_RIGHT_MASK, 0,
@@ -112,7 +112,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
 -      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_A, RETROK_LCTRL,
 -      RETRO_DEVICE_ID_JOYPAD_A, NO_BTN, NO_BTN, 0,
 +      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_A, RETROK_LALT,
@@ -121,7 +121,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_X, RETROK_SPACE,
 -      RETRO_DEVICE_ID_JOYPAD_X, NO_BTN, NO_BTN, 0,
 +      RETRO_DEVICE_ID_JOYPAD_X, NO_BTN, 3, 0,
@@ -129,7 +129,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_L, RETROK_TAB,
 -      RETRO_DEVICE_ID_JOYPAD_L, NO_BTN, NO_BTN, 0,
 +      RETRO_DEVICE_ID_JOYPAD_L, NO_BTN, 4, 0,
@@ -137,7 +137,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_R, RETROK_BACKSPACE,
 -      RETRO_DEVICE_ID_JOYPAD_R, NO_BTN, NO_BTN, 0,
 +      RETRO_DEVICE_ID_JOYPAD_R, NO_BTN, 5, 0,
@@ -145,7 +145,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_L2, RETROK_PAGEUP,
 -      RETRO_DEVICE_ID_JOYPAD_L2, NO_BTN, NO_BTN, 0,
 +      RETRO_DEVICE_ID_JOYPAD_L2, NO_BTN, 6, 0,
@@ -153,7 +153,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_R2, RETROK_PAGEDOWN,
 -      RETRO_DEVICE_ID_JOYPAD_R2, NO_BTN, NO_BTN, 0,
 +      RETRO_DEVICE_ID_JOYPAD_R2, NO_BTN, 7, 0,
@@ -161,7 +161,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
 -      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_L3, RETROK_KP_DIVIDE,
 -      RETRO_DEVICE_ID_JOYPAD_L3, NO_BTN, NO_BTN, 0,
 +      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_L3, RETROK_RALT,
@@ -170,7 +170,7 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
        NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
 -      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_R3, RETROK_KP_PERIOD,
 -      RETRO_DEVICE_ID_JOYPAD_R3, NO_BTN, NO_BTN, 0,
 +      MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_R3, RETROK_RSHIFT,
@@ -179,71 +179,47 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
        NULL, NULL,
--      AXIS_NONE, AXIS_NONE, AXIS_NONE,
-+      AXIS_POS(0), AXIS_NONE, AXIS_NONE,
+-      AXIS_NONE, AXIS_NONE,
++      AXIS_POS(0), AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_LEFT_X_PLUS, RETROK_UNKNOWN,
        RARCH_ANALOG_LEFT_X_PLUS, NO_BTN, NO_BTN, 0,
        true
     },
     {
        NULL, NULL,
--      AXIS_NONE, AXIS_NONE, AXIS_NONE,
-+      AXIS_NEG(0), AXIS_NONE, AXIS_NONE,
+-      AXIS_NONE, AXIS_NONE,
++      AXIS_NEG(0), AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_LEFT_X_MINUS, RETROK_UNKNOWN,
        RARCH_ANALOG_LEFT_X_MINUS, NO_BTN, NO_BTN, 0,
        true
     },
     {
        NULL, NULL,
--      AXIS_NONE, AXIS_NONE, AXIS_NONE,
-+      AXIS_POS(1), AXIS_NONE, AXIS_NONE,
+-      AXIS_NONE, AXIS_NONE,
++      AXIS_POS(1), AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_LEFT_Y_PLUS, RETROK_UNKNOWN,
        RARCH_ANALOG_LEFT_Y_PLUS, NO_BTN, NO_BTN, 0,
        true
     },
     {
        NULL, NULL,
--      AXIS_NONE, AXIS_NONE, AXIS_NONE,
-+      AXIS_NEG(1), AXIS_NONE, AXIS_NONE,
+-      AXIS_NONE, AXIS_NONE,
++      AXIS_NEG(1), AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_LEFT_Y_MINUS, RETROK_UNKNOWN,
        RARCH_ANALOG_LEFT_Y_MINUS, NO_BTN, NO_BTN, 0,
        true
     },
     {
        NULL, NULL,
--      AXIS_NONE, AXIS_NONE, AXIS_NONE,
-+      AXIS_POS(2), AXIS_NONE, AXIS_NONE,
+-      AXIS_NONE, AXIS_NONE,
++      AXIS_POS(2), AXIS_NONE,
        MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_RIGHT_X_PLUS, RETROK_UNKNOWN,
        RARCH_ANALOG_RIGHT_X_PLUS, NO_BTN, NO_BTN, 0,
        true
-    },
+@@ -946,8 +946,8 @@ static const struct retro_keybind retro_keybinds_1[] = {
     {
        NULL, NULL,
--      AXIS_NONE, AXIS_NONE, AXIS_NONE,
-+      AXIS_NEG(2), AXIS_NONE, AXIS_NONE,
-       MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_RIGHT_X_MINUS, RETROK_UNKNOWN,
-       RARCH_ANALOG_RIGHT_X_MINUS, NO_BTN, NO_BTN, 0,
-       true
-    },
-    {
-       NULL, NULL,
--      AXIS_NONE, AXIS_NONE, AXIS_NONE,
-+      AXIS_POS(3), AXIS_NONE, AXIS_NONE,
-       MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_RIGHT_Y_PLUS, RETROK_UNKNOWN,
-       RARCH_ANALOG_RIGHT_Y_PLUS, NO_BTN, NO_BTN, 0,
-       true
-    },
-    {
-       NULL, NULL,
--      AXIS_NONE, AXIS_NONE, AXIS_NONE,
-+      AXIS_NEG(3), AXIS_NONE, AXIS_NONE,
-       MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_RIGHT_Y_MINUS, RETROK_UNKNOWN,
-       RARCH_ANALOG_RIGHT_Y_MINUS, NO_BTN, NO_BTN, 0,
-       true
-@@ -921,8 +921,8 @@ static const struct retro_keybind retro_keybinds_1[] = {
-    {
-       NULL, NULL,
-       AXIS_NONE, AXIS_NONE, AXIS_NONE,
+       AXIS_NONE, AXIS_NONE,
 -      MENU_ENUM_LABEL_VALUE_INPUT_META_MENU_TOGGLE, RETROK_HOME,
 -      RARCH_MENU_TOGGLE, NO_BTN, NO_BTN, 0,
 +      MENU_ENUM_LABEL_VALUE_INPUT_META_MENU_TOGGLE, RETROK_RCTRL,
@@ -252,10 +228,10 @@ index d86c8b6413..6be1e223ad 100644
     },
     {
 diff --git a/configuration.c b/configuration.c
-index b8f947273e..84ab3480fc 100644
+index b815b7c304..b8fabf3021 100644
 --- a/configuration.c
 +++ b/configuration.c
-@@ -631,13 +631,13 @@ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SWITCH;
+@@ -645,13 +645,13 @@ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SWITCH;
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WII;
  #elif defined(WIIU)
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WIIU;
@@ -271,7 +247,7 @@ index b8f947273e..84ab3480fc 100644
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_LINUXRAW;
  #elif defined(HAVE_WAYLAND)
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WAYLAND;
-@@ -645,7 +645,7 @@ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WAYLAND;
+@@ -659,7 +659,7 @@ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_WAYLAND;
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_COCOA;
  #elif defined(__QNX__)
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_QNX;
@@ -280,7 +256,7 @@ index b8f947273e..84ab3480fc 100644
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SDL;
  #elif defined(HAVE_SDL2)
  static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SDL2;
-@@ -679,19 +679,19 @@ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_PSP;
+@@ -693,19 +693,19 @@ static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_PSP;
  static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_CTR;
  #elif defined(SWITCH)
  static const enum joypad_driver_enum JOYPAD_DEFAULT_DRIVER = JOYPAD_SWITCH;
