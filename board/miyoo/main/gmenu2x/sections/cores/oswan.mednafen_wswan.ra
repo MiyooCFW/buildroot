@@ -2,3 +2,4 @@ title=mednafen_wswan
 description=mednafen_wswan libretro core
 exec=/mnt/emus/retroarch/mednafen_wswan.sh
 selectordir=/mnt
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

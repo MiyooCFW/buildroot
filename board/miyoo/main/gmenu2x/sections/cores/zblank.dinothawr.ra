@@ -1,3 +1,4 @@
 title=dinothawr
 description=dinothawr libretro core
 exec=/mnt/emus/retroarch/dinothawr.sh
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

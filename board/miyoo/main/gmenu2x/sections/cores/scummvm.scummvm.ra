@@ -1,3 +1,4 @@
 title=scummvm
 description=scummvm libretro core
 exec=/mnt/emus/retroarch/scummvm.sh
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

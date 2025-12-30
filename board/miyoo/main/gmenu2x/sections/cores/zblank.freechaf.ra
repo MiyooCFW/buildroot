@@ -2,3 +2,4 @@ title=freechaf
 description=freechaf libretro core
 exec=/mnt/emus/retroarch/freechaf.sh
 selectordir=/mnt
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

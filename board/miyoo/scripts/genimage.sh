@@ -88,7 +88,7 @@ if test -d "${BINARIES_DIR}/retroarch"; then
 			if ! test -f "${RA_LDIR}"/*".${CORE_NAME}.ra"; then
 				CORE_LINK="zblank.${CORE_NAME}.ra"
 				touch "${RA_LDIR}"/"${CORE_LINK}"
-				echo -e "title=${CORE_NAME}\ndescription=${CORE_NAME} libretro core\nexec=/mnt/emus/retroarch/${CORE_SCRIPT}\nselectordir=/mnt" > "${RA_LDIR}"/"${CORE_LINK}"
+				echo -e "title=${CORE_NAME}\ndescription=${CORE_NAME} libretro core\nexec=/mnt/emus/retroarch/${CORE_SCRIPT}\nselectordir=/mnt\nparams=--appendconfig=${RA_WDIR}/retroarch_menu.cfg" > "${RA_LDIR}"/"${CORE_LINK}"
 			fi
 		fi
 	done

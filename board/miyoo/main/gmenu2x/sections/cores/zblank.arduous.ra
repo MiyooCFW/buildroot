@@ -2,3 +2,4 @@ title=arduous
 description=arduous libretro core
 exec=/mnt/emus/retroarch/arduous.sh
 selectordir=/mnt
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

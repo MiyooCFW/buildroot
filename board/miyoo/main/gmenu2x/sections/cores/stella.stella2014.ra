@@ -2,3 +2,4 @@ title=stella2014
 description=stella2014 libretro core
 exec=/mnt/emus/retroarch/stella2014.sh
 selectordir=/mnt
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

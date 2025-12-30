@@ -2,3 +2,4 @@ title=mednafen_pce_fast
 description=mednafen_pce_fast libretro core
 exec=/mnt/emus/retroarch/mednafen_pce_fast.sh
 selectordir=/mnt
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

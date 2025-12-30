@@ -2,3 +2,4 @@ title=gearsystem
 description=gearsystem libretro core
 exec=/mnt/emus/retroarch/gearsystem.sh
 selectordir=/mnt
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

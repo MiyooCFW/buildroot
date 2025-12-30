@@ -2,3 +2,4 @@ title=fuse
 description=fuse libretro core
 exec=/mnt/emus/retroarch/fuse.sh
 selectordir=/mnt
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

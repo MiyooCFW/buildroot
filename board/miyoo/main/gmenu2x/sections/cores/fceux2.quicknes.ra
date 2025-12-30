@@ -2,3 +2,4 @@ title=Quick NES
 description=Nintendo Entertainment System Emu (libretro core)
 exec=/mnt/emus/retroarch/quicknes.sh
 selectordir=/mnt/roms/NES
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg
