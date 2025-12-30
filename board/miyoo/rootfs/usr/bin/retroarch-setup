@@ -62,10 +62,16 @@ else
     cores_path="${HOME}/gmenu2x/sections/cores"
     if test -d "${cores_path}"; then
       for file in "${cores_path}"/*; do
-        grep -q '^params=' "$file" &&
-         sed -i '/^params=/d' "$file" # TODO: this consider there is no extra parameters in ra links
-         #&& sed -i "/^params=/ s|\$| --appendconfig ${ra_path}/${ra_append_cfg}|" "$file" \
-        echo "params=--appendconfig=${ra_append_cfg}" >> "$file"
+        if grep -q '^params=' "$file"; then
+          #Warning: escape "-" sign for grep cmd in BB otherwise it will fail
+          grep -q '\--appendconfig=' "$file" && \
+            #Warning: in POSIX using "|" is safer delimer than "/" since paths can contain these also (likewise here)
+            ##Below cmd replaces first occurence of appendconfig, append "g" for global
+            sed -i "s|--appendconfig=[^[:space:]]*|--appendconfig=${ra_append_cfg}|" "$file"\
+          ||sed -i "/^params=/ s|\$| --appendconfig=${ra_append_cfg}|" "$file"
+        else
+          echo "params=--appendconfig=${ra_append_cfg}" >> "$file"
+        fi
       done
     else
       echo "No \"cores\" section in GMenu2X to apply config for libretro implementation."
