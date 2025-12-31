@@ -2,3 +2,4 @@ title=gearboy
 description=gearboy libretro core
 exec=/mnt/emus/retroarch/gearboy.sh
 selectordir=/mnt
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

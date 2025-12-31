@@ -2,3 +2,4 @@ title=pcsx_rearmed
 description=pcsx_rearmed libretro core
 exec=/mnt/emus/retroarch/pcsx_rearmed.sh
 selectordir=/mnt
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

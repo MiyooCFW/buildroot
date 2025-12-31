@@ -2,3 +2,4 @@ title=theodore
 description=theodore libretro core
 exec=/mnt/emus/retroarch/theodore.sh
 selectordir=/mnt
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

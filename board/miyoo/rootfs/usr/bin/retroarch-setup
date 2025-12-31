@@ -1,0 +1,85 @@
+#!/bin/sh
+
+while getopts "rc:" opt; do
+  case "$opt" in
+    r)
+      #Option -r for Rewind
+      ra_rewind="true"
+      ;;
+    c)
+      #Option -c for Custom *.cfg with parsed value"
+      ra_custom_cfg="$OPTARG"
+      ;;
+    \?)
+      echo "Usage: $0 [-r] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history>" >&2
+      exit 1
+      ;;
+  esac
+done
+
+shift $((OPTIND - 1))
+
+#First argument is a non-option value"
+ra_mode="${1}" # (default=menu); history; kiosk; minimal;
+frontend_alive="${FRONTEND}" # (default=gmenu2x)
+
+ra_path="${HOME}/emus/retroarch"
+ra_config_path="${HOME}/.retroarch"
+history_path="${ra_config_path}/playlists/builtin/content_history.lpl" ## RA ver. >1.22.2
+
+cd "${ra_path}" || { echo -en "Failed to cd into ${ra_path}, no RetroArch to launch.\n\nEXITING..." ; exit; }
+
+if test "${ra_mode}" == "history"; then
+  if test -f "${history_path}"; then
+    rom_path="$(head -n20 "${history_path}" | grep -Eo -m1 '/roms/[^"]+')"
+    core_path="$(head -n20 "${history_path}" | grep -Eo -m1 "${ra_config_path}/cores/.+\.so")"
+    if test -f "${core_path}" -a -f "${rom_path}"; then
+      ./retroarch --libretro "${core_path}" "${rom_path}"
+    else
+      echo -e "ERROR: ROM file in $rom_path or libretro CORE in $core_path does not exist"
+    fi
+  else
+    echo -e "ERROR: history file $history_path does not exist"
+  fi
+else
+  if test "${ra_mode}" == "kiosk"; then
+    ra_append_cfg="${ra_path}/retroarch_kiosk.cfg"
+  elif test "${ra_mode}" == "minimal"; then
+    ra_append_cfg="${ra_path}/retroarch_minimal.cfg"
+  elif ! test -z "${ra_mode}"; then
+    echo -e "ERROR: wrong option ${ra_mode} argument passed"
+    exit 1;
+  else #menu
+    ra_append_cfg="${ra_path}/retroarch_menu.cfg"
+  fi
+
+  test "${ra_rewind}" == "true" &&
+   ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_rewind.cfg"
+  test -f "${ra_custom_cfg}" &&
+   ra_append_cfg="${ra_append_cfg}\|${ra_custom_cfg}"
+  #Apply new setting to frontend
+  if test "${frontend_alive}" == "gmenu2x"; then
+    cores_path="${HOME}/gmenu2x/sections/cores"
+    if test -d "${cores_path}"; then
+      for file in "${cores_path}"/*; do
+        if grep -q '^params=' "$file"; then
+          #Warning: escape "-" sign for grep cmd in BB otherwise it will fail
+          grep -q '\--appendconfig=' "$file" && \
+            #Warning: in POSIX using "|" is safer delimer than "/" since paths can contain these also (likewise here)
+            ##Below cmd replaces first occurence of appendconfig, append "g" for global
+            sed -i "s|--appendconfig=[^[:space:]]*|--appendconfig=${ra_append_cfg}|" "$file"\
+          ||sed -i "/^params=/ s|\$| --appendconfig=${ra_append_cfg}|" "$file"
+        else
+          echo "params=--appendconfig=${ra_append_cfg}" >> "$file"
+        fi
+      done
+    else
+      echo "No \"cores\" section in GMenu2X to apply config for libretro implementation."
+    fi
+# elif test "${frontend_alive}" == "some_frontend"; then
+  else
+    #Assuming you have "config_save_on_exit=true" set in your custom RA config file
+    (sleep 6; killall retroarch) &
+    ./retroarch --appendconfig "${ra_append_cfg}"
+  fi
+fi

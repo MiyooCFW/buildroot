@@ -2,3 +2,4 @@ title=fmsx
 description=fmsx libretro core
 exec=/mnt/emus/retroarch/fmsx.sh
 selectordir=/mnt
+params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg
