@@ -1,4 +1,4 @@
-From 341aedc63a28be707c029d77df5b9b0adbb690f8 Mon Sep 17 00:00:00 2001
+From 0b53f1b9a799e20d3cd30f2da09f7a52b97dd5d3 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Wed, 30 Apr 2025 23:04:15 +0200
 Subject: [PATCH] configuration: set active "Unified Menu Controls"
@@ -8,10 +8,10 @@ Subject: [PATCH] configuration: set active "Unified Menu Controls"
  1 file changed, 4 insertions(+)
 
 diff --git a/configuration.c b/configuration.c
-index 84ab3480fc..c17aabf89b 100644
+index b8fabf3021..d3aba25012 100644
 --- a/configuration.c
 +++ b/configuration.c
-@@ -1917,7 +1917,11 @@ static struct config_bool_setting *populate_settings_bool(
+@@ -1950,7 +1950,11 @@ static struct config_bool_setting *populate_settings_bool(
  #endif
  
  #ifdef HAVE_MENU

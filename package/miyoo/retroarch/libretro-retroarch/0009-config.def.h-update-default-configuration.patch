@@ -1,0 +1,59 @@
+From e44eda78c9b6629df71d44afd7f39ab75415681f Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Thu, 18 Dec 2025 14:01:04 +0100
+Subject: [PATCH] config.def.h: update default configuration
+
+- don't swap OK/CANCEL buttons
+- quit_on_close_content (CLI)
+- don't show RESTART app in menu (broken)
+- don't Confirm to Quit/Close/Reset (thus press twice)
+---
+ config.def.h | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/config.def.h b/config.def.h
+index c7aec5febe..aec48d7253 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -761,7 +761,7 @@
+ #define DEFAULT_MENU_SHOW_CONFIGURATIONS true
+ #define DEFAULT_MENU_SHOW_HELP true
+ #define DEFAULT_MENU_SHOW_QUIT true
+-#define DEFAULT_MENU_SHOW_RESTART true
++#define DEFAULT_MENU_SHOW_RESTART false
+ #define DEFAULT_MENU_SHOW_REBOOT true
+ #define DEFAULT_MENU_SHOW_SHUTDOWN true
+ #ifdef HAVE_MIST
+@@ -794,7 +794,7 @@
+ 
+ #define DEFAULT_MENU_INSERT_DISK_RESUME true
+ 
+-#define DEFAULT_QUIT_ON_CLOSE_CONTENT QUIT_ON_CLOSE_CONTENT_DISABLED
++#define DEFAULT_QUIT_ON_CLOSE_CONTENT QUIT_ON_CLOSE_CONTENT_CLI
+ 
+ /* While the menu is active, supported drivers
+  * will display a screensaver after SCREENSAVER_TIMEOUT
+@@ -966,7 +966,11 @@
+ #define DEFAULT_OVERLAY_DPAD_DIAGONAL_SENSITIVITY 80
+ #define DEFAULT_OVERLAY_ABXY_DIAGONAL_SENSITIVITY 50
+ 
++#if defined(MIYOO)
++#define DEFAULT_MENU_SWAP_OK_CANCEL_BUTTONS false
++#else
+ #define DEFAULT_MENU_SWAP_OK_CANCEL_BUTTONS true
++#endif
+ #define DEFAULT_MENU_SWAP_SCROLL_BUTTONS false
+ #define DEFAULT_MENU_SINGLECLICK_PLAYLISTS false
+ #define DEFAULT_MENU_ALLOW_TABS_BACK true
+@@ -977,7 +981,7 @@
+ #define DEFAULT_ALL_USERS_CONTROL_MENU false
+ #endif
+ 
+-#define DEFAULT_QUIT_PRESS_TWICE true
++#define DEFAULT_QUIT_PRESS_TWICE false
+ 
+ #define DEFAULT_LOG_TO_FILE false
+ 
+-- 
+2.45.2.windows.1
+
