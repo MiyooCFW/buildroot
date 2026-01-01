@@ -65,10 +65,10 @@ else
         if grep -q '^params=' "$file"; then
           #Warning: escape "-" sign for grep cmd in BB otherwise it will fail
           grep -q '\--appendconfig=' "$file" && \
-            #Warning: in POSIX using "|" is safer delimer than "/" since paths can contain these also (likewise here)
+            #Warning: in POSIX using ":" is safer delimer than "/" or "|" since paths or cmds can contain these also (likewise here)
             ##Below cmd replaces first occurence of appendconfig, append "g" for global
-            sed -i "s|--appendconfig=[^[:space:]]*|--appendconfig=\"${ra_append_cfg}\"|" "$file"\
-          ||sed -i "/^params=/ s|\$| --appendconfig=\"${ra_append_cfg}\"|" "$file"
+            sed -i "s:--appendconfig=[^[:space:]]*:--appendconfig=\"${ra_append_cfg}\":" "$file"\
+          ||sed -i "/^params=/ s:$: --appendconfig=\"${ra_append_cfg}\":" "$file"
         else
           echo "params=--appendconfig=\"${ra_append_cfg}\"" >> "$file"
         fi
