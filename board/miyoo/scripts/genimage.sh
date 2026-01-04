@@ -76,20 +76,18 @@ if test -d "${BINARIES_DIR}/retroarch"; then
 	CORES_DIR="${BINARIES_DIR}/retroarch/cores"
 	for file in $CORES_DIR/*; do
 		if test -f "$file"; then
-			RA_WDIR="${BINARIES_DIR}/main/emus/retroarch"
+			#RA_WDIR="${BINARIES_DIR}/main/emus/retroarch"
 			RA_TDIR="/mnt/emus/retroarch"
 			CORE_FILE="$(echo "$file" | sed 's/.*\///')"
 			CORE_NAME="$(echo "${CORE_FILE}" | sed 's/_libretro.so//g')"
-			CORE_SCRIPT="${CORE_NAME}.sh"
-			touch $RA_WDIR/"${CORE_SCRIPT}"
-			echo -e "#!/bin/sh\n${RA_TDIR}/retroarch -L ${CORE_FILE} \"\$1\" \"\$2\"" > $RA_WDIR/"${CORE_SCRIPT}"
-			chmod +x $RA_WDIR/"${CORE_SCRIPT}"
 			# sanity check if there's an existing link in gmenu2x
 			RA_LDIR="${BINARIES_DIR}/main/gmenu2x/sections/cores"
-			if ! test -f "${RA_LDIR}"/*".${CORE_NAME}.ra"; then
-				CORE_LINK="zblank.${CORE_NAME}.ra"
+			test -d $RA_LDIR || mkdir $RA_LDIR
+			CORE_LINK="${CORE_NAME}.ra"
+			if ! test -f "${RA_LDIR}"/*"${CORE_LINK}"; then
+				CORE_LINK="${CORE_NAME}.ra"
 				touch "${RA_LDIR}"/"${CORE_LINK}"
-				echo -e "title=${CORE_NAME}\ndescription=${CORE_NAME} libretro core\nexec=${RA_TDIR}/${CORE_SCRIPT}\nselectordir=/mnt\nparams=--appendconfig=${RA_TDIR}/retroarch_menu.cfg" > "${RA_LDIR}"/"${CORE_LINK}"
+				echo -e "title=${CORE_NAME}\ndescription=${CORE_NAME} libretro core\nexec=${RA_TDIR}/retroarch\nselectordir=/mnt\nparams=-vL ${CORE_NAME} --appendconfig=${RA_TDIR}/retroarch_menu.cfg" > "${RA_LDIR}"/"${CORE_LINK}"
 			fi
 		fi
 	done
