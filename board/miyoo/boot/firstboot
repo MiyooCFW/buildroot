@@ -885,19 +885,48 @@ else
 fi
 mount -o remount,ro "${BOOTDIR}" 2>&1 | tee -a ${LOG}
 
-# copy over the config files
-echo "Copying default configuration files into place..." | tee -a ${LOG}
-if $BITTBOY_CONFIG; then
-	cp "${HOME}/gmenu2x/input_bittboy.conf" "${HOME}/gmenu2x/input.conf"
-elif $MIYOO_CONFIG; then
-	cp "${HOME}/gmenu2x/input_miyoo.conf" "${HOME}/gmenu2x/input.conf"
-fi
-
 # create symlink to ROMS part. at /mnt/
 ln -s "${ROMS}" "${HOME}" 2>&1 | tee -a ${LOG}
 
+# GMenu2X setup
+GM2X_WDIR="${HOME}/gmenu2x"
+## Create standard sections structure if missing
+mkdir -p "${GM2X_WDIR}/sections/emulators"
+mkdir -p "${GM2X_WDIR}/sections/games"
+## Copy over the input config files
+echo "Copying default configuration files into place..." | tee -a ${LOG}
+if $BITTBOY_CONFIG; then
+	cp "${GM2X_WDIR}/input_bittboy.conf" "${GM2X_WDIR}/input.conf"
+elif $MIYOO_CONFIG; then
+	cp "${GM2X_WDIR}/input_miyoo.conf" "${GM2X_WDIR}/input.conf"
+fi
+
 echo -en "\nUsing following GMenu2X input configuration:\n" >> ${GMENU2X_LOGS}
-cat "${HOME}/gmenu2x/input.conf" >> ${GMENU2X_LOGS}
+cat "${GM2X_WDIR}/input.conf" >> ${GMENU2X_LOGS}
+
+## RetroArch's cores setup
+RA_WDIR="${HOME}/emus/retroarch"
+if test -e "${RA_WDIR}/retroarch"; then
+	## Generate list of cores to be used
+	CORES_DIR="${HOME}/.retroarch/cores"
+	for file in $CORES_DIR/*; do
+		if test -f "$file"; then
+			CORE_FILE="$(echo "$file" | sed 's/.*\///')"
+			CORE_NAME="$(echo "${CORE_FILE}" | sed 's/_libretro.so//g')"
+			# sanity check if there's an existing link in gmenu2x
+			RA_LDIR="${GM2X_WDIR}/sections/cores"
+			test -d $RA_LDIR || mkdir $RA_LDIR
+			CORE_LINK="${CORE_NAME}.ra"
+			if ! test -e "${RA_LDIR}"/*"${CORE_LINK}"; then
+				echo -e "title=${CORE_NAME}\ndescription=${CORE_NAME} libretro core\nexec=${RA_WDIR}/retroarch\nselectordir=/mnt\nparams=-vL ${CORE_NAME} --appendconfig=${RA_WDIR}/retroarch_menu.cfg" \
+				 > "${RA_LDIR}"/"${CORE_LINK}"
+				#mv ${RA_LDIR}/${CORE_LINK} ${RA_LDIR}/zblank.${CORE_LINK}
+			fi
+		fi
+	done
+else
+	test -d $RA_WDIR && rm -rf $RA_WDIR
+fi
 
 sync
 echo "firstboot script finished." | tee -a ${LOG}
