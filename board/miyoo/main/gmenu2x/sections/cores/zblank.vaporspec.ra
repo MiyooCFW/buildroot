@@ -1,5 +1,0 @@
-title=vaporspec
-description=vaporspec libretro core
-exec=/mnt/emus/retroarch/vaporspec.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

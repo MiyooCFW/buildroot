@@ -1,5 +1,0 @@
-title=jaxe
-description=jaxe libretro core
-exec=/mnt/emus/retroarch/jaxe.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

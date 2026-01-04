@@ -1,5 +1,0 @@
-title=race
-description=race libretro core
-exec=/mnt/emus/retroarch/race.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

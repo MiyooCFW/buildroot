@@ -1,5 +1,0 @@
-title=pokemini
-description=pokemini libretro core
-exec=/mnt/emus/retroarch/pokemini.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

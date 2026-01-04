@@ -1,4 +1,0 @@
-title=mrboom
-description=mrboom libretro core
-exec=/mnt/emus/retroarch/mrboom.sh
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg
