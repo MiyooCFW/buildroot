@@ -1,0 +1,5 @@
+title=RetroArch update
+description=Update list of cores (see logs)
+exec=/usr/bin/retroarch-setup
+params=update
+terminal=true
