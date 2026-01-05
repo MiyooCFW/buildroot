@@ -304,7 +304,7 @@ test_variant_func(){
 	CHOICE=$(cat $TEMP)
 	# Any choice different than "YES" from Test_Variant - that is 0/-1/255 exit code
 	## correct variant to unknown and redo whole flashing_prd again
-	if !(test $CHOICE -eq 1); then
+	if ! (test $CHOICE -eq 1); then
 		console_unknown_func
 		safe_reboot_func
 	fi
@@ -345,7 +345,7 @@ if ! $FOUND_CONSOLE && ! $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		### former CHOICE=1 meant safe_reboot if correct and shouldn't reach to this point
 		while true; do
 			test_video_func
-			if !(test $CHOICE -eq -1 || test $CHOICE -eq 1 || test $CHOICE -eq 255); then
+			if ! (test $CHOICE -eq -1 || test $CHOICE -eq 1 || test $CHOICE -eq 255); then
 				break
 			fi
 		done
@@ -432,7 +432,7 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 				sleep 0.1
 				;;
 		esac
-	elif (((test "$CONSOLE_VARIANT" == "bittboy2" || test "$CONSOLE_VARIANT" == "bittboy3") && grep -q "$DETECTED_5" "${BOOTDIR}/uEnv.txt") || ((test "$CONSOLE_VARIANT" == "xyc" || test "$CONSOLE_VARIANT" == "m3") && grep -q "$DETECTED_2" "${BOOTDIR}/uEnv.txt")); then
+	elif ( (test "$CONSOLE_VARIANT" == "bittboy2" || test "$CONSOLE_VARIANT" == "bittboy3") && grep -q "$DETECTED_5" "${BOOTDIR}/uEnv.txt" ) || ( (test "$CONSOLE_VARIANT" == "xyc" || test "$CONSOLE_VARIANT" == "m3") && grep -q "$DETECTED_2" "${BOOTDIR}/uEnv.txt" ); then
 		echo "Extra Auto-Detected Console's variant from uEnv" >> ${LOG}
 		if (grep -q "$DETECTED_5" "${BOOTDIR}/uEnv.txt"); then
 		dialog --backtitle "MiyooCFW 2.0" --no-shadow --timeout 3 --msgbox  "Auto-Detected $DETECTED_5" 0 0
@@ -445,7 +445,7 @@ if ! $FOUND_CONSOLE && $FOUND_CONSOLE_AUTO && $CONSOLE_DETECTED; then
 		## Loop Test_Keyboard until correct selection has been performed (CHOICE=0/1)
 		while true; do
 			test_keyboard_func
-			if !(test $CHOICE -eq -1 || test $CHOICE -eq 255); then
+			if ! (test $CHOICE -eq -1 || test $CHOICE -eq 255); then
 				break
 			fi
 		done
@@ -815,7 +815,7 @@ if (dialog --backtitle "MiyooCFW 2.0" --no-shadow --clear --stdout --ok-label YE
 			fi
 		fi
 	fi
-	if !(test "${P5_FS_TYPE}" == "VFAT" || test "${P5_FS_TYPE}" == "BTRFS" || test "${P5_FS_TYPE}" == "EXT4"); then
+	if ! (test "${P5_FS_TYPE}" == "VFAT" || test "${P5_FS_TYPE}" == "BTRFS" || test "${P5_FS_TYPE}" == "EXT4"); then
 		echo "ERROR: I couldn't recognize FSTYPE for ${ROMS} partition, resizing ABORTED!" | tee -a ${LOG}
 		RESIZE_ABORT=true
 	fi
