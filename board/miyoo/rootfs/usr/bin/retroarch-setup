@@ -1,7 +1,6 @@
 #!/bin/sh
 
 ##imported env variables are upper-cased:
-###${GM2X_WDIR}
 ###${HOME}
 ###${FRONTEND}
 ###${FRONTEND_WDIR}
@@ -52,27 +51,26 @@ if test "${ra_mode}" == "history"; then
   fi
   exit 0
 elif test "${ra_mode}" == "update"; then
-  RA_WDIR="${ra_path}"
-  if test -e "${RA_WDIR}/retroarch"; then
+  if test -e "${ra_path}/retroarch"; then
     ## Generate list of cores to be used
-    CORES_DIR="${HOME}/.retroarch/cores"
-    for file in $CORES_DIR/*; do
+    cores_dir="${HOME}/.retroarch/cores"
+    for file in $cores_dir/*; do
       if test -f "$file"; then
-        CORE_FILE="$(echo "$file" | sed 's/.*\///')"
-        CORE_NAME="$(echo "${CORE_FILE}" | sed 's/_libretro.so//g')"
+        core_file="$(echo "$file" | sed 's/.*\///')"
+        core_name="$(echo "${core_file}" | sed 's/_libretro.so//g')"
         if test "${frontend_alive}" == "gmenu2x"; then
           test -z "${frontend_wdir}" \
            && frontend_wdir="${HOME}/gmenu2x" ## WIP: assuming gmenu2x is placed at /mnt/gmenu2x
           # sanity check if there's an existing link in gmenu2x
-          RA_LDIR="${frontend_wdir}/sections/cores"
-          test -d $RA_LDIR || mkdir $RA_LDIR
-          CORE_LINK="${CORE_NAME}.ra"
-          if ! test -e "${RA_LDIR}"/*"${CORE_LINK}"; then
-            { echo -e "title=${CORE_NAME}\ndescription=${CORE_NAME} libretro core\nexec=${RA_WDIR}/retroarch\nselectordir=/mnt\nparams=-vL ${CORE_NAME} --appendconfig=${RA_WDIR}/retroarch_menu.cfg" \
-            > "${RA_LDIR}"/"${CORE_LINK}" \
-            && echo -en "\nGenarated link of core: ${CORE_NAME}" >> ${GMENU2X_LOGS}; } \
-            || echo -en "\nWARNING: There was an issue for link of core: ${CORE_NAME}" >> ${GMENU2X_LOGS}
-            #mv ${RA_LDIR}/${CORE_LINK} ${RA_LDIR}/zblank.${CORE_LINK}
+          ra_ldir="${frontend_wdir}/sections/cores"
+          test -d $ra_ldir || mkdir $ra_ldir
+          core_link="${core_name}.ra"
+          if ! test -e "${ra_ldir}"/*"${core_link}"; then
+            { echo -e "title=${core_name}\ndescription=${core_name} libretro core\nexec=${ra_path}/retroarch\nselectordir=/mnt\nparams=-vL ${core_name} --appendconfig=${ra_path}/retroarch_menu.cfg" \
+            > "${ra_ldir}"/"${core_link}" \
+            && echo -en "\nGenarated link of core: ${core_name}"; } \
+            || echo -en "\nWARNING: There was an issue for link of core: ${core_name}"
+            #mv ${ra_ldir}/${core_link} ${ra_ldir}/zblank.${core_link}
           fi
         else
           echo -e "ERROR: Unknown defined FRONTEND=${FRONTEND}, not going to update core links cuz of missing frontend_alive..."
@@ -81,9 +79,9 @@ elif test "${ra_mode}" == "update"; then
       fi
     done
   else
-    echo -en "\nERROR: Did not find ${RA_WDIR}/retroarch for links setup..." | tee -a ${GMENU2X_LOGS}
+    echo -en "\nERROR: Did not find ${ra_path}/retroarch for links setup..."
     exit 1
-    #test -d $RA_WDIR && rm -rf $RA_WDIR
+    #test -d $ra_path && rm -rf $ra_path
   fi
   exit 0
 else
