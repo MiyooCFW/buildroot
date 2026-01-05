@@ -59,7 +59,11 @@ else
    ra_append_cfg="${ra_append_cfg}\|${ra_custom_cfg}"
   #Apply new setting to frontend
   if test "${frontend_alive}" == "gmenu2x"; then
-    cores_path="${HOME}/gmenu2x/sections/cores"
+    if test -d "${HOME}/gmenu2x/sections/cores"; then
+      cores_path="${HOME}/gmenu2x/sections/cores"
+    elif test -d "${HOME}/gmenu2x/sections/.cores"; then
+      cores_path="${HOME}/gmenu2x/sections/.cores"
+    fi
     if test -d "${cores_path}"; then
       for file in "${cores_path}"/*; do
         if grep -q '^params=' "$file"; then
