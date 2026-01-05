@@ -5,18 +5,22 @@
 ###${FRONTEND}
 ###${FRONTEND_WDIR}
 
-while getopts "rc:" opt; do
+while getopts "rsc:" opt; do
   case "$opt" in
     r)
       #Option -r for Rewind
       ra_rewind="true"
+      ;;
+    s)
+      #Option -s for Save config on exit"
+      ra_cfgsave="true"
       ;;
     c)
       #Option -c for Custom *.cfg with parsed value"
       ra_custom_cfg="$OPTARG"
       ;;
     \?)
-      echo "Usage: $0 [-r] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history|update>" >&2
+      echo "Usage: $0 [-r] [-s] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history|update>" >&2
       exit 1
       ;;
   esac
@@ -98,6 +102,8 @@ else
 
   test "${ra_rewind}" == "true" &&
    ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_rewind.cfg"
+  test "${ra_cfgsave}" == "true" &&
+   ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_cfgsave.cfg"
   test -f "${ra_custom_cfg}" &&
    ra_append_cfg="${ra_append_cfg}\|${ra_custom_cfg}"
   #Apply new setting to frontend
@@ -126,7 +132,7 @@ else
     fi
 # elif test "${frontend_alive}" == "some_frontend"; then
   else
-    #Assuming you have "config_save_on_exit=true" set in your custom RA config file
+    ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_cfgsave.cfg"
     (sleep 6; killall retroarch) &
     ./retroarch --appendconfig "${ra_append_cfg}"
   fi
