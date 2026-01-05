@@ -11,7 +11,7 @@ while getopts "rc:" opt; do
       ra_custom_cfg="$OPTARG"
       ;;
     \?)
-      echo "Usage: $0 [-r] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history>" >&2
+      echo "Usage: $0 [-r] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history|update>" >&2
       exit 1
       ;;
   esac
@@ -37,17 +37,47 @@ if test "${ra_mode}" == "history"; then
       ./retroarch --libretro "${core_path}" "${rom_path}"
     else
       echo -e "ERROR: ROM file in $rom_path or libretro CORE in $core_path does not exist"
+      exit 1
     fi
   else
     echo -e "ERROR: history file $history_path does not exist"
+    exit 1
   fi
+  exit 0
+elif test "${ra_mode}" == "update"; then
+  RA_WDIR="${ra_path}"
+  if test -e "${RA_WDIR}/retroarch"; then
+    ## Generate list of cores to be used
+    CORES_DIR="${HOME}/.retroarch/cores"
+    for file in $CORES_DIR/*; do
+      if test -f "$file"; then
+        CORE_FILE="$(echo "$file" | sed 's/.*\///')"
+        CORE_NAME="$(echo "${CORE_FILE}" | sed 's/_libretro.so//g')"
+        # sanity check if there's an existing link in gmenu2x
+        RA_LDIR="${GM2X_WDIR}/sections/cores"
+        test -d $RA_LDIR || mkdir $RA_LDIR
+        CORE_LINK="${CORE_NAME}.ra"
+        if ! test -e "${RA_LDIR}"/*"${CORE_LINK}"; then
+          echo -en "\nGenarated link of core: ${CORE_NAME}" >> ${GMENU2X_LOGS}
+          echo -e "title=${CORE_NAME}\ndescription=${CORE_NAME} libretro core\nexec=${RA_WDIR}/retroarch\nselectordir=/mnt\nparams=-vL ${CORE_NAME} --appendconfig=${RA_WDIR}/retroarch_menu.cfg" \
+          > "${RA_LDIR}"/"${CORE_LINK}"
+          #mv ${RA_LDIR}/${CORE_LINK} ${RA_LDIR}/zblank.${CORE_LINK}
+        fi
+      fi
+    done
+  else
+    echo -en "\nERROR: Did not find ${RA_WDIR}/retroarch for links setup..." | tee -a ${GMENU2X_LOGS}
+    exit 1
+    #test -d $RA_WDIR && rm -rf $RA_WDIR
+  fi
+  exit 0
 else
   if test "${ra_mode}" == "kiosk"; then
     ra_append_cfg="${ra_path}/retroarch_kiosk.cfg"
   elif test "${ra_mode}" == "minimal"; then
     ra_append_cfg="${ra_path}/retroarch_minimal.cfg"
-  elif ! test -z "${ra_mode}"; then
-    echo -e "ERROR: wrong option ${ra_mode} argument passed"
+  elif ! test -z "${ra_mode}" && ! test "${ra_mode}" == "menu"; then
+    echo -e "\nERROR: wrong option ${ra_mode} argument passed"
     exit 1;
   else #menu
     ra_append_cfg="${ra_path}/retroarch_menu.cfg"
@@ -78,7 +108,8 @@ else
         fi
       done
     else
-      echo "No \"cores\" section in GMenu2X to apply config for libretro implementation."
+      echo -en "\nERROR:No \"cores\" section in GMenu2X to apply config for libretro implementation."
+      exit 1;
     fi
 # elif test "${frontend_alive}" == "some_frontend"; then
   else
@@ -86,4 +117,5 @@ else
     (sleep 6; killall retroarch) &
     ./retroarch --appendconfig "${ra_append_cfg}"
   fi
+  exit 0
 fi

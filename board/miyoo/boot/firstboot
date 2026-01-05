@@ -905,31 +905,10 @@ echo -en "\nUsing following GMenu2X input configuration:\n" | tee -a ${GMENU2X_L
 cat "${GM2X_WDIR}/input.conf" | tee -a ${GMENU2X_LOGS}
 
 ## RetroArch's cores setup
-RA_WDIR="${HOME}/emus/retroarch"
-if test -e "${RA_WDIR}/retroarch"; then
-	## Generate list of cores to be used
-	echo -en "\nGenarating GMenu2X links for libretro cores..." | tee -a ${GMENU2X_LOGS}
-	CORES_DIR="${HOME}/.retroarch/cores"
-	for file in $CORES_DIR/*; do
-		if test -f "$file"; then
-			CORE_FILE="$(echo "$file" | sed 's/.*\///')"
-			CORE_NAME="$(echo "${CORE_FILE}" | sed 's/_libretro.so//g')"
-			# sanity check if there's an existing link in gmenu2x
-			RA_LDIR="${GM2X_WDIR}/sections/cores"
-			test -d $RA_LDIR || mkdir $RA_LDIR
-			CORE_LINK="${CORE_NAME}.ra"
-			if ! test -e "${RA_LDIR}"/*"${CORE_LINK}"; then
-				echo -en "\nGenarated link of core: ${CORE_NAME}" >> ${GMENU2X_LOGS}
-				echo -e "title=${CORE_NAME}\ndescription=${CORE_NAME} libretro core\nexec=${RA_WDIR}/retroarch\nselectordir=/mnt\nparams=-vL ${CORE_NAME} --appendconfig=${RA_WDIR}/retroarch_menu.cfg" \
-				 > "${RA_LDIR}"/"${CORE_LINK}"
-				#mv ${RA_LDIR}/${CORE_LINK} ${RA_LDIR}/zblank.${CORE_LINK}
-			fi
-		fi
-	done
-else
-	echo -en "\nDid not find ${RA_WDIR}/retroarch for links setup..." | tee -a ${GMENU2X_LOGS}
-	test -d $RA_WDIR && rm -rf $RA_WDIR
-fi
+echo -en "\nGenarating GMenu2X links for libretro cores..." | tee -a ${GMENU2X_LOGS}
+retroarch-setup update >> ${GMENU2X_LOGS}
+test $? -ne 0 \
+ && echo -en "\nThere was an ERROR when genarating GMenu2X links for libretro cores, pls check ${GMENU2X_LOGS} file..." | tee -a ${GMENU2X_LOGS}
 
 sync
 echo "firstboot script finished." | tee -a ${LOG}
