@@ -14,6 +14,7 @@ LOGS_TEMP=/dev/null
 UMTPR_LOGS=/dev/null
 GMENU2X_LOGS=/dev/null
 
+FRONTEND=""
 FRONTEND_ACTIVE=false
 test -f /tmp/frontend.active \
  && FRONTEND_ACTIVE=true
@@ -250,9 +251,11 @@ fi
 clear
 if test -f "${START}"; then
 	echo "Starting ${START} script." >> "${LOGS}"
+	#export FRONTEND=<name>
 	source "${START}" >> "${LOGS}" 2>&1
 else
 	echo "Starting GMenu2x" >> "${LOGS}"
+	export FRONTEND="gmenu2x" # mainly for retroarch-setup script to read
 	cd "${HOME}"/gmenu2x || { echo -en "Failed to cd into ${HOME}/gmenu2x, no frontend to launch.\n\nPOWEROFF..." >> "${LOGS}" ; sync; poweroff; }
 	if test "x${DEBUG_GMENU2X}" == "xyes"; then
 		gdb -ex="set confirm off" -ex=run -ex="bt full" -ex=q ./gmenu2x-debug 2>&1 | tee -a "${GMENU2X_LOGS}"
