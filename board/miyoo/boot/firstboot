@@ -879,7 +879,7 @@ mount -o remount,rw "${BOOTDIR}" 2>&1 | tee -a ${LOG}
 echo "Disabling the firstboot script." | tee -a ${LOG}
 if grep -sq FIRSTBOOT\=\1 "${OPTIONS_CFG}"; then
 	sed -i '/^FIRSTBOOT=/d' ${OPTIONS_CFG} 2>&1 | tee -a ${LOG}
-	echo "FIRSTBOOT=0" >> ${OPTIONS_CFG}
+	echo -en "\nFIRSTBOOT=0" >> ${OPTIONS_CFG}
 else
 	mv "${BOOTDIR}/firstboot" "${BOOTDIR}/firstboot.done" 2>&1 | tee -a ${LOG}
 fi
@@ -901,12 +901,13 @@ elif $MIYOO_CONFIG; then
 	cp "${GM2X_WDIR}/input_miyoo.conf" "${GM2X_WDIR}/input.conf"
 fi
 
-echo -en "\nUsing following GMenu2X input configuration:\n" | tee -a ${GMENU2X_LOGS}
-cat "${GM2X_WDIR}/input.conf" | tee -a ${GMENU2X_LOGS}
+echo -en "\nUsing following GMenu2X input configuration:\n" >> ${GMENU2X_LOGS}
+cat "${GM2X_WDIR}/input.conf" >> ${GMENU2X_LOGS}
 
 ## RetroArch's cores setup
 echo -en "\nGenarating GMenu2X links for libretro cores..." | tee -a ${GMENU2X_LOGS}
-retroarch-setup update >> ${GMENU2X_LOGS}
+FRONTEND="gmenu2x" FRONTEND_WDIR="${GM2X_WDIR}" \
+ retroarch-setup update >> ${GMENU2X_LOGS}
 test $? -ne 0 \
  && echo -en "\nThere was an ERROR when genarating GMenu2X links for libretro cores, pls check ${GMENU2X_LOGS} file..." | tee -a ${GMENU2X_LOGS}
 

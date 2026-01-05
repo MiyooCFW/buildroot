@@ -1,5 +1,11 @@
 #!/bin/sh
 
+##imported env variables are upper-cased:
+###${GM2X_WDIR}
+###${HOME}
+###${FRONTEND}
+###${FRONTEND_WDIR}
+
 while getopts "rc:" opt; do
   case "$opt" in
     r)
@@ -21,7 +27,8 @@ shift $((OPTIND - 1))
 
 #First argument is a non-option value"
 ra_mode="${1}" # (default=menu); history; kiosk; minimal;
-frontend_alive="${FRONTEND}" # (default=gmenu2x)
+frontend_alive="${FRONTEND}" # (default="") thus no frontend
+frontend_wdir="${FRONTEND_WDIR}"
 
 ra_path="${HOME}/emus/retroarch"
 ra_config_path="${HOME}/.retroarch"
@@ -53,15 +60,23 @@ elif test "${ra_mode}" == "update"; then
       if test -f "$file"; then
         CORE_FILE="$(echo "$file" | sed 's/.*\///')"
         CORE_NAME="$(echo "${CORE_FILE}" | sed 's/_libretro.so//g')"
-        # sanity check if there's an existing link in gmenu2x
-        RA_LDIR="${GM2X_WDIR}/sections/cores"
-        test -d $RA_LDIR || mkdir $RA_LDIR
-        CORE_LINK="${CORE_NAME}.ra"
-        if ! test -e "${RA_LDIR}"/*"${CORE_LINK}"; then
-          echo -en "\nGenarated link of core: ${CORE_NAME}" >> ${GMENU2X_LOGS}
-          echo -e "title=${CORE_NAME}\ndescription=${CORE_NAME} libretro core\nexec=${RA_WDIR}/retroarch\nselectordir=/mnt\nparams=-vL ${CORE_NAME} --appendconfig=${RA_WDIR}/retroarch_menu.cfg" \
-          > "${RA_LDIR}"/"${CORE_LINK}"
-          #mv ${RA_LDIR}/${CORE_LINK} ${RA_LDIR}/zblank.${CORE_LINK}
+        if test "${frontend_alive}" == "gmenu2x"; then
+          test -z "${frontend_wdir}" \
+           && frontend_wdir="${HOME}/gmenu2x" ## WIP: assuming gmenu2x is placed at /mnt/gmenu2x
+          # sanity check if there's an existing link in gmenu2x
+          RA_LDIR="${frontend_wdir}/sections/cores"
+          test -d $RA_LDIR || mkdir $RA_LDIR
+          CORE_LINK="${CORE_NAME}.ra"
+          if ! test -e "${RA_LDIR}"/*"${CORE_LINK}"; then
+            { echo -e "title=${CORE_NAME}\ndescription=${CORE_NAME} libretro core\nexec=${RA_WDIR}/retroarch\nselectordir=/mnt\nparams=-vL ${CORE_NAME} --appendconfig=${RA_WDIR}/retroarch_menu.cfg" \
+            > "${RA_LDIR}"/"${CORE_LINK}" \
+            && echo -en "\nGenarated link of core: ${CORE_NAME}" >> ${GMENU2X_LOGS}; } \
+            || echo -en "\nWARNING: There was an issue for link of core: ${CORE_NAME}" >> ${GMENU2X_LOGS}
+            #mv ${RA_LDIR}/${CORE_LINK} ${RA_LDIR}/zblank.${CORE_LINK}
+          fi
+        else
+          echo -e "ERROR: Unknown defined FRONTEND=${FRONTEND}, not going to update core links cuz of missing frontend_alive..."
+          exit 1
         fi
       fi
     done
@@ -97,12 +112,12 @@ else
     if test -d "${cores_path}"; then
       for file in "${cores_path}"/*; do
         if grep -q '^params=' "$file"; then
-          #Warning: escape "-" sign for grep cmd in BB otherwise it will fail
-          grep -q '\--appendconfig=' "$file" && \
-            #Warning: in POSIX using ":" is safer delimer than "/" or "|" since paths or cmds can contain these also (likewise here)
-            ##Below cmd replaces first occurence of appendconfig, append "g" for global
-            sed -i "s:--appendconfig=[^[:space:]]*:--appendconfig=\"${ra_append_cfg}\":" "$file"\
-          ||sed -i "/^params=/ s:$: --appendconfig=\"${ra_append_cfg}\":" "$file"
+          #Warning: escape "-" sign for grep cmd in BB otherwise it will fail,
+          ## also in POSIX using ":" is safer delimer than "/" or "|" since paths or cmds can contain these also (likewise here)
+          ##Below former sed cmd replaces first occurence of appendconfig, append "g" for global
+          { grep -q '\--appendconfig=' "$file" \
+          && sed -i "s:--appendconfig=[^[:space:]]*:--appendconfig=\"${ra_append_cfg}\":" "$file"; } \
+          || sed -i "/^params=/ s:$: --appendconfig=\"${ra_append_cfg}\":" "$file"
         else
           echo "params=--appendconfig=\"${ra_append_cfg}\"" >> "$file"
         fi
