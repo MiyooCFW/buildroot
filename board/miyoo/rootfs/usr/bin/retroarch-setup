@@ -32,12 +32,27 @@ shift $((OPTIND - 1))
 ra_mode="${1}" # (default=menu); history; kiosk; minimal;
 frontend_alive="${FRONTEND}" # (default="") thus no frontend
 frontend_wdir="${FRONTEND_WDIR}"
+if test "${frontend_alive}" == "gmenu2x"; then
+  test -z "${frontend_wdir}" \
+    && frontend_wdir="${HOME}/gmenu2x" ## WIP: assuming gmenu2x is placed at /mnt/gmenu2x
+  # sanity check if there's an existing link in gmenu2x
+  if test -d "${frontend_wdir}/sections/cores"; then
+    core_linkdir="${frontend_wdir}/sections/cores"
+  elif test -d "${frontend_wdir}/sections/.cores"; then
+    core_linkdir="${frontend_wdir}/sections/.cores"
+  else
+    core_linkdir="${frontend_wdir}/sections/cores"
+    echo -e "WARNING: did not find existing core_linkdir going to create one in ${frontend_wdir}/sections/cores"
+    mkdir "${core_linkdir}" \
+     || { echo -en "\nERROR: Coudln't create directory for gmenu2x section.\n\nEXITING..."; exit 1; }
+  fi
+fi
 
 ra_path="${HOME}/emus/retroarch"
 ra_config_path="${HOME}/.retroarch"
 history_path="${ra_config_path}/playlists/builtin/content_history.lpl" ## RA ver. >1.22.2
 
-cd "${ra_path}" || { echo -en "Failed to cd into ${ra_path}, no RetroArch to launch.\n\nEXITING..." ; exit; }
+cd "${ra_path}" || { echo -en "\nERROR: Failed to cd into ${ra_path}, no RetroArch to launch.\n\nEXITING..." ; exit 1; }
 
 if test "${ra_mode}" == "history"; then
   if test -f "${history_path}"; then
@@ -63,18 +78,14 @@ elif test "${ra_mode}" == "update"; then
         core_file="$(echo "$file" | sed 's/.*\///')"
         core_name="$(echo "${core_file}" | sed 's/_libretro.so//g')"
         if test "${frontend_alive}" == "gmenu2x"; then
-          test -z "${frontend_wdir}" \
-           && frontend_wdir="${HOME}/gmenu2x" ## WIP: assuming gmenu2x is placed at /mnt/gmenu2x
-          # sanity check if there's an existing link in gmenu2x
-          ra_ldir="${frontend_wdir}/sections/cores"
-          test -d $ra_ldir || mkdir $ra_ldir
+          test -d $core_linkdir || mkdir $core_linkdir
           core_link="${core_name}.ra"
-          if ! test -e "${ra_ldir}"/*"${core_link}"; then
+          if ! test -e "${core_linkdir}"/*"${core_link}"; then
             { echo -e "title=${core_name}\ndescription=${core_name} libretro core\nexec=${ra_path}/retroarch\nselectordir=/mnt\nparams=-vL ${core_name} --appendconfig=${ra_path}/retroarch_menu.cfg" \
-            > "${ra_ldir}"/"${core_link}" \
+            > "${core_linkdir}"/"${core_link}" \
             && echo -en "\nGenarated link of core: ${core_name}"; } \
             || echo -en "\nWARNING: There was an issue for link of core: ${core_name}"
-            #mv ${ra_ldir}/${core_link} ${ra_ldir}/zblank.${core_link}
+            #mv ${core_linkdir}/${core_link} ${core_linkdir}/zblank.${core_link}
           fi
         else
           echo -e "ERROR: Unknown defined FRONTEND=${FRONTEND}, not going to update core links cuz of missing frontend_alive..."
@@ -108,13 +119,8 @@ else
    ra_append_cfg="${ra_append_cfg}\|${ra_custom_cfg}"
   #Apply new setting to frontend
   if test "${frontend_alive}" == "gmenu2x"; then
-    if test -d "${HOME}/gmenu2x/sections/cores"; then
-      cores_path="${HOME}/gmenu2x/sections/cores"
-    elif test -d "${HOME}/gmenu2x/sections/.cores"; then
-      cores_path="${HOME}/gmenu2x/sections/.cores"
-    fi
-    if test -d "${cores_path}"; then
-      for file in "${cores_path}"/*; do
+    if test -d "${core_linkdir}"; then
+      for file in "${core_linkdir}"/*; do
         if grep -q '^params=' "$file"; then
           #Warning: escape "-" sign for grep cmd in BB otherwise it will fail,
           ## also in POSIX using ":" is safer delimer than "/" or "|" since paths or cmds can contain these also (likewise here)
