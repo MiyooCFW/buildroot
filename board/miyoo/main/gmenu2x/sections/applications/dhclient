@@ -1,3 +1,4 @@
 title=DHCP client
 description=Start DHCP client
 exec=/mnt/apps/dhclient/dhclient.sh
+terminal=true
