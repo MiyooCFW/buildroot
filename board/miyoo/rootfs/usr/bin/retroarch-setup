@@ -44,7 +44,7 @@ if test "${frontend_alive}" == "gmenu2x"; then
     core_linkdir="${frontend_wdir}/sections/cores"
     echo -e "WARNING: did not find existing core_linkdir going to create one in ${frontend_wdir}/sections/cores"
     mkdir "${core_linkdir}" \
-     || { echo -en "\nERROR: Coudln't create directory for gmenu2x section.\n\nEXITING..."; exit 1; }
+     || { echo -en "\nERROR: Couldn't create directory for gmenu2x section.\n\nEXITING..."; exit 1; }
   fi
 fi
 
@@ -73,17 +73,17 @@ elif test "${ra_mode}" == "update"; then
   if test -e "${ra_path}/retroarch"; then
     ## Generate list of cores to be used
     cores_dir="${HOME}/.retroarch/cores"
+    cores_updated=false
     for file in $cores_dir/*; do
       if test -f "$file"; then
         core_file="$(echo "$file" | sed 's/.*\///')"
         core_name="$(echo "${core_file}" | sed 's/_libretro.so//g')"
         if test "${frontend_alive}" == "gmenu2x"; then
-          test -d $core_linkdir || mkdir $core_linkdir
           core_link="${core_name}.ra"
           if ! test -e "${core_linkdir}"/*"${core_link}"; then
             { echo -e "title=${core_name}\ndescription=${core_name} libretro core\nexec=${ra_path}/retroarch\nselectordir=/mnt\nparams=-vL ${core_name} --appendconfig=${ra_path}/retroarch_menu.cfg" \
             > "${core_linkdir}"/"${core_link}" \
-            && echo -en "\nGenarated link of core: ${core_name}"; } \
+            && cores_updated=true && echo -en "\nGenarated link of core: ${core_name}"; } \
             || echo -en "\nWARNING: There was an issue for link of core: ${core_name}"
             #mv ${core_linkdir}/${core_link} ${core_linkdir}/zblank.${core_link}
           fi
@@ -93,12 +93,14 @@ elif test "${ra_mode}" == "update"; then
         fi
       fi
     done
+    if ! $cores_updated; then
+      echo -en "\nINFO: No new cores, everything up-to-date..."
+    fi
   else
     echo -en "\nERROR: Did not find ${ra_path}/retroarch for links setup..."
     exit 1
     #test -d $ra_path && rm -rf $ra_path
   fi
-  exit 0
 else
   if test "${ra_mode}" == "kiosk"; then
     ra_append_cfg="${ra_path}/retroarch_kiosk.cfg"
@@ -142,5 +144,5 @@ else
     (sleep 6; killall retroarch) &
     ./retroarch --appendconfig "${ra_append_cfg}"
   fi
-  exit 0
 fi
+exit 0
