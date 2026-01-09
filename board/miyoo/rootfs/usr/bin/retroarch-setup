@@ -5,22 +5,26 @@
 ###${FRONTEND}
 ###${FRONTEND_WDIR}
 
-while getopts "rsc:" opt; do
+while getopts "rsqc:" opt; do
   case "$opt" in
     r)
       #Option -r for Rewind
       ra_rewind="true"
       ;;
     s)
-      #Option -s for Save config on exit"
+      #Option -s for Save config on exit
       ra_cfgsave="true"
+      ;;
+    q)
+      #Option -q for QuickResume (autoload & autosave state)
+      ra_quickres="true"
       ;;
     c)
       #Option -c for Custom *.cfg with parsed value"
       ra_custom_cfg="$OPTARG"
       ;;
     \?)
-      echo "Usage: $0 [-r] [-s] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history|update>" >&2
+      echo "Usage: $0 [-rsq] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history|update>" >&2
       exit 1
       ;;
   esac
@@ -102,6 +106,7 @@ elif test "${ra_mode}" == "update"; then
     #test -d $ra_path && rm -rf $ra_path
   fi
 else
+  #primary options (last arg)
   if test "${ra_mode}" == "kiosk"; then
     ra_append_cfg="${ra_path}/retroarch_kiosk.cfg"
   elif test "${ra_mode}" == "minimal"; then
@@ -112,9 +117,12 @@ else
   else #menu
     ra_append_cfg="${ra_path}/retroarch_menu.cfg"
   fi
-
+  
+  #secondary options (shift values)
   test "${ra_rewind}" == "true" &&
    ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_rewind.cfg"
+  test "${ra_quickres}" == "true" &&
+   ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_quickres.cfg"
   test "${ra_cfgsave}" == "true" &&
    ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_cfgsave.cfg"
   test -f "${ra_custom_cfg}" &&
@@ -140,9 +148,11 @@ else
     fi
 # elif test "${frontend_alive}" == "some_frontend"; then
   else
+    # Force -s opt for save config on quit as we autokill ps
     ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_cfgsave.cfg"
     (sleep 6; killall retroarch) &
     ./retroarch --appendconfig "${ra_append_cfg}"
   fi
 fi
+echo -en "\nINFO:Exiting normally retroarch-setup ran in \"${ra_mode}\" mode via \"${frontend_alive}\" frontend."
 exit 0
