@@ -4,6 +4,7 @@
 ###${HOME}
 ###${FRONTEND}
 ###${FRONTEND_WDIR}
+###${ROMS}
 
 while getopts "rsqc:" opt; do
   case "$opt" in
@@ -34,8 +35,11 @@ shift $((OPTIND - 1))
 
 #First argument is a non-option value"
 ra_mode="${1}" # (default=menu); history; kiosk; minimal;
+roms_dir="${ROMS}"
+test -z "${roms_dir}" && roms_dir="/roms"
 frontend_alive="${FRONTEND}" # (default="") thus no frontend
 frontend_wdir="${FRONTEND_WDIR}"
+
 if test "${frontend_alive}" == "gmenu2x"; then
   test -z "${frontend_wdir}" \
     && frontend_wdir="${HOME}/gmenu2x" ## WIP: assuming gmenu2x is placed at /mnt/gmenu2x
@@ -76,16 +80,36 @@ if test "${ra_mode}" == "history"; then
 elif test "${ra_mode}" == "update"; then
   if test -e "${ra_path}/retroarch"; then
     ## Generate list of cores to be used
-    cores_dir="${HOME}/.retroarch/cores"
+    cores_dir="${ra_config_path}/cores"
+    cores_info_dir="${ra_config_path}/core_info"
     cores_updated=false
     for file in $cores_dir/*; do
       if test -f "$file"; then
         core_file="$(echo "$file" | sed 's/.*\///')"
         core_name="$(echo "${core_file}" | sed 's/_libretro.so//g')"
+        core_info_file="${cores_info_dir}/${core_name}_libretro.info"
+        if test -f ${core_info_file}; then
+          core_systemid=$(sed -n 's/^systemid = //p' "${core_info_file}" | tr -d '"')
+          core_romsdir="${roms_dir}/$(echo ${core_systemid} | tr [:lower:] [:upper:])"
+          core_supports_no_game=$(sed -n 's/^supports_no_game = //p' "${core_info_file}" | tr -d '"')
+          core_supported_extensions=$(sed -n 's/^supported_extensions = //p' "${core_info_file}"| tr -d '"' | sed 's/|/,./g' | sed 's/^/./')
+        else
+          echo -en "\nWARNING: Missing info file for core: ${core_name}"
+        fi
         if test "${frontend_alive}" == "gmenu2x"; then
           core_link="${core_name}.ra"
           if ! test -e "${core_linkdir}"/*"${core_link}"; then
-            { echo -e "title=${core_name}\ndescription=${core_name} libretro core\nexec=${ra_path}/retroarch\nselectordir=/mnt\nparams=-vL ${core_name} --appendconfig=${ra_path}/retroarch_menu.cfg" \
+            if ! ${core_supports_no_game}; then
+              selectordir="selectordir=${core_romsdir}/"
+              selectorbrowser="selectorbrowser=false"
+              selectorfilter="selectorfilter=${core_supported_extensions}"
+              mkdir -p ${core_romsdir} #create ROMS dir structure
+            fi
+            title="title=${core_name}"
+            description="description=${core_name} libretro core"
+            exec="exec=${ra_path}/retroarch"
+            params="params=-vL ${core_name} --appendconfig=${ra_path}/retroarch_menu.cfg"
+            { echo -e "${title}\n${description}\n${exec}\n${params}\n${selectordir}\n${selectorbrowser}\n${selectorfilter}" \
             > "${core_linkdir}"/"${core_link}" \
             && cores_updated=true && echo -en "\nGenarated link of core: ${core_name}"; } \
             || echo -en "\nWARNING: There was an issue for link of core: ${core_name}"
