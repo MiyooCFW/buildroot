@@ -85,20 +85,25 @@ elif test "${ra_mode}" == "update"; then
     cores_updated=false
     for file in $cores_dir/*; do
       if test -f "$file"; then
-        core_file="$(echo "$file" | sed 's/.*\///')"
-        core_name="$(echo "${core_file}" | sed 's/_libretro.so//g')"
+        core_file="$(echo "$file" | sed 's:.*\/::')"
+        core_name="$(echo "${core_file}" | sed 's:_libretro.so::g')"
         core_info_file="${cores_info_dir}/${core_name}_libretro.info"
         if test -f ${core_info_file}; then
-          core_systemid=$(sed -n 's/^systemid = //p' "${core_info_file}" | tr -d '"')
+          core_systemid=$(sed -n 's:^systemid = ::p' "${core_info_file}" | tr -d '"')
           core_romsdir="${roms_dir}/$(echo ${core_systemid} | tr [:lower:] [:upper:])"
-          core_supports_no_game=$(sed -n 's/^supports_no_game = //p' "${core_info_file}" | tr -d '"')
-          core_supported_extensions=$(sed -n 's/^supported_extensions = //p' "${core_info_file}"| tr -d '"' | sed 's/|/,./g' | sed 's/^/./')
+          core_supports_no_game=$(sed -n 's:^supports_no_game = ::p' "${core_info_file}" | tr -d '"')
+          core_supported_extensions=$(sed -n 's:^supported_extensions = ::p' "${core_info_file}"| tr -d '"' | sed 's:|:,.:g' | sed 's:^:.:')
         else
           echo -en "\nWARNING: Missing info file for core: ${core_name}"
+          continue
         fi
         if test "${frontend_alive}" == "gmenu2x"; then
           core_link="${core_name}.ra"
           if ! test -e "${core_linkdir}"/*"${core_link}"; then
+            #set empty vars or will be fetched in next loops
+            selectordir=""
+            selectorbrowser=""
+            selectorfilter=""
             if ! ${core_supports_no_game}; then
               selectordir="selectordir=${core_romsdir}/"
               selectorbrowser="selectorbrowser=false"
@@ -173,7 +178,8 @@ else
 # elif test "${frontend_alive}" == "some_frontend"; then
   else
     # Force -s opt for save config on quit as we autokill ps
-    ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_cfgsave.cfg"
+    ra_append_cfg="$(echo "${ra_append_cfg}\|${ra_path}/retroarch_cfgsave.cfg" | tr -d '\')"
+    echo "exec: retroarch --appendconfig=${ra_append_cfg}"
     (sleep 6; killall retroarch) &
     ./retroarch --appendconfig "${ra_append_cfg}"
   fi
