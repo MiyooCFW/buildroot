@@ -92,14 +92,15 @@ elif test "${ra_mode}" == "update"; then
           core_systemid=$(sed -n 's:^systemid = ::p' "${core_info_file}" | tr -d '"')
           core_romsdir="${roms_dir}/$(echo ${core_systemid} | tr [:lower:] [:upper:])"
           core_supports_no_game=$(sed -n 's:^supports_no_game = ::p' "${core_info_file}" | tr -d '"')
-          core_supported_extensions=$(sed -n 's:^supported_extensions = ::p' "${core_info_file}"| tr -d '"' | sed 's:|:,.:g' | sed 's:^:.:')
+          core_supported_extensions="$(sed -n 's:^supported_extensions = ::p' "${core_info_file}"| tr -d '"')|zip|7z"
         else
           echo -en "\nWARNING: Missing info file for core: ${core_name}"
           continue
         fi
         if test "${frontend_alive}" == "gmenu2x"; then
           core_link="${core_name}.ra"
-          if ! test -e "${core_linkdir}"/*"${core_link}"; then
+          core_supported_extensions=$(echo "${core_supported_extensions}" | sed 's:|:,.:g' | sed 's:^:.:') #fix extensions format
+          if ! (test -e "${core_linkdir}"/*"${core_link}" || test -e "${core_linkdir}"/.*"${core_link}") ; then
             #set empty vars or will be fetched in next loops
             selectordir=""
             selectorbrowser=""
@@ -159,7 +160,7 @@ else
   #Apply new setting to frontend
   if test "${frontend_alive}" == "gmenu2x"; then
     if test -d "${core_linkdir}"; then
-      for file in "${core_linkdir}"/*; do
+      for file in "${core_linkdir}"/* "${core_linkdir}"/.[!.]*; do
         if grep -q '^params=' "$file"; then
           #Warning: escape "-" sign for grep cmd in BB otherwise it will fail,
           ## also in POSIX using ":" is safer delimer than "/" or "|" since paths or cmds can contain these also (likewise here)
