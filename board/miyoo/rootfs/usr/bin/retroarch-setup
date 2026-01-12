@@ -8,7 +8,10 @@
 ###${FRONTEND_WDIR}
 ###${ROMS}
 
-while getopts "rsqc:" opt; do
+##preset env variables
+debug=false
+
+while getopts "rsqdc:" opt; do
   case "$opt" in
     r)
       #Option -r for Rewind
@@ -26,8 +29,12 @@ while getopts "rsqc:" opt; do
       #Option -c for Custom *.cfg with parsed value"
       ra_custom_cfg="$OPTARG"
       ;;
+    d)
+      #Option -d for DEBUG output
+      debug=true
+      ;;
     \?)
-      echo "Usage: $0 [-rsq] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history|update>" >&2
+      echo "Usage: $0 [-rsqd] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history|update>" >&2
       exit 1
       ;;
   esac
@@ -44,7 +51,7 @@ frontend_wdir="${FRONTEND_WDIR}"
 
 if test "${frontend_alive}" == "gmenu2x"; then
   test -z "${frontend_wdir}" \
-    && frontend_wdir="${HOME}/gmenu2x" ## WIP: assuming gmenu2x is placed at /mnt/gmenu2x
+   && frontend_wdir="${HOME}/gmenu2x" ## WIP: assuming gmenu2x is placed at /mnt/gmenu2x
   # sanity check if there's an existing link in gmenu2x
   if test -d "${frontend_wdir}/sections/cores"; then
     core_linkdir="${frontend_wdir}/sections/cores"
@@ -94,9 +101,20 @@ elif test "${ra_mode}" == "update"; then
           core_corename="$(sed -n 's:^corename = ::p' "${core_info_file}" | tr -d '"')"
           core_display_name="$(sed -n 's:^display_name = ::p' "${core_info_file}" | tr -d '"')"
           core_systemid="$(sed -n 's:^systemid = ::p' "${core_info_file}" | tr -d '"')"
-          core_romsdir="${roms_dir}/$(echo ${core_systemid} | tr [:lower:] [:upper:])"
+          core_romsdir="${roms_dir}/$(echo ${core_systemid} | tr [:lower:] [:upper:])/"
           core_supports_no_game=$(sed -n 's:^supports_no_game = ::p' "${core_info_file}" | tr -d '"')
           core_supported_extensions="$(sed -n 's:^supported_extensions = ::p' "${core_info_file}"| tr -d '"')|zip|7z"
+          
+          test -z "${core_corename}" && \
+           { if $debug; then echo -en "\nDEBUG: Missing \"corename =\" in ${core_name} info file"; fi; core_corename="${core_name}"; }
+          test -z "${core_display_name}" && \
+           if $debug; then echo -en "\nDEBUG: Missing \"display_name = =\" in ${core_name} info file"; fi;
+          if ! ${core_supports_no_game}; then
+            test -z "${core_systemid}" && \
+             { if $debug; then echo -en "\nDEBUG: Missing \"systemid =\" in ${core_name} info file means no proper \"core romsdir\" path for frontend"; fi; core_romsdir="${roms_dir}"; }
+            test "${core_supported_extensions}" == "|zip|7z" && \
+             { if $debug; then echo -en "\nDEBUG: Missing \"supported_extensions =\" in ${core_name} info file means no proper \"file filter\" for frontend"; fi; unset core_supported_extensions; }
+          fi
         else
           echo -en "\nWARNING: Missing info file for core: ${core_name}"
           continue
@@ -110,7 +128,7 @@ elif test "${ra_mode}" == "update"; then
             selectorbrowser=""
             selectorfilter=""
             if ! ${core_supports_no_game}; then
-              selectordir="selectordir=${core_romsdir}/"
+              selectordir="selectordir=${core_romsdir}"
               selectorbrowser="selectorbrowser=false"
               selectorfilter="selectorfilter=${core_supported_extensions}"
               mkdir -p ${core_romsdir} #create ROMS dir structure
@@ -120,9 +138,9 @@ elif test "${ra_mode}" == "update"; then
             exec="exec=${ra_path}/retroarch"
             params="params=-vL ${core_name} --appendconfig=${ra_path}/retroarch_menu.cfg"
             { echo -e "${title}\n${description}\n${exec}\n${params}\n${selectordir}\n${selectorbrowser}\n${selectorfilter}" \
-            > "${core_linkdir}"/"${core_link}" \
-            && cores_updated=true && echo -en "\nGenarated link of core: ${core_name}"; } \
-            || echo -en "\nWARNING: There was an issue for link of core: ${core_name}"
+             > "${core_linkdir}"/"${core_link}" \
+             && cores_updated=true && echo -en "\nGenarated link of core: ${core_name}"; } \
+             || echo -en "\nWARNING: There was an issue for link of core: ${core_name}"
             #mv ${core_linkdir}/${core_link} ${core_linkdir}/zblank.${core_link}
           fi
         else
@@ -170,8 +188,8 @@ else
           ## also in POSIX using ":" is safer delimer than "/" or "|" since paths or cmds can contain these also (likewise here)
           ##Below former sed cmd replaces first occurence of appendconfig, append "g" for global
           { grep -q '\--appendconfig=' "$file" \
-          && sed -i "s:--appendconfig=[^[:space:]]*:--appendconfig=\"${ra_append_cfg}\":" "$file"; } \
-          || sed -i "/^params=/ s:$: --appendconfig=\"${ra_append_cfg}\":" "$file"
+           && sed -i "s:--appendconfig=[^[:space:]]*:--appendconfig=\"${ra_append_cfg}\":" "$file"; } \
+           || sed -i "/^params=/ s:$: --appendconfig=\"${ra_append_cfg}\":" "$file"
         else
           echo "params=--appendconfig=\"${ra_append_cfg}\"" >> "$file"
         fi
@@ -189,5 +207,5 @@ else
     ./retroarch --appendconfig "${ra_append_cfg}"
   fi
 fi
-echo -en "\nINFO:Exiting normally retroarch-setup ran in \"${ra_mode}\" mode via \"${frontend_alive}\" frontend."
+echo -en "\nINFO: Exiting normally retroarch-setup ran in \"${ra_mode}\" mode via \"${frontend_alive}\" frontend."
 exit 0

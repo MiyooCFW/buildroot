@@ -907,9 +907,13 @@ cat "${GM2X_WDIR}/input.conf" >> ${GMENU2X_LOGS}
 ## RetroArch's cores setup
 echo -en "\nGenarating GMenu2X links for libretro cores..." | tee -a ${GMENU2X_LOGS}
 FRONTEND="gmenu2x" FRONTEND_WDIR="${GM2X_WDIR}" \
- retroarch-setup update >> ${GMENU2X_LOGS}
-test $? -ne 0 \
- && echo -en "\nThere was an ERROR when genarating GMenu2X links for libretro cores, pls check ${GMENU2X_LOGS} file..." | tee -a ${GMENU2X_LOGS}
+ retroarch-setup -d update >> ${GMENU2X_LOGS}
+if test $? -ne 0; then
+	echo -en "\nThere was an ERROR when genarating GMenu2X links for libretro cores, pls check ${GMENU2X_LOGS} file..." | tee -a ${GMENU2X_LOGS}
+else
+	echo -en "\nSuccessfully generated RA links, for detailed list pls see ${GMENU2X_LOGS} file."
+fi
+sleep 1
 
 sync
 echo "firstboot script finished." | tee -a ${LOG}
