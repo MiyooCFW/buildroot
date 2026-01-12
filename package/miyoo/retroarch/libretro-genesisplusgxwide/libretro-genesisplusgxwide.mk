@@ -23,7 +23,7 @@ endef
 define LIBRETRO_GENESISPLUSGXWIDE_INSTALL_TARGET_CMDS
     mkdir -p "${BINARIES_DIR}/retroarch/cores"
 	$(INSTALL) -D $(@D)/genesis_plus_gx_wide_libretro.so \
-		${BINARIES_DIR}/retroarch/cores/genesisplusgxwide_libretro.so
+		${BINARIES_DIR}/retroarch/cores/genesis_plus_gx_wide_libretro.so
 endef
 
 $(eval $(generic-package))
