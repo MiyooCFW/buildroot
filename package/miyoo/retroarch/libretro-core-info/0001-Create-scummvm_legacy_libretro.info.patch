@@ -1,7 +1,7 @@
-From 550b1a7bf2f13e3700e60a1167c563cddbb33c42 Mon Sep 17 00:00:00 2001
+From e1b286069d77ab26b66d3f5b15b82add52ead2f4 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Mon, 27 Jan 2025 22:23:55 +0100
-Subject: [PATCH 2/2] Create scummvm_legacy_libretro.info
+Subject: [PATCH] Create scummvm_legacy_libretro.info
 
 ---
  scummvm_legacy_libretro.info | 106 +++++++++++++++++++++++++++++++++++
@@ -10,7 +10,7 @@ Subject: [PATCH 2/2] Create scummvm_legacy_libretro.info
 
 diff --git a/scummvm_legacy_libretro.info b/scummvm_legacy_libretro.info
 new file mode 100644
-index 0000000..9c613a3
+index 0000000..ead98bd
 --- /dev/null
 +++ b/scummvm_legacy_libretro.info
 @@ -0,0 +1,106 @@

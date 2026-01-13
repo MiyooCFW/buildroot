@@ -1,0 +1,58 @@
+From 10d2b37b2ab140df8e2bf8b31622913007353dcc Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Tue, 13 Jan 2026 21:13:23 +0100
+Subject: [PATCH] re-Create uae4all_libretro.info
+
+seems they are deleted if not present in libretro-super (see list: https://github.com/libretro/libretro-super/tree/25dd1d7addfaa925485c47f4dffaedb7bd4cd3b1/dist/info)
+---
+ uae4all_libretro.info | 38 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+ create mode 100644 uae4all_libretro.info
+
+diff --git a/uae4all_libretro.info b/uae4all_libretro.info
+new file mode 100644
+index 0000000..b556140
+--- /dev/null
++++ b/uae4all_libretro.info
+@@ -0,0 +1,38 @@
++# Software Information
++display_name = "Commodore - Amiga 500(UAE4ALL)"
++categories = "Emulator"
++authors = "Chips-fr"
++corename = "UAE4ALL"
++supported_extensions = "adf|adz"
++license = "GPLv2"
++permissions = ""
++display_version = "v0.7"
++
++# Hardware Information
++manufacturer = "Commodore"
++systemname = "Amiga"
++systemid = "commodore_amiga"
++
++# Libretro Features
++database = "Commodore - Amiga"
++supports_no_game = "false"
++libretro_saves = "false"
++savestate = "false"
++cheats = "false"
++input_descriptors = "true"
++memory_descriptors = "false"
++core_options = "true"
++load_subsystem = "false"
++hw_render = "false"
++needs_fullpath = "true"
++disk_control = "true"
++is_experimental = "true"
++
++# Firmware
++firmware_count = 1
++firmware0_desc = "kick34005.A500 (Amiga 500 BIOS, Kickstart v1.3 Rev. 34.005)"
++firmware0_path = "kick34005.A500"
++firmware0_opt = "false"
++notes = "(!) kick34005.A500 (md5): 82a21c1890cae844b3df741f2762d48d"
++
++description = "An old fork of the uae4all Amiga emulator, ported to libretro. It emulates most Commodore Amiga 500 hardware with OSC 1MB Chip. The core has no built-in Kickstart, so you need to provide one. This core is intended only for use on low-powered hardware and is in the development stage"
+-- 
+2.45.2.windows.1
+
