@@ -1,0 +1,193 @@
+From c614cf6fdce3b1c84e618e3860d71f8839a2b35f Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Tue, 13 Jan 2026 21:50:33 +0100
+Subject: [PATCH] add missing `systemid` for cores req. content
+
+---
+ easyrpg_libretro.info      | 1 +
+ ffmpeg_libretro.info       | 1 +
+ freechaf_libretro.info     | 1 +
+ freej2me_libretro.info     | 1 +
+ gw_libretro.info           | 1 +
+ imageviewer_libretro.info  | 1 +
+ lutro_libretro.info        | 1 +
+ neocd_libretro.info        | 1 +
+ oberon_libretro.info       | 1 +
+ qemu_libretro.info         | 1 +
+ reminiscence_libretro.info | 1 +
+ simcp_libretro.info        | 1 +
+ stonesoup_libretro.info    | 1 +
+ vemulator_libretro.info    | 1 +
+ 14 files changed, 14 insertions(+)
+
+diff --git a/easyrpg_libretro.info b/easyrpg_libretro.info
+index d057e86..e1c19a3 100644
+--- a/easyrpg_libretro.info
++++ b/easyrpg_libretro.info
+@@ -10,6 +10,7 @@ display_version = "0.8.1.0"
+ 
+ # Hardware Information
+ systemname = "RPG Maker 2000/2003 Game Engine"
++systemid = "rpg_maker"
+ 
+ # Libretro Features
+ database = "RPG Maker"
+diff --git a/ffmpeg_libretro.info b/ffmpeg_libretro.info
+index 653c039..d8e75be 100644
+--- a/ffmpeg_libretro.info
++++ b/ffmpeg_libretro.info
+@@ -5,6 +5,7 @@ supported_extensions = "mkv|avi|f4v|f4f|3gp|ogm|flv|mp4|mp3|flac|ogg|m4a|webm|3g
+ corename = "FFmpeg"
+ categories = "Media player"
+ systemname = "FFmpeg"
++systemid = "movie"
+ license = "LGPLv2, GPLv2"
+ permissions = ""
+ display_version = "Git"
+diff --git a/freechaf_libretro.info b/freechaf_libretro.info
+index f685a86..ec56542 100644
+--- a/freechaf_libretro.info
++++ b/freechaf_libretro.info
+@@ -11,6 +11,7 @@ categories = "Emulator"
+ # Hardware Information
+ manufacturer = "Fairchild"
+ systemname = "FreeChaF"
++systemid = "channelf"
+ 
+ # Libretro Features
+ database = "Fairchild - Channel F"
+diff --git a/freej2me_libretro.info b/freej2me_libretro.info
+index cac7723..d5fd425 100644
+--- a/freej2me_libretro.info
++++ b/freej2me_libretro.info
+@@ -11,6 +11,7 @@ display_version = "GIT"
+ # Hardware Information
+ manufacturer = "Java"
+ systemname = "J2ME"
++systemid = "J2ME"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+diff --git a/gw_libretro.info b/gw_libretro.info
+index b15c192..728a255 100644
+--- a/gw_libretro.info
++++ b/gw_libretro.info
+@@ -11,6 +11,7 @@ display_version = "Git"
+ # Hardware Information
+ manufacturer = "Various"
+ systemname = "Handheld Electronic"
++systemid = "gameandwatch"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+diff --git a/imageviewer_libretro.info b/imageviewer_libretro.info
+index 5eeb8e2..1266d9c 100644
+--- a/imageviewer_libretro.info
++++ b/imageviewer_libretro.info
+@@ -7,6 +7,7 @@ categories = "Images"
+ permissions = ""
+ 
+ # Hardware Information
++systemid = "images"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+diff --git a/lutro_libretro.info b/lutro_libretro.info
+index 7a5e1ba..0c75d55 100644
+--- a/lutro_libretro.info
++++ b/lutro_libretro.info
+@@ -10,6 +10,7 @@ display_version = "v1"
+ 
+ # Hardware Information
+ systemname = "Lutro"
++systemid = "lutro"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+diff --git a/neocd_libretro.info b/neocd_libretro.info
+index a3791d0..032ceeb 100644
+--- a/neocd_libretro.info
++++ b/neocd_libretro.info
+@@ -10,6 +10,7 @@ categories = "Emulator"
+ # Hardware Information
+ manufacturer = "SNK"
+ systemname = "SNK Neo Geo CD"
++systemid = "neocd"
+ database = "SNK - Neo Geo CD"
+ 
+ # BIOS/Firmware
+diff --git a/oberon_libretro.info b/oberon_libretro.info
+index ceabfa3..3870368 100644
+--- a/oberon_libretro.info
++++ b/oberon_libretro.info
+@@ -8,6 +8,7 @@ license = "ISC"
+ 
+ # Hardware Information
+ systemname = "Oberon RISC machine"
++systemid = "oberon"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+diff --git a/qemu_libretro.info b/qemu_libretro.info
+index 7928c36..9cac726 100644
+--- a/qemu_libretro.info
++++ b/qemu_libretro.info
+@@ -7,6 +7,7 @@ categories = "Emulator"
+ license = "GPLv2"
+ permissions = ""
+ display_version = "0.1.0"
++systemid = "qemu"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+diff --git a/reminiscence_libretro.info b/reminiscence_libretro.info
+index 535c6a7..c49aced 100644
+--- a/reminiscence_libretro.info
++++ b/reminiscence_libretro.info
+@@ -10,6 +10,7 @@ display_version = "0.3.6"
+ # Hardware Information
+ categories = "Game"
+ systemname = "Flashback Game Engine"
++systemid = "flashback"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+diff --git a/simcp_libretro.info b/simcp_libretro.info
+index a5c410c..7bf0597 100644
+--- a/simcp_libretro.info
++++ b/simcp_libretro.info
+@@ -11,6 +11,7 @@ categories = "Emulator"
+ # Hardware Information
+ manufacturer = "Miles Gordon Technology"
+ systemname = "SAM coupe"
++systemid = "sam_coupe"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+diff --git a/stonesoup_libretro.info b/stonesoup_libretro.info
+index b624f68..bbb8582 100644
+--- a/stonesoup_libretro.info
++++ b/stonesoup_libretro.info
+@@ -9,6 +9,7 @@ permissions = ""
+ display_version = "Git"
+ 
+ # Hardware Information
++systemid = "dcss"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+diff --git a/vemulator_libretro.info b/vemulator_libretro.info
+index 4a16b56..ffc7d8e 100644
+--- a/vemulator_libretro.info
++++ b/vemulator_libretro.info
+@@ -11,6 +11,7 @@ display_version = "0.1"
+ manufacturer = "Sega"
+ categories = "Game"
+ systemname = "SEGA Visual Memory Unit"
++systemid = "vmu"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+-- 
+2.45.2.windows.1
+
