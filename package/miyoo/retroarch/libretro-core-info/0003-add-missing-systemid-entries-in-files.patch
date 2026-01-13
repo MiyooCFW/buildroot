@@ -1,0 +1,76 @@
+From dc8a9bf3703bf6946017fbc21713cf4a3a21f62b Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Tue, 13 Jan 2026 21:50:33 +0100
+Subject: [PATCH] add missing `systemid` entries in files
+
+---
+ freechaf_libretro.info     | 1 +
+ gw_libretro.info           | 1 +
+ lutro_libretro.info        | 1 +
+ reminiscence_libretro.info | 1 +
+ vemulator_libretro.info    | 1 +
+ 5 files changed, 5 insertions(+)
+
+diff --git a/freechaf_libretro.info b/freechaf_libretro.info
+index f685a86..ec56542 100644
+--- a/freechaf_libretro.info
++++ b/freechaf_libretro.info
+@@ -11,6 +11,7 @@ categories = "Emulator"
+ # Hardware Information
+ manufacturer = "Fairchild"
+ systemname = "FreeChaF"
++systemid = "channelf"
+ 
+ # Libretro Features
+ database = "Fairchild - Channel F"
+diff --git a/gw_libretro.info b/gw_libretro.info
+index b15c192..728a255 100644
+--- a/gw_libretro.info
++++ b/gw_libretro.info
+@@ -11,6 +11,7 @@ display_version = "Git"
+ # Hardware Information
+ manufacturer = "Various"
+ systemname = "Handheld Electronic"
++systemid = "gameandwatch"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+diff --git a/lutro_libretro.info b/lutro_libretro.info
+index 7a5e1ba..0c75d55 100644
+--- a/lutro_libretro.info
++++ b/lutro_libretro.info
+@@ -10,6 +10,7 @@ display_version = "v1"
+ 
+ # Hardware Information
+ systemname = "Lutro"
++systemid = "lutro"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+diff --git a/reminiscence_libretro.info b/reminiscence_libretro.info
+index 535c6a7..c49aced 100644
+--- a/reminiscence_libretro.info
++++ b/reminiscence_libretro.info
+@@ -10,6 +10,7 @@ display_version = "0.3.6"
+ # Hardware Information
+ categories = "Game"
+ systemname = "Flashback Game Engine"
++systemid = "flashback"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+diff --git a/vemulator_libretro.info b/vemulator_libretro.info
+index 4a16b56..ffc7d8e 100644
+--- a/vemulator_libretro.info
++++ b/vemulator_libretro.info
+@@ -11,6 +11,7 @@ display_version = "0.1"
+ manufacturer = "Sega"
+ categories = "Game"
+ systemname = "SEGA Visual Memory Unit"
++systemid = "vmu"
+ 
+ # Libretro Features
+ supports_no_game = "false"
+-- 
+2.45.2.windows.1
+
