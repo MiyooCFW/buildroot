@@ -1,5 +1,0 @@
-title=uae4all
-description=uae4all libretro core
-exec=/mnt/emus/retroarch/uae4all.sh
-selectordir=/mnt/roms/AMIGA
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

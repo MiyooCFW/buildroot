@@ -1,4 +1,0 @@
-title=xrick
-description=xrick libretro core
-exec=/mnt/emus/retroarch/xrick.sh
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

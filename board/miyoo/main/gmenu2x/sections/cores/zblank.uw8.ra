@@ -1,5 +1,0 @@
-title=uw8
-description=uw8 libretro core
-exec=/mnt/emus/retroarch/uw8.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

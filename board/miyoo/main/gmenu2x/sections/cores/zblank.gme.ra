@@ -1,5 +1,0 @@
-title=gme
-description=gme libretro core
-exec=/mnt/emus/retroarch/gme.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

@@ -1,5 +1,0 @@
-title=atari800
-description=atari800 libretro core
-exec=/mnt/emus/retroarch/atari800.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

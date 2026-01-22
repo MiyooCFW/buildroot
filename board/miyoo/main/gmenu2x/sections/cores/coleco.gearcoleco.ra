@@ -1,5 +1,0 @@
-title=gearcoleco
-description=gearcoleco libretro core
-exec=/mnt/emus/retroarch/gearcoleco.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

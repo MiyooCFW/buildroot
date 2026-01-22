@@ -1,5 +1,0 @@
-title=jumpnbump
-description=jumpnbump libretro core
-exec=/mnt/emus/retroarch/jumpnbump.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

@@ -1,4 +1,0 @@
-title=cannonball
-description=cannonball libretro core
-exec=/mnt/emus/retroarch/cannonball.sh
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

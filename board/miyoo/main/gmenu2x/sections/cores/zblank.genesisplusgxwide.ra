@@ -1,5 +1,0 @@
-title=genesisplusgxwide
-description=genesisplusgxwide libretro core
-exec=/mnt/emus/retroarch/genesisplusgxwide.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

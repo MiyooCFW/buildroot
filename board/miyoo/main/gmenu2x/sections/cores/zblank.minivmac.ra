@@ -1,5 +1,0 @@
-title=minivmac
-description=minivmac libretro core
-exec=/mnt/emus/retroarch/minivmac.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

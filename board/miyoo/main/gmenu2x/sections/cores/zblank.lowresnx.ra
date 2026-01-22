@@ -1,5 +1,0 @@
-title=lowresnx
-description=lowresnx libretro core
-exec=/mnt/emus/retroarch/lowresnx.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

@@ -1,5 +1,0 @@
-title=lutro
-description=lutro libretro core
-exec=/mnt/emus/retroarch/lutro.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

@@ -1,5 +1,0 @@
-title=vemulator
-description=vemulator libretro core
-exec=/mnt/emus/retroarch/vemulator.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

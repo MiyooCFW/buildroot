@@ -1,5 +1,0 @@
-title=handy
-description=handy libretro core
-exec=/mnt/emus/retroarch/handy.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

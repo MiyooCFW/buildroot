@@ -1,4 +1,0 @@
-title=gong
-description=gong libretro core
-exec=/mnt/emus/retroarch/gong.sh
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

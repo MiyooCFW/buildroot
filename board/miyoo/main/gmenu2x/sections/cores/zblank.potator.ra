@@ -1,5 +1,0 @@
-title=potator
-description=potator libretro core
-exec=/mnt/emus/retroarch/potator.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

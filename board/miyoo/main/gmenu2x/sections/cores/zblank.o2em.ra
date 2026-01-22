@@ -1,5 +1,0 @@
-title=o2em
-description=o2em libretro core
-exec=/mnt/emus/retroarch/o2em.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

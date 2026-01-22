@@ -1,4 +1,0 @@
-title=scummvm_heavy
-description=scummvm lr.core(AGS,Glk,TsAGE,Kyra,Ultima)
-exec=/mnt/emus/retroarch/scummvm_heavy.sh
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

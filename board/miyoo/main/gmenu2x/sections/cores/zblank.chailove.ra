@@ -1,5 +1,0 @@
-title=chailove
-description=chailove libretro core
-exec=/mnt/emus/retroarch/chailove.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

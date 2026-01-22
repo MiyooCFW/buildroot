@@ -1,5 +1,0 @@
-title=bk
-description=bk libretro core
-exec=/mnt/emus/retroarch/bk.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

@@ -1,5 +1,0 @@
-title=gpsp
-description=gpsp libretro core
-exec=/mnt/emus/retroarch/gpsp.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

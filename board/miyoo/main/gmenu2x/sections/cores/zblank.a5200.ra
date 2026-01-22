@@ -1,5 +1,0 @@
-title=a5200
-description=a5200 libretro core
-exec=/mnt/emus/retroarch/a5200.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

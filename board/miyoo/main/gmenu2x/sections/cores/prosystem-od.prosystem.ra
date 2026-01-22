@@ -1,5 +1,0 @@
-title=prosystem
-description=prosystem libretro core
-exec=/mnt/emus/retroarch/prosystem.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

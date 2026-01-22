@@ -1,5 +1,0 @@
-title=vecx
-description=vecx libretro core
-exec=/mnt/emus/retroarch/vecx.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg
