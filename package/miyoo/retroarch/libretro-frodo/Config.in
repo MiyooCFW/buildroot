@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_FRODO
+	bool "libretro-frodo"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A fast libretro COMMODORE 64 emulator core.
+
+	  https://github.com/Apaczer/frodo4/tree/libretro
