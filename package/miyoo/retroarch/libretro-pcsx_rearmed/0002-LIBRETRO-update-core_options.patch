@@ -1,27 +1,30 @@
-From 958a3a4c41917a61dbfb51c3d7e15266110f8a58 Mon Sep 17 00:00:00 2001
+From 7525d68bf55ffa4f2af7ad173ff32bced699bd69 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Sat, 15 Mar 2025 13:56:30 +0100
 Subject: [PATCH] LIBRETRO: update core_options
 
-- add extra low CPU values (def 40)
+- correct description of "auto" CPU -> aka 57%
 - disable dithering
 - enable fast_lighting
 - enable frameskip (def: auto_threshold 60%)
 ---
- frontend/libretro_core_options.h | 32 ++++++++++++++++++++++++++------
- 1 file changed, 26 insertions(+), 6 deletions(-)
+ frontend/libretro_core_options.h | 34 +++++++++++++++++++++++---------
+ 1 file changed, 25 insertions(+), 9 deletions(-)
 
 diff --git a/frontend/libretro_core_options.h b/frontend/libretro_core_options.h
-index 8c457582..8cb42c0e 100644
+index 8c457582..60229dc6 100644
 --- a/frontend/libretro_core_options.h
 +++ b/frontend/libretro_core_options.h
-@@ -233,13 +233,33 @@ struct retro_core_option_v2_definition option_defs_us[] = {
- #if defined(HAVE_PRE_ARMV7) && !defined(_3DS)
-       " Default is 50."
- #else
+@@ -230,16 +230,32 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+       "PSX CPU Clock Speed (%)",
+       NULL,
+       "Overclock or under-clock the PSX CPU. The value has to be lower than 100 because of some slowdowns (cache misses, hw access penalties, etc.) that are not emulated. Try adjusting this if the game is too slow, too fast or hangs."
+-#if defined(HAVE_PRE_ARMV7) && !defined(_3DS)
+-      " Default is 50."
+-#else
 -      " Default is 57."
-+      " Default is 40."
- #endif
+-#endif
++      " Default is 57 (auto)."
        ,
        NULL,
        "system",
@@ -50,16 +53,7 @@ index 8c457582..8cb42c0e 100644
           { "30",  NULL },
           { "31",  NULL },
           { "32",  NULL },
-@@ -313,7 +333,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
-          { "100", NULL },
-          { NULL, NULL },
-       },
--      "auto",
-+      "40",
-    },
-    {
-       "pcsx_rearmed_dithering",
-@@ -328,7 +348,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+@@ -328,7 +344,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
           { "force",    "Force" },
           { NULL, NULL },
        },
@@ -68,7 +62,7 @@ index 8c457582..8cb42c0e 100644
        "disabled",
  #else
        "enabled",
-@@ -365,7 +385,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+@@ -365,7 +381,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
           { "fixed_interval", "Fixed Interval" },
           { NULL, NULL },
        },
@@ -77,7 +71,7 @@ index 8c457582..8cb42c0e 100644
     },
     {
        "pcsx_rearmed_frameskip_threshold",
-@@ -393,7 +413,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+@@ -393,7 +409,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
           { "60", NULL },
           { NULL, NULL },
        },
@@ -86,7 +80,7 @@ index 8c457582..8cb42c0e 100644
     },
     {
        "pcsx_rearmed_frameskip_interval",
-@@ -793,7 +813,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+@@ -793,7 +809,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
           { "enabled",  NULL },
           { NULL, NULL},
        },
