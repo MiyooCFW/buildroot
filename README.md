@@ -47,6 +47,18 @@ make
 make sdk
 ```
 
+### Minimal build
+
+- image (mininal)
+
+```shell
+support/kconfig/merge_config.sh configs/miyoo_uclibc_defconfig \
+board/miyoo/minconfig/min-pkgs-fragment.config board/miyoo/minconfig/rootfs-size-fragment.config
+make MINIMAL="YES"
+```
+
+NOTE: `merge_config.sh` allows up to 2 extra fragment configs.
+
 ## Speed up build progress
 
 ### Compile speed
