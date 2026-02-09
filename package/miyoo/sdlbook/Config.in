@@ -1,5 +1,8 @@
 config BR2_PACKAGE_SDLBOOK
 	bool "sdlbook"
+	select BR2_PACKAGE_MUPDF
+	select BR2_PACKAGE_DJVU
+	select BR2_PACKAGE_TIFF
 	help
 	  Simple djvu/pdf/epub ebook viewer based on djvulibre,
 	  libmupdf and SDL 1.2
