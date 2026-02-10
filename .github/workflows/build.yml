@@ -60,13 +60,11 @@ jobs:
       run: |
         cd ${{ inputs.submodule || '.' }}
         sudo apt-get update && sudo apt-get install -y gsfonts
-        support/kconfig/merge_config.sh configs/miyoo_uclibc_defconfig \
-        board/miyoo/minconfig/rootfs-size-fragment.config board/miyoo/minconfig/min-pkgs-fragment.config
+        board/miyoo/minconfig/mini_config.sh miyoo_uclibc_defconfig
         CPU_N=$(getconf _NPROCESSORS_ONLN)
         set -o pipefail
         if ! ( \
-        make -j $CPU_N \
-        MINIMAL="YES" \
+        make -j $CPU_N MINIMAL="yes" \
         CFW_HASH="${{ steps.cfwsha.outputs.cfw_sha }}" CFW_TAG="${{ steps.cfwsha.outputs.cfw_tag }}" CFW_ITERATION="${{ steps.cfwsha.outputs.cfw_iteration }}" \
         APPEND_VERSION="-Dev_build$(echo ${{ github.ref_name != 'master' && github.ref_name || '' }} | sed 's/\//-/g' | sed '/./ s/^/-/')" 2>&1 \
         | tee build.log \
@@ -130,13 +128,11 @@ jobs:
       run: |
         cd ${{ inputs.submodule || '.' }}
         sudo apt-get update && sudo apt-get install -y gsfonts
-        support/kconfig/merge_config.sh configs/miyoo_musl_defconfig \
-        board/miyoo/minconfig/rootfs-size-fragment.config board/miyoo/minconfig/min-pkgs-fragment.config
+        board/miyoo/minconfig/mini_config.sh miyoo_musl_defconfig
         CPU_N=$(getconf _NPROCESSORS_ONLN)
         set -o pipefail
         if ! ( \
-        make -j $CPU_N \
-        MINIMAL="YES" \
+        make -j $CPU_N MINIMAL="yes" \
         CFW_HASH="${{ steps.cfwsha.outputs.cfw_sha }}" CFW_TAG="${{ steps.cfwsha.outputs.cfw_tag }}" CFW_ITERATION="${{ steps.cfwsha.outputs.cfw_iteration }}" \
         APPEND_VERSION="-Dev_build$(echo ${{ github.ref_name != 'master' && github.ref_name || '' }} | sed 's/\//-/g' | sed '/./ s/^/-/')" 2>&1 \
         | tee build.log \

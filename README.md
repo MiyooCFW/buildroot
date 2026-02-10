@@ -1,4 +1,4 @@
-# Buildroot Package for Miyoo CFW 2.0.0
+shell# Buildroot Package for Miyoo CFW 2.0.0
 Opensource development package for Miyoo handhelds.
 
 ## Install
@@ -41,10 +41,18 @@ make miyoo_musl_defconfig
 make
 ```
 
-- image & sdk
+- image & sdk (shared)
 
 ```shell
 make sdk
+```
+
+## Make "minimal" build
+
+### Apply minimal setup with regular uclibc/musl libc defconfig
+
+```shell
+./board/miyoo/minconfig/mini_config.sh miyoo_<libc>_defconfig
 ```
 
 ### Minimal build
@@ -52,12 +60,27 @@ make sdk
 - image (mininal)
 
 ```shell
-support/kconfig/merge_config.sh configs/miyoo_uclibc_defconfig \
-board/miyoo/minconfig/min-pkgs-fragment.config board/miyoo/minconfig/rootfs-size-fragment.config
-make MINIMAL="YES"
+make MINIMAL="yes"
 ```
 
-NOTE: `merge_config.sh` allows up to 2 extra fragment configs.
+## Make "static" SDK build
+
+### apply static defconfig musl/uclibc
+```shell
+make miyoo_uclibc_static_defconfig
+```
+-- or --
+
+```shell
+make miyoo_musl_static_defconfig
+```
+### build SDK (staticly linked)
+- sdk (static)
+```shell
+make sdk
+```
+
+
 
 ## Speed up build progress
 
