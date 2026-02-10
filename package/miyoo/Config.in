@@ -1,5 +1,6 @@
 menu "System"
 	source "package/miyoo/gmenu2x/Config.in"
+	source "package/miyoo/gmenu2x-skins/Config.in"
 	source "package/miyoo/gmenu2x-gm2xpkg/Config.in"
 	source "package/miyoo/miyoo-daemon/Config.in"
 	source "package/miyoo/miyoo-logo/Config.in"

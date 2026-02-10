@@ -1,0 +1,5 @@
+config BR2_PACKAGE_GMENU2X_SKINS
+	bool "gmenu2x-skins"
+	depends on BR2_PACKAGE_GMENU2X
+	help
+	  These are GMenu2X's extra skins,fonts&icons (mixed licensing).
