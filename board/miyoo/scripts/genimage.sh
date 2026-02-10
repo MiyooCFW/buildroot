@@ -119,6 +119,10 @@ label_roms="ROMS"
 dd if=/dev/zero of=${image_roms} bs=${ROMS_SIZE} count=1 # for fatresize we need part. size bigger than 256M, but for backup space at least 1G is need in ROMS (copy of main)
 mkfs.ext4 -d "${BINARIES_DIR}/roms/" -v -L ${label_roms} ${image_roms}
 
-test "$MINIMAL" == "yes" && \
- sed -i "s|size = 256M|size = ${SWAP_SIZE}|g" board/miyoo/genimage-sdcard.cfg
-support/scripts/genimage.sh ${1} -c board/miyoo/genimage-sdcard.cfg
+if test "$MINIMAL" == "yes"; then
+	tmpcfg=$(mktemp)
+	sed "s|size = 256M|size = ${SWAP_SIZE}|g" board/miyoo/genimage-sdcard.cfg >> ${tmpcfg}
+	support/scripts/genimage.sh ${1} -c ${tmpcfg}
+else
+	support/scripts/genimage.sh ${1} -c board/miyoo/genimage-sdcard.cfg
+fi
