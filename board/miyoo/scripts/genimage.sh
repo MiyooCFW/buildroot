@@ -10,12 +10,12 @@ SELFDIR=$(dirname $(realpath ${0}))
 
 MAIN_SIZE=1500M
 ROMS_SIZE=1G
-#SWAP_SIZE=256M # swap size is called from genimage-sdcard.cfg in BOARD
+#SWAP_SIZE=256M # swap size is called from genimage-sdcard.cfg in BOARD (in our normal scenario bigger than usual for resizing part. on real hw)
 #ROOTFS_SIZE=256M # rootfs ext2 size is called from defconfig in BOARD
 if test "$MINIMAL" == "yes"; then
-	MAIN_SIZE=128M
-	ROMS_SIZE=256M
-	SWAP_SIZE=16M
+	MAIN_SIZE=64M # min ~32M for actual target data (TODO: mkfs.btrfs creates 133MiB actual size either way)
+	ROMS_SIZE=176M # more than 256M for fatersize, but we won't be using it here anyway
+	SWAP_SIZE=32M # generally 16÷64MB, ideally 32MB (for F1C100S ?)
 	#ROOTFS_SIZE=160M # rootfs ext2 size is called from either fragment.defconfig or env variable (invoked in make)
 	BUILD_TYPE="MINIMAL-"
 fi
