@@ -42,9 +42,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.buildroot-ccache
-        key: ${{ inputs.submodule }}-uclibc-ccache-${{ github.sha }}
+        key: ${{ inputs.submodule }}-uclibc-minimal-ccache-${{ github.sha }}
         restore-keys: |
-          ${{ inputs.submodule }}-uclibc-ccache-
+          ${{ inputs.submodule }}-uclibc-minimal-ccache-
     
     - name: generate cfw hash & iteration count
       run: |
@@ -110,9 +110,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.buildroot-ccache
-        key: ${{ inputs.submodule }}-musl-ccache-${{ github.sha }}
+        key: ${{ inputs.submodule }}-musl-minimal-ccache-${{ github.sha }}
         restore-keys: |
-          ${{ inputs.submodule }}-musl-ccache-
+          ${{ inputs.submodule }}-musl-minimal-ccache-
 
     - name: generate cfw hash & iteration count
       run: |
