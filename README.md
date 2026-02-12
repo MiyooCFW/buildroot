@@ -11,10 +11,11 @@ It is assumed you're using Debian based distro, others like Arch or Fedora may b
 sudo apt install -y wget unzip build-essential git bc swig libncurses-dev libpython3-dev libssl-dev cpio rsync subversion python3 mercurial imagemagick btrfs-progs
 ```
 
-### Download BSP
+### Download BSP & cd to BR2's $TOPDIR
 
 ```shell
 git clone https://github.com/MiyooCFW/buildroot
+cd buildroot
 ```
 
 ## Make the first build
@@ -22,14 +23,12 @@ git clone https://github.com/MiyooCFW/buildroot
 ### Apply defconfig uClibc
 
 ```shell
-cd buildroot
 make miyoo_uclibc_defconfig
 ```
 
 ### Or apply defconfig musl
 
 ```shell
-cd buildroot
 make miyoo_musl_defconfig
 ```
 
@@ -41,11 +40,46 @@ make miyoo_musl_defconfig
 make
 ```
 
-- image & sdk
+- image & sdk (shared)
 
 ```shell
 make sdk
 ```
+
+## Make "minimal" build
+
+### Apply minimal setup with regular uclibc/musl libc defconfig
+
+```shell
+./board/miyoo/minconfig/mini_config.sh miyoo_<libc>_defconfig
+```
+
+### Minimal build
+
+- image (mininal)
+
+```shell
+make MINIMAL="yes"
+```
+
+## Make "static" SDK build
+
+### apply static defconfig musl/uclibc
+```shell
+make miyoo_uclibc_static_defconfig
+```
+-- or --
+
+```shell
+make miyoo_musl_static_defconfig
+```
+### build SDK (staticly linked)
+- sdk (static)
+```shell
+make sdk
+```
+
+
 
 ## Speed up build progress
 

@@ -4,8 +4,21 @@ set -e
 BR2_VENDOR=${2}
 BR2_VERSION_FULL=${3}
 LIBC=${4}
+MINIMAL="${9}"
 STARTDIR=$(pwd)
 SELFDIR=$(dirname $(realpath ${0}))
+
+MAIN_SIZE=1500M
+ROMS_SIZE=1G
+#SWAP_SIZE=256M # swap size is called from genimage-sdcard.cfg in BOARD (in our normal scenario bigger than usual for resizing part. on real hw)
+#ROOTFS_SIZE=256M # rootfs ext2 size is called from defconfig in BOARD
+if test "$MINIMAL" == "yes"; then
+	MAIN_SIZE=64M # min ~32M for actual target data (TODO: mkfs.btrfs creates 133MiB actual size either way)
+	ROMS_SIZE=176M # more than 256M for fatersize, but we won't be using it here anyway
+	SWAP_SIZE=32M # generally 16÷64MB, ideally 32MB (for F1C100S ?)
+	#ROOTFS_SIZE=160M # rootfs ext2 size is called from either fragment.defconfig or env variable (invoked in make)
+	BUILD_TYPE="MINIMAL-"
+fi
 
 # Generate CFW release tag, status and append iteration count
 if test $(git tag | wc -l) -ne 0; then
@@ -55,7 +68,7 @@ else
 	STATUS="UNKNOWN"
 fi
 
-export IMAGE_NAME="${BR2_VENDOR}-${CFW_TYPE}-${CFW_RELEASE}-${CFW_HASH}_${LIBC}-${STATUS}${APPEND_VERSION}.img"
+export IMAGE_NAME="${BR2_VENDOR}-${CFW_TYPE}-${CFW_RELEASE}-${CFW_HASH}_${LIBC}-${BUILD_TYPE}${STATUS}${APPEND_VERSION}.img"
 
 # Relocate board files for genimage-sdcard config to read (see last cmd)
 cp -r board/miyoo/boot "${BINARIES_DIR}"
@@ -63,7 +76,7 @@ cp -r board/miyoo/main "${BINARIES_DIR}"
 cp -r board/miyoo/roms "${BINARIES_DIR}"
 
 # Write CFW version to splash image
-convert board/miyoo/miyoo-splash.png -pointsize 12 -fill white -annotate +10+230 "v${CFW_RELEASE} ${CFW_VERSION} (${LIBC}) ${STATUS}${APPEND_VERSION}" -type Palette -colors 224 -depth 8 -compress none -verbose BMP3:"${BINARIES_DIR}"/boot/miyoo-splash.bmp
+convert board/miyoo/miyoo-splash.png -pointsize 12 -fill white -annotate +10+230 "v${CFW_RELEASE} ${CFW_VERSION} (${LIBC}) ${BUILD_TYPE}${STATUS}${APPEND_VERSION}" -type Palette -colors 224 -depth 8 -compress none -verbose BMP3:"${BINARIES_DIR}"/boot/miyoo-splash.bmp
 
 # Workaround for build apss and configs being placed in /usr/ after img generation (as we use MAIN)
 test -d "${BINARIES_DIR}/gmenu2x" && cp -r "${BINARIES_DIR}/gmenu2x/" "${BINARIES_DIR}/main/"
@@ -98,12 +111,18 @@ fi
 # Generate MAIN BTRFS partition
 image="${BINARIES_DIR}/main.img"
 label="MAIN"
-mkfs.btrfs -r "${BINARIES_DIR}/main/" -b 1500M -v -f -L ${label} ${image} # hardcoded value and should be enough for extra exec/libs 1G def + 500MB extra in MAIN
+mkfs.btrfs -r "${BINARIES_DIR}/main/" -b ${MAIN_SIZE} -v -f -L ${label} ${image} # hardcoded value and should be enough for extra exec/libs 1G def + 500MB extra in MAIN
 
 # Generate ROMS EXT4 partition (dir at mount point is created at prebuild script)
 image_roms="${BINARIES_DIR}/roms.img"
 label_roms="ROMS"
-dd if=/dev/zero of=${image_roms} bs=1G count=1 # for fatresize we need part. size bigger than 256M, but for backup space at least 1G is need in ROMS (copy of main)
+dd if=/dev/zero of=${image_roms} bs=${ROMS_SIZE} count=1 # for fatresize we need part. size bigger than 256M, but for backup space at least 1G is need in ROMS (copy of main)
 mkfs.ext4 -d "${BINARIES_DIR}/roms/" -v -L ${label_roms} ${image_roms}
 
-support/scripts/genimage.sh ${1} -c board/miyoo/genimage-sdcard.cfg
+if test "$MINIMAL" == "yes"; then
+	tmpcfg=$(mktemp)
+	sed "s|size = 256M|size = ${SWAP_SIZE}|g" board/miyoo/genimage-sdcard.cfg >> ${tmpcfg}
+	support/scripts/genimage.sh ${1} -c ${tmpcfg}
+else
+	support/scripts/genimage.sh ${1} -c board/miyoo/genimage-sdcard.cfg
+fi

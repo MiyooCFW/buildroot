@@ -16,7 +16,143 @@ on:
         required: true
         type: string
 
-jobs:   
+jobs:  
+  build-image-minimal-uclibc:
+    runs-on: ubuntu-22.04
+    env:
+      FORCE_UNSAFE_CONFIGURE: 1
+    steps:
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@v10
+      with:
+        overprovision-lvm: true
+        remove-dotnet: true
+        remove-android: true
+        remove-haskell: true
+        remove-codeql: true
+        remove-docker-images: true
+
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - if: inputs.submodule
+      run: git submodule update --init -- ${{ inputs.submodule }}
+  
+    - name: retrieve ccache
+      uses: actions/cache@v4
+      with:
+        path: ~/.buildroot-ccache
+        key: ${{ inputs.submodule }}-uclibc-minimal-ccache-${{ github.sha }}
+        restore-keys: |
+          ${{ inputs.submodule }}-uclibc-minimal-ccache-
+    
+    - name: generate cfw hash & iteration count
+      run: |
+        git config --global --add safe.directory /__w/buildroot/buildroot 
+        echo "cfw_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        if test $(git tag | wc -l) -ne 0; then \
+        echo "cfw_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT; \
+        echo "cfw_iteration=$(git rev-list --count $(git describe --tags --abbrev=0)..HEAD)" >> $GITHUB_OUTPUT; \
+        fi
+      id: cfwsha
+    
+    - name: build
+      run: |
+        cd ${{ inputs.submodule || '.' }}
+        sudo apt-get update && sudo apt-get install -y gsfonts
+        board/miyoo/minconfig/mini_config.sh miyoo_uclibc_defconfig
+        CPU_N=$(getconf _NPROCESSORS_ONLN)
+        set -o pipefail
+        if ! ( \
+        make -j $CPU_N MINIMAL="yes" \
+        CFW_HASH="${{ steps.cfwsha.outputs.cfw_sha }}" CFW_TAG="${{ steps.cfwsha.outputs.cfw_tag }}" CFW_ITERATION="${{ steps.cfwsha.outputs.cfw_iteration }}" \
+        APPEND_VERSION="-Dev_build$(echo ${{ github.ref_name != 'master' && github.ref_name || '' }} | sed 's/\//-/g' | sed '/./ s/^/-/')" 2>&1 \
+        | tee build.log \
+        | grep --line-buffered "^>>>" \
+        ); then tail -n100 build.log && exit 1
+        fi
+ 
+    - name: Archive build logs (uClibc) - minimal
+      if: success() || failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs (uClibc) - minimal
+        path: ${{ inputs.submodule || '.' }}/build.log
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: build image (uClibc) - minimal
+        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-*.img
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+
+  build-image-minimal-musl:
+    runs-on: ubuntu-22.04
+    env:
+      FORCE_UNSAFE_CONFIGURE: 1
+    steps:
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@v10
+      with:
+        overprovision-lvm: true
+        remove-dotnet: true
+        remove-android: true
+        remove-haskell: true
+        remove-codeql: true
+        remove-docker-images: true
+
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - if: inputs.submodule
+      run: git submodule update --init -- ${{ inputs.submodule }}
+
+    - name: retrieve ccache
+      uses: actions/cache@v4
+      with:
+        path: ~/.buildroot-ccache
+        key: ${{ inputs.submodule }}-musl-minimal-ccache-${{ github.sha }}
+        restore-keys: |
+          ${{ inputs.submodule }}-musl-minimal-ccache-
+
+    - name: generate cfw hash & iteration count
+      run: |
+        git config --global --add safe.directory /__w/buildroot/buildroot 
+        echo "cfw_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        if test $(git tag | wc -l) -ne 0; then \
+        echo "cfw_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT; \
+        echo "cfw_iteration=$(git rev-list --count $(git describe --tags --abbrev=0)..HEAD)" >> $GITHUB_OUTPUT; \
+        fi
+      id: cfwsha
+
+    - name: build
+      run: |
+        cd ${{ inputs.submodule || '.' }}
+        sudo apt-get update && sudo apt-get install -y gsfonts
+        board/miyoo/minconfig/mini_config.sh miyoo_musl_defconfig
+        CPU_N=$(getconf _NPROCESSORS_ONLN)
+        set -o pipefail
+        if ! ( \
+        make -j $CPU_N MINIMAL="yes" \
+        CFW_HASH="${{ steps.cfwsha.outputs.cfw_sha }}" CFW_TAG="${{ steps.cfwsha.outputs.cfw_tag }}" CFW_ITERATION="${{ steps.cfwsha.outputs.cfw_iteration }}" \
+        APPEND_VERSION="-Dev_build$(echo ${{ github.ref_name != 'master' && github.ref_name || '' }} | sed 's/\//-/g' | sed '/./ s/^/-/')" 2>&1 \
+        | tee build.log \
+        | grep --line-buffered "^>>>" \
+        ); then tail -n100 build.log && exit 1
+        fi
+ 
+    - name: Archive build logs (musl) - minimal
+      if: success() || failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs (musl) - minimal
+        path: ${{ inputs.submodule || '.' }}/build.log
+      
+    - uses: actions/upload-artifact@v4
+      with:
+        name: build image (musl) - minimal
+        path: ${{ inputs.submodule || '.' }}/output/images/miyoo-*.img
+        if-no-files-found: error # 'error', 'warn', 'ignore'; defaults to `warn`
+
   build-image-uclibc:
     runs-on: ubuntu-22.04
     env:
