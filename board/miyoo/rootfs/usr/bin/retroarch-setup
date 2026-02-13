@@ -101,17 +101,22 @@ elif test "${ra_mode}" == "update"; then
           core_corename="$(sed -n 's:^corename = ::p' "${core_info_file}" | tr -d '"')"
           core_display_name="$(sed -n 's:^display_name = ::p' "${core_info_file}" | tr -d '"')"
           core_systemid="$(sed -n 's:^systemid = ::p' "${core_info_file}" | tr -d '"')"
-          core_romsdir="${roms_dir}/$(echo ${core_systemid} | tr [:lower:] [:upper:])/"
+          core_gamedir="$(sed -n 's:^gamedir = ::p' "${core_info_file}" | tr -d '"')"
           core_supports_no_game=$(sed -n 's:^supports_no_game = ::p' "${core_info_file}" | tr -d '"')
           core_supported_extensions="$(sed -n 's:^supported_extensions = ::p' "${core_info_file}"| tr -d '"')|zip|7z"
-          
           test -z "${core_corename}" && \
            { if $debug; then echo -en "\nDEBUG: Missing \"corename =\" in ${core_name} info file"; fi; core_corename="${core_name}"; }
           test -z "${core_display_name}" && \
            if $debug; then echo -en "\nDEBUG: Missing \"display_name = =\" in ${core_name} info file"; fi;
           if ! ${core_supports_no_game}; then
-            test -z "${core_systemid}" && \
-             { if $debug; then echo -en "\nDEBUG: Missing \"systemid =\" in ${core_name} info file means no proper \"core romsdir\" path for frontend"; fi; core_romsdir="${roms_dir}"; }
+            if ! test -z "${core_gamedir}"; then
+              core_romsdir="${roms_dir}/$(echo ${core_gamedir} | tr [:lower:] [:upper:])/"
+            elif ! test -z "${core_systemid}"; then
+              core_romsdir="${roms_dir}/$(echo ${core_systemid} | tr [:lower:] [:upper:])/"
+            else
+             { if $debug; then echo -en "\nDEBUG: Missing \"romsdir =\" & \"systemid =\" in ${core_name} info file means no proper \"core romsdir\" path for frontend"; fi;}
+              core_romsdir="${roms_dir}"
+            fi
             test "${core_supported_extensions}" == "|zip|7z" && \
              { if $debug; then echo -en "\nDEBUG: Missing \"supported_extensions =\" in ${core_name} info file means no proper \"file filter\" for frontend"; fi; unset core_supported_extensions; }
           fi
@@ -129,7 +134,8 @@ elif test "${ra_mode}" == "update"; then
             selectorfilter=""
             if ! ${core_supports_no_game}; then
               selectordir="selectordir=${core_romsdir}"
-              selectorbrowser="selectorbrowser=false"
+              test "${core_romsdir}" != "${roms_dir}" && \
+               selectorbrowser="selectorbrowser=false"
               selectorfilter="selectorfilter=${core_supported_extensions}"
               mkdir -p ${core_romsdir} #create ROMS dir structure
             fi
@@ -169,7 +175,7 @@ else
   else #menu
     ra_append_cfg="${ra_path}/retroarch_menu.cfg"
   fi
-  
+
   #secondary options (shift values)
   test "${ra_rewind}" == "true" &&
    ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_rewind.cfg"
