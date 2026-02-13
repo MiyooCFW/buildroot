@@ -1,5 +1,0 @@
-title=reminiscence
-description=reminiscence libretro core
-exec=/mnt/emus/retroarch/reminiscence.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

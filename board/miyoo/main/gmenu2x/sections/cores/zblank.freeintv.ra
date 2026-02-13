@@ -1,5 +1,0 @@
-title=freeintv
-description=freeintv libretro core
-exec=/mnt/emus/retroarch/freeintv.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

@@ -83,30 +83,7 @@ test -d "${BINARIES_DIR}/gmenu2x" && cp -r "${BINARIES_DIR}/gmenu2x/" "${BINARIE
 test -d "${BINARIES_DIR}/emus" && cp -r "${BINARIES_DIR}/emus/" "${BINARIES_DIR}/main/"
 test -d "${BINARIES_DIR}/apps" && cp -r "${BINARIES_DIR}/apps/" "${BINARIES_DIR}/main/"
 test -d "${BINARIES_DIR}/games" && cp -r "${BINARIES_DIR}/games/" "${BINARIES_DIR}/main/"
-if test -d "${BINARIES_DIR}/retroarch"; then
-	rsync -avzh "${BINARIES_DIR}/retroarch/" "${BINARIES_DIR}/main/.retroarch/"
-	## Generate list of cores to be used
-	CORES_DIR="${BINARIES_DIR}/retroarch/cores"
-	for file in $CORES_DIR/*; do
-		if test -f "$file"; then
-			RA_WDIR="${BINARIES_DIR}/main/emus/retroarch"
-			RA_TDIR="/mnt/emus/retroarch"
-			CORE_FILE="$(echo "$file" | sed 's/.*\///')"
-			CORE_NAME="$(echo "${CORE_FILE}" | sed 's/_libretro.so//g')"
-			CORE_SCRIPT="${CORE_NAME}.sh"
-			touch $RA_WDIR/"${CORE_SCRIPT}"
-			echo -e "#!/bin/sh\n${RA_TDIR}/retroarch -L ${CORE_FILE} \"\$1\" \"\$2\"" > $RA_WDIR/"${CORE_SCRIPT}"
-			chmod +x $RA_WDIR/"${CORE_SCRIPT}"
-			# sanity check if there's an existing link in gmenu2x
-			RA_LDIR="${BINARIES_DIR}/main/gmenu2x/sections/cores"
-			if ! test -f "${RA_LDIR}"/*".${CORE_NAME}.ra"; then
-				CORE_LINK="zblank.${CORE_NAME}.ra"
-				touch "${RA_LDIR}"/"${CORE_LINK}"
-				echo -e "title=${CORE_NAME}\ndescription=${CORE_NAME} libretro core\nexec=${RA_TDIR}/${CORE_SCRIPT}\nselectordir=/mnt\nparams=--appendconfig=${RA_TDIR}/retroarch_menu.cfg" > "${RA_LDIR}"/"${CORE_LINK}"
-			fi
-		fi
-	done
-fi
+test -d "${BINARIES_DIR}/retroarch" && cp -r "${BINARIES_DIR}/retroarch/" "${BINARIES_DIR}/main/.retroarch/" # I rather not use `rsync -avzh` if it's not a part of GNU utils
 
 # Generate MAIN BTRFS partition
 image="${BINARIES_DIR}/main.img"

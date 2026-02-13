@@ -1,17 +1,40 @@
 #!/bin/sh
 
-while getopts "rc:" opt; do
+# shellcheck disable=SC3000-SC4000
+
+##imported env variables are upper-cased:
+###${HOME}
+###${FRONTEND}
+###${FRONTEND_WDIR}
+###${ROMS}
+
+##preset env variables
+debug=false
+
+while getopts "rsqdc:" opt; do
   case "$opt" in
     r)
       #Option -r for Rewind
       ra_rewind="true"
       ;;
+    s)
+      #Option -s for Save config on exit
+      ra_cfgsave="true"
+      ;;
+    q)
+      #Option -q for QuickResume (autoload & autosave state)
+      ra_quickres="true"
+      ;;
     c)
       #Option -c for Custom *.cfg with parsed value"
       ra_custom_cfg="$OPTARG"
       ;;
+    d)
+      #Option -d for DEBUG output
+      debug=true
+      ;;
     \?)
-      echo "Usage: $0 [-r] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history>" >&2
+      echo "Usage: $0 [-rsqd] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history|update>" >&2
       exit 1
       ;;
   esac
@@ -21,13 +44,32 @@ shift $((OPTIND - 1))
 
 #First argument is a non-option value"
 ra_mode="${1}" # (default=menu); history; kiosk; minimal;
-frontend_alive="${FRONTEND}" # (default=gmenu2x)
+roms_dir="${ROMS}"
+test -z "${roms_dir}" && roms_dir="/roms"
+frontend_alive="${FRONTEND}" # (default="") thus no frontend
+frontend_wdir="${FRONTEND_WDIR}"
+
+if test "${frontend_alive}" == "gmenu2x"; then
+  test -z "${frontend_wdir}" \
+   && frontend_wdir="${HOME}/gmenu2x" ## WIP: assuming gmenu2x is placed at /mnt/gmenu2x
+  # sanity check if there's an existing link in gmenu2x
+  if test -d "${frontend_wdir}/sections/cores"; then
+    core_linkdir="${frontend_wdir}/sections/cores"
+  elif test -d "${frontend_wdir}/sections/.cores"; then
+    core_linkdir="${frontend_wdir}/sections/.cores"
+  else
+    core_linkdir="${frontend_wdir}/sections/cores"
+    echo -e "WARNING: did not find existing core_linkdir going to create one in ${frontend_wdir}/sections/cores"
+    mkdir "${core_linkdir}" \
+     || { echo -en "\nERROR: Couldn't create directory for gmenu2x section.\n\nEXITING..."; exit 1; }
+  fi
+fi
 
 ra_path="${HOME}/emus/retroarch"
 ra_config_path="${HOME}/.retroarch"
 history_path="${ra_config_path}/playlists/builtin/content_history.lpl" ## RA ver. >1.22.2
 
-cd "${ra_path}" || { echo -en "Failed to cd into ${ra_path}, no RetroArch to launch.\n\nEXITING..." ; exit; }
+cd "${ra_path}" || { echo -en "\nERROR: Failed to cd into ${ra_path}, no RetroArch to launch.\n\nEXITING..." ; exit 1; }
 
 if test "${ra_mode}" == "history"; then
   if test -f "${history_path}"; then
@@ -37,49 +79,139 @@ if test "${ra_mode}" == "history"; then
       ./retroarch --libretro "${core_path}" "${rom_path}"
     else
       echo -e "ERROR: ROM file in $rom_path or libretro CORE in $core_path does not exist"
+      exit 1
     fi
   else
     echo -e "ERROR: history file $history_path does not exist"
+    exit 1
+  fi
+  exit 0
+elif test "${ra_mode}" == "update"; then
+  if test -e "${ra_path}/retroarch"; then
+    ## Generate list of cores to be used
+    cores_dir="${ra_config_path}/cores"
+    cores_info_dir="${ra_config_path}/core_info"
+    cores_updated=false
+    for file in $cores_dir/*; do
+      if test -f "$file"; then
+        core_file="$(echo "$file" | sed 's:.*\/::')"
+        core_name="$(echo "${core_file}" | sed 's:_libretro.so::g')"
+        core_info_file="${cores_info_dir}/${core_name}_libretro.info"
+        if test -f ${core_info_file}; then
+          core_corename="$(sed -n 's:^corename = ::p' "${core_info_file}" | tr -d '"')"
+          core_display_name="$(sed -n 's:^display_name = ::p' "${core_info_file}" | tr -d '"')"
+          core_systemid="$(sed -n 's:^systemid = ::p' "${core_info_file}" | tr -d '"')"
+          core_gamedir="$(sed -n 's:^gamedir = ::p' "${core_info_file}" | tr -d '"')"
+          core_supports_no_game=$(sed -n 's:^supports_no_game = ::p' "${core_info_file}" | tr -d '"')
+          core_supported_extensions="$(sed -n 's:^supported_extensions = ::p' "${core_info_file}"| tr -d '"')|zip|7z"
+          test -z "${core_corename}" && \
+           { if $debug; then echo -en "\nDEBUG: Missing \"corename =\" in ${core_name} info file"; fi; core_corename="${core_name}"; }
+          test -z "${core_display_name}" && \
+           if $debug; then echo -en "\nDEBUG: Missing \"display_name = =\" in ${core_name} info file"; fi;
+          if ! ${core_supports_no_game}; then
+            if ! test -z "${core_gamedir}"; then
+              core_romsdir="${roms_dir}/$(echo ${core_gamedir} | tr [:lower:] [:upper:])/"
+            elif ! test -z "${core_systemid}"; then
+              core_romsdir="${roms_dir}/$(echo ${core_systemid} | tr [:lower:] [:upper:])/"
+            else
+             { if $debug; then echo -en "\nDEBUG: Missing \"romsdir =\" & \"systemid =\" in ${core_name} info file means no proper \"core romsdir\" path for frontend"; fi;}
+              core_romsdir="${roms_dir}"
+            fi
+            test "${core_supported_extensions}" == "|zip|7z" && \
+             { if $debug; then echo -en "\nDEBUG: Missing \"supported_extensions =\" in ${core_name} info file means no proper \"file filter\" for frontend"; fi; unset core_supported_extensions; }
+          fi
+        else
+          echo -en "\nWARNING: Missing info file for core: ${core_name}"
+          continue
+        fi
+        if test "${frontend_alive}" == "gmenu2x"; then
+          core_link="${core_name}.ra"
+          core_supported_extensions=$(echo "${core_supported_extensions}" | sed 's:|:,.:g' | sed 's:^:.:') #fix extensions format
+          if ! (test -e "${core_linkdir}"/*"${core_link}" || test -e "${core_linkdir}"/.*"${core_link}") ; then
+            #set empty vars or will be fetched in next loops
+            selectordir=""
+            selectorbrowser=""
+            selectorfilter=""
+            if ! ${core_supports_no_game}; then
+              selectordir="selectordir=${core_romsdir}"
+              test "${core_romsdir}" != "${roms_dir}" && \
+               selectorbrowser="selectorbrowser=false"
+              selectorfilter="selectorfilter=${core_supported_extensions}"
+              mkdir -p ${core_romsdir} #create ROMS dir structure
+            fi
+            title="title=${core_corename}"
+            description="description=${core_display_name} libretro"
+            exec="exec=${ra_path}/retroarch"
+            params="params=-vL ${core_name} --appendconfig=${ra_path}/retroarch_menu.cfg"
+            { echo -e "${title}\n${description}\n${exec}\n${params}\n${selectordir}\n${selectorbrowser}\n${selectorfilter}" \
+             > "${core_linkdir}"/"${core_link}" \
+             && cores_updated=true && echo -en "\nGenarated link of core: ${core_name}"; } \
+             || echo -en "\nWARNING: There was an issue for link of core: ${core_name}"
+            #mv ${core_linkdir}/${core_link} ${core_linkdir}/zblank.${core_link}
+          fi
+        else
+          echo -e "ERROR: Unknown defined FRONTEND=${FRONTEND}, not going to update core links cuz of missing frontend_alive..."
+          exit 1
+        fi
+      fi
+    done
+    if ! $cores_updated; then
+      echo -en "\nINFO: No new cores, everything up-to-date..."
+    fi
+  else
+    echo -en "\nERROR: Did not find ${ra_path}/retroarch for links setup..."
+    exit 1
+    #test -d $ra_path && rm -rf $ra_path
   fi
 else
+  #primary options (last arg)
   if test "${ra_mode}" == "kiosk"; then
     ra_append_cfg="${ra_path}/retroarch_kiosk.cfg"
   elif test "${ra_mode}" == "minimal"; then
     ra_append_cfg="${ra_path}/retroarch_minimal.cfg"
-  elif ! test -z "${ra_mode}"; then
-    echo -e "ERROR: wrong option ${ra_mode} argument passed"
+  elif ! test -z "${ra_mode}" && ! test "${ra_mode}" == "menu"; then
+    echo -e "\nERROR: wrong option ${ra_mode} argument passed"
     exit 1;
   else #menu
     ra_append_cfg="${ra_path}/retroarch_menu.cfg"
   fi
 
+  #secondary options (shift values)
   test "${ra_rewind}" == "true" &&
    ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_rewind.cfg"
+  test "${ra_quickres}" == "true" &&
+   ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_quickres.cfg"
+  test "${ra_cfgsave}" == "true" &&
+   ra_append_cfg="${ra_append_cfg}\|${ra_path}/retroarch_cfgsave.cfg"
   test -f "${ra_custom_cfg}" &&
    ra_append_cfg="${ra_append_cfg}\|${ra_custom_cfg}"
   #Apply new setting to frontend
   if test "${frontend_alive}" == "gmenu2x"; then
-    cores_path="${HOME}/gmenu2x/sections/cores"
-    if test -d "${cores_path}"; then
-      for file in "${cores_path}"/*; do
+    if test -d "${core_linkdir}"; then
+      for file in "${core_linkdir}"/* "${core_linkdir}"/.[!.]*; do
         if grep -q '^params=' "$file"; then
-          #Warning: escape "-" sign for grep cmd in BB otherwise it will fail
-          grep -q '\--appendconfig=' "$file" && \
-            #Warning: in POSIX using ":" is safer delimer than "/" or "|" since paths or cmds can contain these also (likewise here)
-            ##Below cmd replaces first occurence of appendconfig, append "g" for global
-            sed -i "s:--appendconfig=[^[:space:]]*:--appendconfig=\"${ra_append_cfg}\":" "$file"\
-          ||sed -i "/^params=/ s:$: --appendconfig=\"${ra_append_cfg}\":" "$file"
+          #Warning: escape "-" sign for grep cmd in BB otherwise it will fail,
+          ## also in POSIX using ":" is safer delimer than "/" or "|" since paths or cmds can contain these also (likewise here)
+          ##Below former sed cmd replaces first occurence of appendconfig, append "g" for global
+          { grep -q '\--appendconfig=' "$file" \
+           && sed -i "s:--appendconfig=[^[:space:]]*:--appendconfig=\"${ra_append_cfg}\":" "$file"; } \
+           || sed -i "/^params=/ s:$: --appendconfig=\"${ra_append_cfg}\":" "$file"
         else
           echo "params=--appendconfig=\"${ra_append_cfg}\"" >> "$file"
         fi
       done
     else
-      echo "No \"cores\" section in GMenu2X to apply config for libretro implementation."
+      echo -en "\nERROR:No \"cores\" section in GMenu2X to apply config for libretro implementation."
+      exit 1;
     fi
 # elif test "${frontend_alive}" == "some_frontend"; then
   else
-    #Assuming you have "config_save_on_exit=true" set in your custom RA config file
+    # Force -s opt for save config on quit as we autokill ps
+    ra_append_cfg="$(echo "${ra_append_cfg}\|${ra_path}/retroarch_cfgsave.cfg" | tr -d '\')"
+    echo "exec: retroarch --appendconfig=${ra_append_cfg}"
     (sleep 6; killall retroarch) &
     ./retroarch --appendconfig "${ra_append_cfg}"
   fi
 fi
+echo -en "\nINFO: Exiting normally retroarch-setup ran in \"${ra_mode}\" mode via \"${frontend_alive}\" frontend."
+exit 0

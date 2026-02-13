@@ -1,5 +1,0 @@
-title=mame2003_plus
-description=mame2003_plus libretro core
-exec=/mnt/emus/retroarch/mame2003_plus.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg

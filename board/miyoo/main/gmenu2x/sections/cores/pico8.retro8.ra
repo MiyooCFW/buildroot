@@ -1,5 +1,0 @@
-title=retro8
-description=retro8 libretro core
-exec=/mnt/emus/retroarch/retro8.sh
-selectordir=/mnt
-params=--appendconfig=/mnt/emus/retroarch/retroarch_menu.cfg
