@@ -1,0 +1,59 @@
+From 7777dc72ad312e4d6ed6fd8d8685ecdb6216d389 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Fri, 13 Feb 2026 18:36:19 +0100
+Subject: [PATCH] create `00_add_missing.sh` script to add blank entries
+
+---
+ 00_add_missing.sh        | 24 ++++++++++++++++++++++++
+ 00_example_libretro.info |  4 ++++
+ 2 files changed, 28 insertions(+)
+ create mode 100755 00_add_missing.sh
+
+diff --git a/00_add_missing.sh b/00_add_missing.sh
+new file mode 100755
+index 0000000..f0a3180
+--- /dev/null
++++ b/00_add_missing.sh
+@@ -0,0 +1,24 @@
++#!/bin/bash
++
++SEARCH_DIR="${1:-.}" # first arg or CWD
++
++find "$SEARCH_DIR" -type f | while read -r file; do
++    core_supports_no_game=$(sed -n 's:^supports_no_game = ::p' "$file" 2>/dev/null | tr -d '"')
++
++    if [[ "$core_supports_no_game" == "false" ]]; then
++        if grep -oq "systemid =" $file; then
++		if ! grep -oq "gamedir =" $file; then
++			echo -e "\nWARNING: No systemid in: $file"
++			core_systemid="$(sed -n 's:^systemid = ::p' "${file}" | tr -d '"')"
++			echo -e "\nCreated -> gamedir = \"${core_systemid}\""
++			echo -e "\ngamedir = \"${core_systemid}\"" >> $file
++			core_systemid=""
++		#else
++			#echo "Found gamedir in: $file"
++		fi
++	else
++		echo -e "\nERROR: no systemid with req. content in $file"
++	fi
++    fi
++done
++
+diff --git a/00_example_libretro.info b/00_example_libretro.info
+index 7c633d5..86b1bd9 100644
+--- a/00_example_libretro.info
++++ b/00_example_libretro.info
+@@ -36,6 +36,10 @@
+ # If blank or not used, a standard core platform will be used (optional):
+ # systemid = "nes"
+ 
++# Directory used for storing content to be loaded, usually the same as systemid (if not specified).
++# Should be specified if supports_no_game is false
++# gamedir = "nes"
++
+ # The number of mandatory/optional firmware files the core needs:
+ # firmware_count = 7
+ 
+-- 
+2.45.2.windows.1
+
