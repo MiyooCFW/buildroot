@@ -6,6 +6,15 @@ LIBRETRO_RETROARCH_LICENSE_FILES = COPYING
 LIBRETRO_RETROARCH_DEPENDENCIES = host-pkgconf sdl sdl_image sdl_mixer sdl_sound sdl_ttf freetype
 RETROARCH_LIBRETRO_PLATFORM = miyoo
 
+# bug in uClibc doesn't allow to use IPv6 (?) so let us defer to IPv4
+ifeq ($(BR2_TOOLCHAIN_USES_UCLIBC)$(BR2_TOOLCHAIN_EXTERNAL_UCLIBC),y)
+define LIBRETRO_RETROARCH_POST_PATCH_USE_SOCKET_LEGACY
+	$(SED) "s|HAVE_SOCKET_LEGACY = 0|HAVE_SOCKET_LEGACY = 1|g" $(@D)/Makefile.miyoo
+endef
+endif
+
+LIBRETRO_RETROARCH_POST_PATCH_HOOKS += LIBRETRO_RETROARCH_POST_PATCH_USE_SOCKET_LEGACY
+
 define LIBRETRO_RETROARCH_BUILD_CMDS
 	$(MAKE) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" -C $(@D) -f Makefile.miyoo
 	$(TARGET_STRIP) --strip-unneeded $(@D)/retroarch
