@@ -1,4 +1,4 @@
-From 6ddaba0640c88773aeaa91e001cab8b4d4ae15b2 Mon Sep 17 00:00:00 2001
+From e3f1f0fadaef9b08a2580d553c708e1d16e07443 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Wed, 30 Apr 2025 23:08:23 +0200
 Subject: [PATCH] input/driver: correct Miyoo mapping in MENU
@@ -8,10 +8,10 @@ Subject: [PATCH] input/driver: correct Miyoo mapping in MENU
  1 file changed, 40 insertions(+)
 
 diff --git a/input/input_driver.c b/input/input_driver.c
-index 5334198024..d202b68eae 100644
+index 7b07939e37..dc25bd350b 100644
 --- a/input/input_driver.c
 +++ b/input/input_driver.c
-@@ -6941,6 +6941,22 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
+@@ -7258,6 +7258,22 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
           unsigned i;
           unsigned ids[][2] =
           {
@@ -34,7 +34,7 @@ index 5334198024..d202b68eae 100644
              {RETROK_RETURN,    RETRO_DEVICE_ID_JOYPAD_A      },
              {RETROK_BACKSPACE, RETRO_DEVICE_ID_JOYPAD_B      },
              {RETROK_DELETE,    RETRO_DEVICE_ID_JOYPAD_Y      },
-@@ -6955,6 +6971,7 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
+@@ -7272,6 +7288,7 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
              {RETROK_PAGEDOWN,  RETRO_DEVICE_ID_JOYPAD_R      },
              {RETROK_HOME,      RETRO_DEVICE_ID_JOYPAD_L3     },
              {RETROK_END,       RETRO_DEVICE_ID_JOYPAD_R3     },
@@ -42,7 +42,7 @@ index 5334198024..d202b68eae 100644
              /* Extra keys read regardless of 'enable_hotkey' */
              {0,                RARCH_QUIT_KEY                }, /* 14 */
              {0,                RARCH_FULLSCREEN_TOGGLE_KEY   },
-@@ -6999,7 +7016,11 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
+@@ -7316,7 +7333,11 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
           unsigned i;
           unsigned ids[][2] =
           {
@@ -54,7 +54,7 @@ index 5334198024..d202b68eae 100644
              {RETROK_UP,        RETRO_DEVICE_ID_JOYPAD_UP     },
              {RETROK_DOWN,      RETRO_DEVICE_ID_JOYPAD_DOWN   },
              {RETROK_LEFT,      RETRO_DEVICE_ID_JOYPAD_LEFT   },
-@@ -7160,6 +7181,24 @@ void input_keyboard_event(bool down, unsigned code,
+@@ -7477,6 +7498,24 @@ void input_keyboard_event(bool down, unsigned code,
      * is active */
     if (menu_st->flags & MENU_ST_FLAG_SCREENSAVER_ACTIVE)
     {
@@ -79,7 +79,7 @@ index 5334198024..d202b68eae 100644
        if (   (down)
            && (code != RETROK_UNKNOWN)
            && (menu_input_dialog_get_display_kb()
-@@ -7176,6 +7215,7 @@ void input_keyboard_event(bool down, unsigned code,
+@@ -7493,6 +7532,7 @@ void input_keyboard_event(bool down, unsigned code,
            ||   (code == RETROK_RETURN)      /* RETRO_DEVICE_ID_JOYPAD_A */
            ||   (code == RETROK_DELETE)      /* RETRO_DEVICE_ID_JOYPAD_Y */
            ||   (BIT512_GET(input_st->keyboard_mapping_bits, code)))))

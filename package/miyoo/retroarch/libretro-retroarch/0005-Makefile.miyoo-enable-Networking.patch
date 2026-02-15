@@ -1,4 +1,4 @@
-From d7842088287f06355148ca6604646c11ba347485 Mon Sep 17 00:00:00 2001
+From 40bf47bed90c5451473c5516648e6a9ee81cff1b Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Mon, 10 Mar 2025 20:46:29 +0100
 Subject: [PATCH] Makefile.miyoo: enable Networking
