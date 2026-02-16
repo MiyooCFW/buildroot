@@ -1,4 +1,4 @@
-From fb0bfee46c19c60c72572d606e6241324bce6d48 Mon Sep 17 00:00:00 2001
+From 82974051ff694b37721dbb2fd3c7d7003856f401 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Mon, 10 Mar 2025 20:42:53 +0100
 Subject: [PATCH] Change def gamepad driver (sdl_dingux  to sdl) & rebind
@@ -25,10 +25,10 @@ index 95cc30d856..ca93214ffa 100644
  DEF_FLAGS += -std=gnu99 -D_GNU_SOURCE
  LIBS := -ldl -lz -lrt -pthread -lasound
 diff --git a/config.def.h b/config.def.h
-index dd21de39e5..c7aec5febe 100644
+index 073e128571..6b0a1d5422 100644
 --- a/config.def.h
 +++ b/config.def.h
-@@ -1640,8 +1640,10 @@
+@@ -1641,8 +1641,10 @@
  #define DEFAULT_INPUT_DESCRIPTOR_LABEL_SHOW true
  #define DEFAULT_INPUT_DESCRIPTOR_HIDE_UNBOUND false
  
@@ -41,10 +41,10 @@ index dd21de39e5..c7aec5febe 100644
  #define DEFAULT_INPUT_MAX_USERS 8
  #endif
 diff --git a/config.def.keybinds.h b/config.def.keybinds.h
-index 0450af305f..37e04d3181 100644
+index 85d3d51ec0..f1902ef99c 100644
 --- a/config.def.keybinds.h
 +++ b/config.def.keybinds.h
-@@ -686,146 +686,146 @@ static const struct retro_keybind retro_keybinds_1[] = {
+@@ -693,146 +693,146 @@ static const struct retro_keybind retro_keybinds_1[] = {
     { 
        NULL, NULL,
        AXIS_NONE, AXIS_NONE,
@@ -216,7 +216,7 @@ index 0450af305f..37e04d3181 100644
        MENU_ENUM_LABEL_VALUE_INPUT_ANALOG_RIGHT_X_PLUS, RETROK_UNKNOWN,
        RARCH_ANALOG_RIGHT_X_PLUS, NO_BTN, NO_BTN, 0,
        true
-@@ -946,8 +946,8 @@ static const struct retro_keybind retro_keybinds_1[] = {
+@@ -960,8 +960,8 @@ static const struct retro_keybind retro_keybinds_1[] = {
     {
        NULL, NULL,
        AXIS_NONE, AXIS_NONE,
@@ -228,7 +228,7 @@ index 0450af305f..37e04d3181 100644
     },
     {
 diff --git a/configuration.c b/configuration.c
-index b815b7c304..b8fabf3021 100644
+index 6fbf77d10f..49bfb8fe1b 100644
 --- a/configuration.c
 +++ b/configuration.c
 @@ -645,13 +645,13 @@ static const enum input_driver_enum INPUT_DEFAULT_DRIVER = INPUT_SWITCH;

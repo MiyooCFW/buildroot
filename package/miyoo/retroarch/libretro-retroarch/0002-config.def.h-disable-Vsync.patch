@@ -1,4 +1,4 @@
-From 32558e1816d75d795ff3f03f3250d5b5d41b3db4 Mon Sep 17 00:00:00 2001
+From 7233016be0a98f93f3389118f811eec64c497803 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Mon, 10 Mar 2025 20:40:29 +0100
 Subject: [PATCH] config.def.h: disable Vsync
@@ -23,7 +23,7 @@ index 8876292bd4..95cc30d856 100644
  ASFLAGS :=
  LDFLAGS := -Wl,--gc-sections
 diff --git a/config.def.h b/config.def.h
-index 85164ea788..dd21de39e5 100644
+index 49b35076b0..073e128571 100644
 --- a/config.def.h
 +++ b/config.def.h
 @@ -367,7 +367,7 @@
@@ -35,7 +35,7 @@ index 85164ea788..dd21de39e5 100644
  
  /* Vulkan specific */
  #define DEFAULT_MAX_SWAPCHAIN_IMAGES 3
-@@ -548,7 +548,7 @@
+@@ -547,7 +547,7 @@
  #if defined(DINGUX)
  /* Enables aspect ratio correction (1:1 PAR) when
   * using the IPU hardware scaler in Dingux devices */

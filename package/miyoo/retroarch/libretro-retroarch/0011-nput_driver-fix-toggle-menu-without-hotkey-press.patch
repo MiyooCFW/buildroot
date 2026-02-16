@@ -1,4 +1,4 @@
-From 248b4f88e5f38d5f9c874ebb7633b356f4e34d7a Mon Sep 17 00:00:00 2001
+From 504fdd02ddb5504da0596b81d35810e9c13a0b0c Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Sat, 27 Dec 2025 23:21:47 +0100
 Subject: [PATCH] nput_driver: fix toggle menu without hotkey press
@@ -8,13 +8,13 @@ Subject: [PATCH] nput_driver: fix toggle menu without hotkey press
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/input/input_driver.c b/input/input_driver.c
-index fc06ba50ad..a8f11fec99 100644
+index 153c5d52e6..0b372b336f 100644
 --- a/input/input_driver.c
 +++ b/input/input_driver.c
-@@ -5794,7 +5794,7 @@ static void input_keys_pressed(
-    /* Ignore hotkey block delay when menu toggle and hotkey enabler share the same key */
+@@ -6057,7 +6057,7 @@ static void input_keys_pressed(
     if (     !any_pressed
           && !(input_st->flags & INP_FLAG_WAIT_INPUT_RELEASE)
+          && !(input_st->flags & INP_FLAG_KB_MAPPING_BLOCKED)
 -         && binds[port][RARCH_MENU_TOGGLE].key == binds[port][RARCH_ENABLE_HOTKEY].key)
 +         && binds[port][RARCH_MENU_TOGGLE].key)
     {

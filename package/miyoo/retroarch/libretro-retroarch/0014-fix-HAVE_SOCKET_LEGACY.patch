@@ -1,0 +1,32 @@
+From 2184afbef7b9510a3dbeae3b38e5dd729d0050ba Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sun, 15 Feb 2026 20:56:30 +0100
+Subject: [PATCH] fix HAVE_SOCKET_LEGACY
+
+---
+ libretro-common/include/net/net_compat.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/libretro-common/include/net/net_compat.h b/libretro-common/include/net/net_compat.h
+index 05970a79d1..3b34885d76 100644
+--- a/libretro-common/include/net/net_compat.h
++++ b/libretro-common/include/net/net_compat.h
+@@ -260,6 +260,7 @@ RETRO_BEGIN_DECLS
+ #define NI_DGRAM       16
+ 
+ #ifndef __PS3__
++#ifndef HAVE_SOCKET_LEGACY
+ struct addrinfo
+ {
+    int ai_flags;
+@@ -272,6 +273,7 @@ struct addrinfo
+    struct addrinfo *ai_next;
+ };
+ #endif
++#endif
+ 
+ /* gai_strerror() not used, so we skip that. */
+ 
+-- 
+2.45.2.windows.1
+
