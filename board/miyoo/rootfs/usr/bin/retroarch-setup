@@ -34,7 +34,7 @@ while getopts "rsqdc:" opt; do
       debug=true
       ;;
     \?)
-      echo "Usage: $0 [-rsqd] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history|update>" >&2
+      echo "Usage: $0 [-rsqd] [-c <retroarch.cfg>] <menu(default)|kiosk|minimal|history|update|lock|unlock>" >&2
       exit 1
       ;;
   esac
@@ -69,13 +69,14 @@ ra_path="${HOME}/emus/retroarch"
 ra_config_path="${HOME}/.retroarch"
 history_path="${ra_config_path}/playlists/builtin/content_history.lpl" ## RA ver. >1.22.2
 
-cd "${ra_path}" || { echo -en "\nERROR: Failed to cd into ${ra_path}, no RetroArch to launch.\n\nEXITING..." ; exit 1; }
+test -d "${ra_path}" || { echo -en "\nERROR: Missing ${ra_path}, no RetroArch to work with.\n\nEXITING..." ; exit 1; }
 
 if test "${ra_mode}" == "history"; then
   if test -f "${history_path}"; then
     rom_path="$(head -n20 "${history_path}" | grep -Eo -m1 '/roms/[^"]+')"
     core_path="$(head -n20 "${history_path}" | grep -Eo -m1 "${ra_config_path}/cores/.+\.so")"
     if test -f "${core_path}" -a -f "${rom_path}"; then
+      cd "${ra_path}" || { echo -en "\nERROR: Failed to cd into ${ra_path}, no RetroArch to launch.\n\nEXITING..." ; exit 1; }
       ./retroarch --libretro "${core_path}" "${rom_path}"
     else
       echo -e "ERROR: ROM file in $rom_path or libretro CORE in $core_path does not exist"
@@ -86,16 +87,30 @@ if test "${ra_mode}" == "history"; then
     exit 1
   fi
   exit 0
+elif test "${ra_mode}" == "lock" || test "${ra_mode}" == "unlock"; then
+  ## Lock installed cores
+  for file in "${ra_config_path}/cores"/*.so; do
+    if test -f "$file"; then
+      corefile_no_ext="$(echo "$file" | sed 's:\.so::g')"
+      if ! test -f "${corefile_no_ext}".lck && test "${ra_mode}" == "lock"; then
+        touch "${corefile_no_ext}".lck && \
+          { if $debug; then echo -en "\nDEBUG: Locked core $(echo "${corefile_no_ext}" | sed 's:.*\/::')"; fi; }
+      elif test -f "${corefile_no_ext}".lck && test "${ra_mode}" == "unlock"; then
+        rm "${corefile_no_ext}".lck && \
+          { if $debug; then echo -en "\nDEBUG: Unlocked core $(echo "${corefile_no_ext}" | sed 's:.*\/::')"; fi; }      
+      fi
+    fi
+  done
 elif test "${ra_mode}" == "update"; then
   if test -e "${ra_path}/retroarch"; then
     ## Generate list of cores to be used
     cores_dir="${ra_config_path}/cores"
     cores_info_dir="${ra_config_path}/core_info"
     cores_updated=false
-    for file in $cores_dir/*; do
+    for file in $cores_dir/*.so; do
       if test -f "$file"; then
         core_file="$(echo "$file" | sed 's:.*\/::')"
-        core_name="$(echo "${core_file}" | sed 's:_libretro.so::g')"
+        core_name="$(echo "${core_file}" | sed 's:_libretro\.so::g')"
         core_info_file="${cores_info_dir}/${core_name}_libretro.info"
         if test -f ${core_info_file}; then
           core_corename="$(sed -n 's:^corename = ::p' "${core_info_file}" | tr -d '"')"
@@ -210,6 +225,7 @@ else
     ra_append_cfg="$(echo "${ra_append_cfg}\|${ra_path}/retroarch_cfgsave.cfg" | tr -d '\')"
     echo "exec: retroarch --appendconfig=${ra_append_cfg}"
     (sleep 6; killall retroarch) &
+    cd "${ra_path}" || { echo -en "\nERROR: Failed to cd into ${ra_path}, no RetroArch to launch.\n\nEXITING..." ; exit 1; }
     ./retroarch --appendconfig "${ra_append_cfg}"
   fi
 fi
