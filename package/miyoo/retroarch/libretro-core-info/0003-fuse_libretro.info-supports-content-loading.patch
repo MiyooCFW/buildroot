@@ -1,0 +1,25 @@
+From 3039d438eb96a1f0212463f5d1059218e280e5c0 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Thu, 19 Feb 2026 23:10:39 +0100
+Subject: [PATCH] fuse_libretro.info: supports content loading
+
+---
+ fuse_libretro.info | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fuse_libretro.info b/fuse_libretro.info
+index a26bc52..d02c235 100644
+--- a/fuse_libretro.info
++++ b/fuse_libretro.info
+@@ -14,7 +14,7 @@ systemname = "ZX Spectrum (various)"
+ systemid = "zx_spectrum"
+ 
+ # Libretro Features
+-supports_no_game = "true"
++supports_no_game = "false"
+ database = "Sinclair - ZX Spectrum +3|Sinclair - ZX Spectrum"
+ 
+ # BIOS / Firmware
+-- 
+2.45.2.windows.1
+

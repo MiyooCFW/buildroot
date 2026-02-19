@@ -1,4 +1,4 @@
-From 9f05b9b7fb9cb5ca35a423026148f030ce514b6c Mon Sep 17 00:00:00 2001
+From 9cd6ad97f6660bf3b29854260bb858958659e280 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Fri, 13 Feb 2026 19:15:07 +0100
 Subject: [PATCH] add `gamedir` info entry for "support game" cores
@@ -68,6 +68,7 @@ Subject: [PATCH] add `gamedir` info entry for "support game" cores
  freej2me_libretro.info                  | 2 ++
  frodo_libretro.info                     | 2 ++
  fsuae_libretro.info                     | 2 ++
+ fuse_libretro.info                      | 2 ++
  gambatte_libretro.info                  | 2 ++
  gearboy_libretro.info                   | 2 ++
  gearcoleco_libretro.info                | 2 ++
@@ -211,7 +212,7 @@ Subject: [PATCH] add `gamedir` info entry for "support game" cores
  x64sdl_libretro.info                    | 2 ++
  yabasanshiro_libretro.info              | 2 ++
  yabause_libretro.info                   | 2 ++
- 207 files changed, 414 insertions(+), 5 deletions(-)
+ 208 files changed, 416 insertions(+), 5 deletions(-)
 
 diff --git a/81_libretro.info b/81_libretro.info
 index 4e0c43e..58cf930 100644
@@ -857,6 +858,16 @@ index d8737c2..15bf08c 100644
  description = "A port of the FS-UAE Amiga emulator to libretro. The core expects a kickstart to be located in the user's 'saves' directory, in a subdirectory named fsue/Kickstarts. Most users will be better served by the PUAE core, which has received more work to integrate it with libretro and to make it usable with just a gamepad."
 +
 +gamedir = "amiga"
+diff --git a/fuse_libretro.info b/fuse_libretro.info
+index d02c235..1e48c60 100644
+--- a/fuse_libretro.info
++++ b/fuse_libretro.info
+@@ -46,3 +46,5 @@ firmware7_opt = "true"
+ notes = "[1] Amstrad have kindly given their permission for the redistribution|[^] of their copyrighted material but retain that copyright."
+ 
+ description = "A port of the Fuse Unix Spectrum Emulator to libretro, this core supports many Spectrum, Timex, Pentagon and Scorpion variants. The Pentagon and Scorpion machines need BIOS images placed inside a 'fuse' subdirectory inside the frontend's 'system' directory. This core is a good first choice for playing Spectrum games, with 81 (EightyOne) covering the Sinclair ZX 81 games."
++
++gamedir = "z80"
 diff --git a/gambatte_libretro.info b/gambatte_libretro.info
 index fc1e4e3..85273e9 100644
 --- a/gambatte_libretro.info
