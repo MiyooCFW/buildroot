@@ -189,6 +189,7 @@ else
     exit 1;
   else #menu
     ra_append_cfg="${ra_path}/retroarch_menu.cfg"
+    ra_mode="menu"
   fi
 
   #secondary options (shift values)
