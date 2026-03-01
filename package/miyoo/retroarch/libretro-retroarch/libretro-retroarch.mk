@@ -1,10 +1,22 @@
-LIBRETRO_RETROARCH_VERSION = 23bf1f10d48667a1319ba8a6907f3725ead3f53f
+LIBRETRO_RETROARCH_VERSION = e4221d4456fb1ef21f0aecd7c5d5c8ae65fde26f
 LIBRETRO_RETROARCH_SITE = https://github.com/libretro/RetroArch/archive/$(LIBRETRO_RETROARCH_VERSION)
 LIBRETRO_RETROARCH_SOURCE = libretro-retroarch-$(LIBRETRO_RETROARCH_VERSION).tar.gz
 LIBRETRO_RETROARCH_LICENSE = GPL-3.0
 LIBRETRO_RETROARCH_LICENSE_FILES = COPYING
 LIBRETRO_RETROARCH_DEPENDENCIES = host-pkgconf sdl sdl_image sdl_mixer sdl_sound sdl_ttf freetype
 RETROARCH_LIBRETRO_PLATFORM = miyoo
+
+# bug in uClibc doesn't allow to use IPv6 (?). 
+
+# ifeq ($(BR2_TOOLCHAIN_USES_UCLIBC)$(BR2_TOOLCHAIN_EXTERNAL_UCLIBC),y)
+# define LIBRETRO_RETROARCH_POST_PATCH_USE_SOCKET_LEGACY
+# 	$(SED) "s|HAVE_SOCKET_LEGACY = 0|HAVE_SOCKET_LEGACY = 1|g" $(@D)/Makefile.miyoo
+# endef
+# endif
+
+# LIBRETRO_RETROARCH_POST_PATCH_HOOKS += LIBRETRO_RETROARCH_POST_PATCH_USE_SOCKET_LEGACY
+
+# Moreover IPv6 has more overhead over IPv4, which can cause OOM segfault on dl&extract even with musl, so we'll use later for both
 
 define LIBRETRO_RETROARCH_BUILD_CMDS
 	$(MAKE) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" -C $(@D) -f Makefile.miyoo

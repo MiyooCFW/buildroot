@@ -1,4 +1,4 @@
-From 4d78f64c448672a0dbb73cd723148e432956e0a2 Mon Sep 17 00:00:00 2001
+From ac169f82287255d34b9b4df9ca245f0b644c615e Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Fri, 19 Dec 2025 22:29:35 +0100
 Subject: [PATCH] input_driver: toggle menu even with hotkey press
@@ -8,10 +8,10 @@ Subject: [PATCH] input_driver: toggle menu even with hotkey press
  1 file changed, 24 insertions(+)
 
 diff --git a/input/input_driver.c b/input/input_driver.c
-index adf6c6cbe3..fc06ba50ad 100644
+index 6664e234ee..153c5d52e6 100644
 --- a/input/input_driver.c
 +++ b/input/input_driver.c
-@@ -5815,6 +5815,30 @@ static void input_keys_pressed(
+@@ -6078,6 +6078,30 @@ static void input_keys_pressed(
           BIT256_SET_PTR(p_new_state, RARCH_ENABLE_HOTKEY);
     }
  

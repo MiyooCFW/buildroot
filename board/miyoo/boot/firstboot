@@ -914,6 +914,8 @@ else
 	echo -en "\nSuccessfully generated RA links, for detailed list pls see ${GMENU2X_LOGS} file."
 fi
 sleep 1
+echo -en "\nLocking installed libretro cores..." | tee -a ${GMENU2X_LOGS}
+retroarch-setup -d lock >> ${GMENU2X_LOGS}
 
 sync
 echo "firstboot script finished." | tee -a ${LOG}

@@ -1,4 +1,4 @@
-From 666e35789b7b4259f91cf1cd5f28f594b6c19257 Mon Sep 17 00:00:00 2001
+From 2bbe81257019ef69b7fa7d064043151985f26afc Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Mon, 10 Mar 2025 20:39:21 +0100
 Subject: [PATCH] Makefile.miyoo: use STAGING dir of BR2
