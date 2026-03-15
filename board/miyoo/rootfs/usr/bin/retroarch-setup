@@ -5,7 +5,6 @@
 ##imported env variables are upper-cased:
 ###${HOME}
 ###${FRONTEND}
-###${FRONTEND_WDIR}
 ###${ROMS}
 
 ##preset env variables
@@ -47,7 +46,7 @@ ra_mode="${1}" # (default=menu); history; kiosk; minimal;
 roms_dir="${ROMS}"
 test -z "${roms_dir}" && roms_dir="/roms"
 frontend_alive="${FRONTEND}" # (default="") thus no frontend
-frontend_wdir="${FRONTEND_WDIR}"
+frontend_wdir=$(readlink -f /proc/$(pgrep "${FRONTEND}")/cwd 2>/dev/null || echo "")
 
 if test "${frontend_alive}" == "gmenu2x"; then
   test -z "${frontend_wdir}" \
@@ -123,7 +122,8 @@ elif test "${ra_mode}" == "update"; then
            { if $debug; then echo -en "\nDEBUG: Missing \"corename =\" in ${core_name} info file"; fi; core_corename="${core_name}"; }
           test -z "${core_display_name}" && \
            if $debug; then echo -en "\nDEBUG: Missing \"display_name = =\" in ${core_name} info file"; fi;
-          if ! ${core_supports_no_game}; then
+          # Test if core accepts content loading, so supports only game load OR have no supported_extensions
+          if ! ${core_supports_no_game} || ! test "${core_supported_extensions}" == "|zip|7z"; then
             if ! test -z "${core_gamedir}"; then
               core_romsdir="${roms_dir}/$(echo ${core_gamedir} | tr [:lower:] [:upper:])/"
             elif ! test -z "${core_systemid}"; then
@@ -147,7 +147,7 @@ elif test "${ra_mode}" == "update"; then
             selectordir=""
             selectorbrowser=""
             selectorfilter=""
-            if ! ${core_supports_no_game}; then
+            if ! ${core_supports_no_game} || ! test -z "${core_supported_extensions}"; then
               selectordir="selectordir=${core_romsdir}"
               test "${core_romsdir}" != "${roms_dir}" && \
                selectorbrowser="selectorbrowser=false"
@@ -230,5 +230,5 @@ else
     ./retroarch --appendconfig "${ra_append_cfg}"
   fi
 fi
-echo -en "\nINFO: Exiting normally retroarch-setup ran in \"${ra_mode}\" mode via \"${frontend_alive}\" frontend."
+echo -en "\nINFO: Exiting normally retroarch-setup ran in \"${ra_mode}\" mode via \"${frontend_wdir}/${frontend_alive}\" frontend."
 exit 0
