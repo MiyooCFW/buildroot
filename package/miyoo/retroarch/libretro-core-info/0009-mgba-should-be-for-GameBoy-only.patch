@@ -1,0 +1,22 @@
+From 5368633c5527d11af47fa9b703084bc1d41c7466 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Wed, 18 Mar 2026 21:23:06 +0100
+Subject: [PATCH] mgba: should be for GameBoy only
+
+---
+ mgba_libretro.info | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/mgba_libretro.info b/mgba_libretro.info
+index 6f5d143..ead8ebe 100644
+--- a/mgba_libretro.info
++++ b/mgba_libretro.info
+@@ -47,4 +47,4 @@ notes = "(!) gba_bios.bin (md5): a860e8c0b6d573d191e4ec7db1b1e4f6|(!) gb_bios.bi
+ 
+ description = "An advanced, mature and actively developed Game Boy Advance emulator, ported to libretro. This emulator strives for high accuracy and high performance, and it is generally a good first choice for GBA emulation on any platform where it is available. gpSP is a good fallback on devices that cannot maintain full speed with mGBA."
+ 
+-gamedir = "gba"
++gamedir = "gb"
+-- 
+2.45.2.windows.1
+

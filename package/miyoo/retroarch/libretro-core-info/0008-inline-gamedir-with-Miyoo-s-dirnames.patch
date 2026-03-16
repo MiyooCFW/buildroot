@@ -1,0 +1,979 @@
+From d61f3d9fd328946af80a1c4cc5b609c75a836d7d Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Wed, 18 Mar 2026 21:22:58 +0100
+Subject: [PATCH] inline `gamedir` with Miyoo's dirnames
+
+---
+ DoubleCherryGB_libretro.info            | 2 +-
+ a5200_libretro.info                     | 2 +-
+ atari800_libretro.info                  | 2 +-
+ blastem_libretro.info                   | 2 +-
+ boytacean_libretro.info                 | 2 +-
+ bsnes-jg_libretro.info                  | 2 +-
+ bsnes2014_accuracy_libretro.info        | 2 +-
+ bsnes2014_balanced_libretro.info        | 2 +-
+ bsnes2014_performance_libretro.info     | 2 +-
+ bsnes_cplusplus98_libretro.info         | 2 +-
+ bsnes_hd_beta_libretro.info             | 2 +-
+ bsnes_libretro.info                     | 2 +-
+ bsnes_mercury_accuracy_libretro.info    | 2 +-
+ bsnes_mercury_balanced_libretro.info    | 2 +-
+ bsnes_mercury_performance_libretro.info | 2 +-
+ chimerasnes_libretro.info               | 2 +-
+ clownmdemu_libretro.info                | 2 +-
+ crocods_libretro.info                   | 2 +-
+ dcastaway_libretro.info                 | 2 +-
+ duckstation_libretro.info               | 2 +-
+ emux_gb_libretro.info                   | 2 +-
+ emux_sms_libretro.info                  | 2 +-
+ fbalpha2012_cps1_libretro.info          | 2 +-
+ fbalpha2012_cps2_libretro.info          | 2 +-
+ fbalpha2012_cps3_libretro.info          | 2 +-
+ fbalpha2012_libretro.info               | 2 +-
+ fbalpha2012_neogeo_libretro.info        | 2 +-
+ fbneo_cps12_libretro.info               | 2 +-
+ fbneo_libretro.info                     | 2 +-
+ fbneo_neogeo_libretro.info              | 2 +-
+ fixgb_libretro.info                     | 2 +-
+ freeintv_libretro.info                  | 2 +-
+ frodo_libretro.info                     | 2 +-
+ fuse_libretro.info                      | 2 +-
+ gambatte_libretro.info                  | 2 +-
+ gearboy_libretro.info                   | 2 +-
+ geargrafx_libretro.info                 | 2 +-
+ gearsystem_libretro.info                | 2 +-
+ genesis_plus_gx_libretro.info           | 2 +-
+ genesis_plus_gx_wide_libretro.info      | 2 +-
+ gpsp_libretro.info                      | 2 +-
+ gw_libretro.info                        | 2 +-
+ handy_libretro.info                     | 2 +-
+ hatari_libretro.info                    | 2 +-
+ higan_sfc_balanced_libretro.info        | 2 +-
+ higan_sfc_libretro.info                 | 2 +-
+ holani_libretro.info                    | 2 +-
+ mednafen_gba_libretro.info              | 2 +-
+ mednafen_lynx_libretro.info             | 2 +-
+ mednafen_ngp_libretro.info              | 2 +-
+ mednafen_pce_fast_libretro.info         | 2 +-
+ mednafen_pce_libretro.info              | 2 +-
+ mednafen_psx_hw_libretro.info           | 2 +-
+ mednafen_psx_libretro.info              | 2 +-
+ mednafen_snes_libretro.info             | 2 +-
+ mednafen_supafaust_libretro.info        | 2 +-
+ mednafen_supergrafx_libretro.info       | 2 +-
+ mednafen_wswan_libretro.info            | 2 +-
+ mesen-s_libretro.info                   | 2 +-
+ meteor_libretro.info                    | 2 +-
+ mgba_libretro.info                      | 2 +-
+ pcsx1_libretro.info                     | 2 +-
+ pcsx_rearmed_interpreter_libretro.info  | 2 +-
+ pcsx_rearmed_libretro.info              | 2 +-
+ pcsx_rearmed_neon_libretro.info         | 2 +-
+ picodrive_libretro.info                 | 2 +-
+ pokemini_libretro.info                  | 2 +-
+ prosystem_libretro.info                 | 2 +-
+ race_libretro.info                      | 2 +-
+ rustation_libretro.info                 | 2 +-
+ sameboy_libretro.info                   | 2 +-
+ smsplus_libretro.info                   | 2 +-
+ snes9x2002_libretro.info                | 2 +-
+ snes9x2005_libretro.info                | 2 +-
+ snes9x2005_plus_libretro.info           | 2 +-
+ snes9x2010_libretro.info                | 2 +-
+ snes9x_libretro.info                    | 2 +-
+ stella2014_libretro.info                | 2 +-
+ stella2023_libretro.info                | 2 +-
+ stella_libretro.info                    | 2 +-
+ swanstation_libretro.info               | 2 +-
+ tempgba_libretro.info                   | 2 +-
+ tgbdual_libretro.info                   | 2 +-
+ uae4all_libretro.info                   | 2 +-
+ uae4arm_libretro.info                   | 2 +-
+ vba_next_libretro.info                  | 2 +-
+ vbam_libretro.info                      | 2 +-
+ x64sdl_libretro.info                    | 2 +-
+ 88 files changed, 88 insertions(+), 88 deletions(-)
+
+diff --git a/DoubleCherryGB_libretro.info b/DoubleCherryGB_libretro.info
+index 9b84c08..3c549de 100644
+--- a/DoubleCherryGB_libretro.info
++++ b/DoubleCherryGB_libretro.info
+@@ -31,4 +31,4 @@ is_experimental = "false"
+ 
+ description = "A fork of the TGB Dual Game Boy core with up to 16 players multiplayer and link over network support for Pokemon Trading. While this core is a decent, usable emulator, it is most notable for being able to emulate to Game Boys connected via Link Cable, which is useful for things like trading Pokemon, etc. DoubleCherryGB added the emulation of the GAMEBOY 4 PLAYER ADATPTER (DMG-07) and up 16 Player Link Hacks like the Tetris 4Player Hack and the FACEBALL 2000 16 player RING LINK CABLE. Thanks to the core's modest hardware requirements, it should run well even on low-powered hardware, though users with more powerful hardware may be better served by the SameBoy core, which can also do the same Link Cable functionality but with improved accuracy and compatibility."
+ 
+-gamedir = "game_boy"
++gamedir = "gb"
+diff --git a/a5200_libretro.info b/a5200_libretro.info
+index 916a338..524f12b 100644
+--- a/a5200_libretro.info
++++ b/a5200_libretro.info
+@@ -28,4 +28,4 @@ notes = "(!) 5200.rom (md5): 281f20ea4320404ec820fb7ec0693b38"
+ 
+ description = "A port of the a5200 Atari 5200 emulator to libretro. Based on Atari800 2.0.2 and originally developed for the GCW Zero, this core runs fast on low-powered hardware. With a design focussed on ease of use and good libretro integration, the core is intended as a simple 'plug and play' solution for Atari 5200 content."
+ 
+-gamedir = "atari_5200"
++gamedir = "5200"
+diff --git a/atari800_libretro.info b/atari800_libretro.info
+index 6a2d003..cf08471 100644
+--- a/atari800_libretro.info
++++ b/atari800_libretro.info
+@@ -58,4 +58,4 @@ notes = "(!) 5200.rom (md5): 281f20ea4320404ec820fb7ec0693b38|(!) ATARIBAS.ROM (
+ 
+ description = "A port of the free and portable Atari800 emulator to libretro. This core supports games and programs written for the Atari 8-bit computers (400, 800, 600 XL, 800XL, 130XE) and 5200 console. When loaded, the core should boot to the Atari Computer - Memo Pad screen and will generate a .atari800.cfg config file in the frontend's home directory and will add the required BIOS files it detects in the frontend's system directory to the config file. Once that is done, users may manually select which Atari system to emulate through the Atari System core option. These and other options can also be modified through the core's own menu, accessible through the retrokeyboard's F1 key."
+ 
+-gamedir = "atari_5200"
++gamedir = "800"
+diff --git a/blastem_libretro.info b/blastem_libretro.info
+index eb42049..f14cea1 100644
+--- a/blastem_libretro.info
++++ b/blastem_libretro.info
+@@ -41,4 +41,4 @@ notes = "(!) rom.db (sha1): E5414FB1C4CC7D7F5101C07E4547316779BA3D97"
+ 
+ description = "A port of the BlastEm Sega Genesis/Mega Drive emulator to libretro. This emulator is focused on being both extremely accurate and extremely fast. While it is not as mature as Genesis Plus GX, its extreme accuracy makes it capable of running many demos and test ROMs that choke other emulators, including the notoriously complex Titan Overdrive I and II demos."
+ 
+-gamedir = "mega_drive"
++gamedir = "smd"
+diff --git a/boytacean_libretro.info b/boytacean_libretro.info
+index 0a699a3..0a12e60 100644
+--- a/boytacean_libretro.info
++++ b/boytacean_libretro.info
+@@ -27,4 +27,4 @@ core_options = "true"
+ database = "Nintendo - Game Boy|Nintendo - Game Boy Color"
+ description = "A Game Boy emulator that is written in Rust."
+ 
+-gamedir = "game_boy"
++gamedir = "gb"
+diff --git a/bsnes-jg_libretro.info b/bsnes-jg_libretro.info
+index c6ef42c..89be91c 100644
+--- a/bsnes-jg_libretro.info
++++ b/bsnes-jg_libretro.info
+@@ -82,4 +82,4 @@ disk_control = "false"
+ 
+ description = "bsnes-jg is a fork of bsnes v115, rewritten to use the C++ standard library and focus on preservation through accurate emulation and a robust, standards-compliant codebase. Speed hacks were removed, and support for achievements and libretro's cheat interface were added. Additionally, higher quality audio resampling, as well as full support for Super Game Boy, BS-X Satellaview, Sufami Turbo, and Competition carts has been implemented. This core is slightly faster than the original bsnes, but still has more or less the same system requirements. It is a great option for desktop platforms with relatively fast CPUs, though it will also run at full speed on a number of ARM SBCs.
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/bsnes2014_accuracy_libretro.info b/bsnes2014_accuracy_libretro.info
+index 150e786..71d7f8a 100644
+--- a/bsnes2014_accuracy_libretro.info
++++ b/bsnes2014_accuracy_libretro.info
+@@ -88,4 +88,4 @@ disk_control = "false"
+ 
+ description = "bsnes 2014 Accuracy is based on version 094 of the bsnes emulator with some accuracy improvements backported from later versions. It is built from the 'accuracy' profile, which includes bsnes' more-demanding dot-based PPU (as opposed to the faster scanline-precision PPU used in the 'balanced' profile), though the only commercial game that requires this level of precision is the notorious Air Strike Patrol (A.S.P.). Unlike the 'Mercury' cores, the '2014' cores are based on the unchanged bsnes source without any major additions. The up-to-date bsnes core is a better choice for most users who are seeking the highest accuracy, except for those who require access to cheats and retro-achievements, for whom these older forks may be preferable."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/bsnes2014_balanced_libretro.info b/bsnes2014_balanced_libretro.info
+index 636f93b..f9e4e50 100644
+--- a/bsnes2014_balanced_libretro.info
++++ b/bsnes2014_balanced_libretro.info
+@@ -88,4 +88,4 @@ disk_control = "false"
+ 
+ description = "bsnes 2014 Balanced is based on version 094 of the bsnes emulator with some accuracy improvements backported from later versions. It is built from the 'balanced' profile, which includes bsnes' less-demanding scanline-precision PPU (as opposed to the slower dot-based PPU used in the 'accuracy' profile), though the only commercial game that is affected by this is the notorious Air Strike Patrol (A.S.P.). Unlike the 'Mercury' cores, the '2014' cores are based on the unchanged bsnes source without any major additions. The up-to-date bsnes core is a better choice for most users who are seeking the highest accuracy, except for those who require access to cheats and retro-achievements, for whom these older forks may be preferable."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/bsnes2014_performance_libretro.info b/bsnes2014_performance_libretro.info
+index 01380d8..66562b8 100644
+--- a/bsnes2014_performance_libretro.info
++++ b/bsnes2014_performance_libretro.info
+@@ -85,4 +85,4 @@ disk_control = "false"
+ 
+ description = "bsnes 2014 Performance is based on version 094 of the bsnes emulator with some accuracy improvements backported from later versions. It is built from the 'performance' profile, which includes bsnes' fastest (but least-accurate) PPU. The biggest problem with the 'performance' profile is that it does not support the CX4 add-on chip used by Capcom's Mega Man X2 and X3 games, but most other games should run fine. For most users, though, Snes9x-Current is a better option for higher performance on low-spec devices and the up-to-date bsnes core is better for accuracy. Unlike the 'Mercury' cores, the '2014' cores are based on the unchanged bsnes source without any major additions."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/bsnes_cplusplus98_libretro.info b/bsnes_cplusplus98_libretro.info
+index 929f8a9..c006bb0 100644
+--- a/bsnes_cplusplus98_libretro.info
++++ b/bsnes_cplusplus98_libretro.info
+@@ -31,4 +31,4 @@ is_experimental = "true"
+ 
+ description = "bsnes C++98 is based on version 085 of the bsnes emulator, but with the codebase downgraded to be compatible with the older C++98 standard. It is built from the 'performance' profile, which includes bsnes' fastest (but least-accurate) PPU. This core is really only useful for platforms that are stuck on old compilers (such as certain consoles) that are also powerful enough for bsnes. For most users, though, Snes9x-Current is a better option for speed and newer bsnes flavors are better for accuracy. So, unless you have a specific need for this core, you are probably better off with a different choice."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/bsnes_hd_beta_libretro.info b/bsnes_hd_beta_libretro.info
+index a88cd6c..f4f9fa3 100644
+--- a/bsnes_hd_beta_libretro.info
++++ b/bsnes_hd_beta_libretro.info
+@@ -92,4 +92,4 @@ disk_control = "false"
+ 
+ description = "bsnes HD Beta is based on the latest code from the bsnes emulator, but it serves as a test-bed for some additional features that are not considered stable enough for inclusion in the standard bsnes core. These features include true widescreen support and increased color depth (i.e., without dithering), among others. Aside from these additional experimental features, this core is identical to the standard bsnes core in both accuracy and performance (and libretro features/limitations)."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/bsnes_libretro.info b/bsnes_libretro.info
+index 1c6b5b2..89f1aea 100644
+--- a/bsnes_libretro.info
++++ b/bsnes_libretro.info
+@@ -95,4 +95,4 @@ disk_control = "false"
+ 
+ description = "bsnes libretro core is based on the latest source code from the bsnes emulator, which is known for its high accuracy and faithful reproduction of the SNES/SFC console. In addition to high accuracy, this version also includes a number of enhancements, such as mode 7 upscaling and overclocking for the Super FX add-on chip used in Star Fox and other games. This core is a good option for users on desktop platforms (Windows, Mac and Linux) with a relatively fast CPU. While it lacks support for libretro cheats and retro-achievements, it does have its own runahead implementation that is accessible from the core options. This core is not compatible with compressed save files, so be aware of that if you wish to import saves made by another core."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/bsnes_mercury_accuracy_libretro.info b/bsnes_mercury_accuracy_libretro.info
+index e6be9d6..f5cc59d 100644
+--- a/bsnes_mercury_accuracy_libretro.info
++++ b/bsnes_mercury_accuracy_libretro.info
+@@ -89,4 +89,4 @@ disk_control = "false"
+ 
+ description = "bsnes Mercury Accuracy is based on version 094 of the bsnes emulator with some accuracy improvements backported from later versions. It also has some optimizations that do not reduce accuracy and some core options that can reduce accuracy (such as overclocking and HLE for the add-on chips used in many carts). It is built from the 'accuracy' profile, which includes bsnes' more-demanding dot-based PPU (as opposed to the faster scanline-precision PPU used in the 'balanced' profile), though the only commercial game that requires this level of precision is the notorious Air Strike Patrol (A.S.P.). The up-to-date bsnes core is a better choice for most users who are seeking the highest accuracy, except for those who require access to cheats and retro-achievements, for whom these older forks may be preferable."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/bsnes_mercury_balanced_libretro.info b/bsnes_mercury_balanced_libretro.info
+index 64d483d..c17399d 100644
+--- a/bsnes_mercury_balanced_libretro.info
++++ b/bsnes_mercury_balanced_libretro.info
+@@ -89,4 +89,4 @@ disk_control = "false"
+ 
+ description = "bsnes Mercury Balanced is based on version 094 of the bsnes emulator with some accuracy improvements backported from later versions. It also has some optimizations that do not reduce accuracy and some core options that can reduce accuracy (such as overclocking and HLE for the add-on chips used in many carts). It is built from the 'balanced' profile, which includes bsnes' less-demanding scanline-precision PPU (as opposed to the slower dot-based PPU used in the 'accuracy' profile), though the only commercial game that is affected is the notorious Air Strike Patrol (A.S.P.). The up-to-date bsnes core is a better choice for most users who are seeking the highest accuracy, except for those who require access to cheats and retro-achievements, for whom these older forks may be preferable."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/bsnes_mercury_performance_libretro.info b/bsnes_mercury_performance_libretro.info
+index b949b27..0a8210b 100644
+--- a/bsnes_mercury_performance_libretro.info
++++ b/bsnes_mercury_performance_libretro.info
+@@ -86,4 +86,4 @@ disk_control = "false"
+ 
+ description = "bsnes Mercury Accuracy is based on version 094 of the bsnes emulator with some accuracy improvements backported from later versions. It is built from the 'performance' profile, which includes bsnes' fastest (but least-accurate) PPU. The biggest problem with the 'performance' profile is that it does not support the CX4 add-on chip used by Capcom's Mega Man X2 and X3 games, but most other games should run fine. For most users, though, Snes9x-Current is a better option for higher performance on low-spec devices and the up-to-date bsnes core is better for accuracy."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/chimerasnes_libretro.info b/chimerasnes_libretro.info
+index 3c0afca..f020e9c 100644
+--- a/chimerasnes_libretro.info
++++ b/chimerasnes_libretro.info
+@@ -31,4 +31,4 @@ disk_control = "false"
+ 
+ description = "ChimeraSNES is a fork of the classic and popular SNES emulator Snes9x from circa 2005, much like snes9x2005. It has sound quality close to that of snes9x2005+ but is about as fast as snes9x2005 and comes preconfigured for slower systems."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/clownmdemu_libretro.info b/clownmdemu_libretro.info
+index 74d76fb..ba8e688 100644
+--- a/clownmdemu_libretro.info
++++ b/clownmdemu_libretro.info
+@@ -36,4 +36,4 @@ is_experimental = "false"
+ 
+ description = "A highly-portable emulator that aims to be as fast as possible without sacrificing accuracy."
+ 
+-gamedir = "mega_drive"
++gamedir = "smd"
+diff --git a/crocods_libretro.info b/crocods_libretro.info
+index 78040a5..f009d7d 100644
+--- a/crocods_libretro.info
++++ b/crocods_libretro.info
+@@ -33,4 +33,4 @@ needs_kbd_mouse_focus = "true"
+ 
+ description = "A port of the CrocoDS Amstrad CPC emulator to libretro. This emulator was originally written for use on the Nintendo DS console via homebrew, and, as such, runs well even on very weak hardware."
+ 
+-gamedir = "cpc"
++gamedir = "amstrad"
+diff --git a/dcastaway_libretro.info b/dcastaway_libretro.info
+index e6f8e3e..41f1da6 100644
+--- a/dcastaway_libretro.info
++++ b/dcastaway_libretro.info
+@@ -39,4 +39,4 @@ notes = "(!) tos.rom (md5): 036c5ae4f885cbf62c9bed651c6c58a8|(!) tos.rom (md5):
+ 
+ description = "A port of the DCaSTaway emulator to libretro. This core supports Atari's 16-/32-bit ST hardware and is aimed at lower-spec devices."
+ 
+-gamedir = "atari_st"
++gamedir = "st"
+diff --git a/duckstation_libretro.info b/duckstation_libretro.info
+index 3a969a7..3ded8a8 100644
+--- a/duckstation_libretro.info
++++ b/duckstation_libretro.info
+@@ -39,4 +39,4 @@ notes = "(!) scph5500.bin (md5): 8dd7d5296a650fac7319bce665a6a53c|(!) scph5501.b
+ 
+ description = "DuckStation is a PlayStation 1 (aka PSX) emulator focusing on playability, speed, graphical enhancements, and long-term maintainability. A 'BIOS' ROM image is required to start the emulator and to play games. Features include hardware rendering (OpenGL, Vulkan and D3D11), upscaling, 24-bit color, and a dynamic recompiler (x86-64, ARMv7, AArch64)."
+ 
+-gamedir = "playstation"
++gamedir = "ps1"
+diff --git a/emux_gb_libretro.info b/emux_gb_libretro.info
+index a8d985b..64c50fc 100644
+--- a/emux_gb_libretro.info
++++ b/emux_gb_libretro.info
+@@ -40,4 +40,4 @@ notes = "(!) dmg_boot.bin (md5): 32fbbd84168d3482956eb3c5051637f5"
+ 
+ description = "Emux is a cross-platform emulator project with a goal of emulating multiple kinds of machines related to gaming, such as consoles or arcades. Its philosophy is very much inspired by the Linux kernel (hence the name), which  brilliantly manages to support multiple machines while keeping drivers entirely platform-independent. Emux is designed in the same way, keeping a code base of CPUs and controllers separate from machines. This emulator was never fully developed and remains here for historical purposes or in case someone wishes to contribute to its development."
+ 
+-gamedir = "game_boy"
++gamedir = "gb"
+diff --git a/emux_sms_libretro.info b/emux_sms_libretro.info
+index 72b6252..fd99cd2 100644
+--- a/emux_sms_libretro.info
++++ b/emux_sms_libretro.info
+@@ -40,4 +40,4 @@ notes = "(!) bios.sms (md5): 840481177270d5642a14ca71ee72844c"
+ 
+ description = "Emux is a cross-platform emulator project with a goal of emulating multiple kinds of machines related to gaming, such as consoles or arcades. Its philosophy is very much inspired by the Linux kernel (hence the name), which  brilliantly manages to support multiple machines while keeping drivers entirely platform-independent. Emux is designed in the same way, keeping a code base of CPUs and controllers separate from machines. This emulator was never fully developed and remains here for historical purposes or in case someone wishes to contribute to its development."
+ 
+-gamedir = "master_system"
++gamedir = "sms"
+diff --git a/fbalpha2012_cps1_libretro.info b/fbalpha2012_cps1_libretro.info
+index 6763e7a..1b45fdd 100644
+--- a/fbalpha2012_cps1_libretro.info
++++ b/fbalpha2012_cps1_libretro.info
+@@ -21,4 +21,4 @@ notes = "(!) The BIOS files must be inside the ROM directory."
+ 
+ description = "Based on a snapshot of the Final Burn Alpha codebase from circa 2012, 'FB Alpha 2012 CPS-1' is compatible with FB Alpha v0.2.97.28 ROM sets. This core variant is for CPS-1 games only. It exists solely for use with RAM-constrained platforms, such as certain console or embedded platforms, that do not have the capacity to load the full core along with large games. Most users should use up-to-date FBNeo instead."
+ 
+-gamedir = "fb_alpha"
++gamedir = "fba"
+diff --git a/fbalpha2012_cps2_libretro.info b/fbalpha2012_cps2_libretro.info
+index 115e09d..c42c44e 100644
+--- a/fbalpha2012_cps2_libretro.info
++++ b/fbalpha2012_cps2_libretro.info
+@@ -21,4 +21,4 @@ notes = "(!) The BIOS files must be inside the ROM directory."
+ 
+ description = "Based on a snapshot of the Final Burn Alpha codebase from circa 2012, 'FB Alpha 2012 CPS-2' is compatible with FB Alpha v0.2.97.28 ROM sets. This core variant is for CPS-2 games only. It exists solely for use with RAM-constrained platforms, such as certain console or embedded platforms, that do not have the capacity to load the full core along with large games. Most users should use up-to-date FBNeo instead."
+ 
+-gamedir = "fb_alpha"
++gamedir = "fba"
+diff --git a/fbalpha2012_cps3_libretro.info b/fbalpha2012_cps3_libretro.info
+index 8de92c1..69262f1 100644
+--- a/fbalpha2012_cps3_libretro.info
++++ b/fbalpha2012_cps3_libretro.info
+@@ -21,4 +21,4 @@ notes = "(!) The BIOS files must be inside the ROM directory."
+ 
+ description = "Based on a snapshot of the Final Burn Alpha codebase from circa 2012, 'FB Alpha 2012 CPS-3' is compatible with FB Alpha v0.2.97.29 ROM sets. This core variant is for CPS-3 games only. It exists solely for use with RAM-constrained platforms, such as certain console or embedded platforms, that do not have the capacity to load the full core along with large games. Most users should use up-to-date FBNeo instead."
+ 
+-gamedir = "fb_alpha"
++gamedir = "fba"
+diff --git a/fbalpha2012_libretro.info b/fbalpha2012_libretro.info
+index bea641e..119d2e3 100644
+--- a/fbalpha2012_libretro.info
++++ b/fbalpha2012_libretro.info
+@@ -21,4 +21,4 @@ notes = "(!) The BIOS files must be inside the ROM directory."
+ 
+ description = "Based on a snapshot of the Final Burn Alpha codebase from circa 2012, 'FB Alpha 2012' is compatible with FB Alpha v0.2.97.29 ROM sets. Most users should use up-to-date FBNeo instead and should only fall back to this core if their device is not capable of running that core."
+ 
+-gamedir = "fb_alpha"
++gamedir = "fba"
+diff --git a/fbalpha2012_neogeo_libretro.info b/fbalpha2012_neogeo_libretro.info
+index a87a76d..973ef74 100644
+--- a/fbalpha2012_neogeo_libretro.info
++++ b/fbalpha2012_neogeo_libretro.info
+@@ -21,4 +21,4 @@ notes = "(!) The BIOS files must be inside the ROM directory."
+ 
+ description = "Based on a snapshot of the Final Burn Alpha codebase from circa 2012, 'FB Alpha 2012 Neo Geo' is compatible with FB Alpha v0.2.97.29 ROM sets. This core variant is for Neo-Geo games only. It exists solely for use with RAM-constrained platforms, such as certain console or embedded platforms, that do not have the capacity to load the full core along with large games. Most users should use up-to-date FBNeo instead."
+ 
+-gamedir = "fb_alpha"
++gamedir = "fba"
+diff --git a/fbneo_cps12_libretro.info b/fbneo_cps12_libretro.info
+index 67934ab..7f2ce7e 100644
+--- a/fbneo_cps12_libretro.info
++++ b/fbneo_cps12_libretro.info
+@@ -39,4 +39,4 @@ notes = "(!) Homepage : https://neo-source.com/"
+ 
+ description = "Based on the latest up-to-date source, 'FinalBurn Neo' is compatible with FinalBurn Neo latest ROM sets. This core variant only supports CPS-1 & CPS-2 games. It exists solely for use with platforms that do not have the capability to use the standard FBNeo core."
+ 
+-gamedir = "fb_alpha"
++gamedir = "fba"
+diff --git a/fbneo_libretro.info b/fbneo_libretro.info
+index 2f73959..ed86dfa 100644
+--- a/fbneo_libretro.info
++++ b/fbneo_libretro.info
+@@ -105,4 +105,4 @@ notes = "(!) The BIOS files can also be inside the ROM directory or the root of
+ 
+ description = "Based on the latest up-to-date source, 'FinalBurn Neo' is compatible with FinalBurn Neo latest ROM sets. This core should be the first choice for most users who want to run arcade games via libretro. MAME runs more games, so if FBN is incompatible with a game, those are the next ones to try. The FBA2012 cores should only be used if a device cannot run FBN at full speed. Formerly known as 'FB Alpha'."
+ 
+-gamedir = "fb_alpha"
++gamedir = "fba"
+diff --git a/fbneo_neogeo_libretro.info b/fbneo_neogeo_libretro.info
+index 19b00b5..d4f3a42 100644
+--- a/fbneo_neogeo_libretro.info
++++ b/fbneo_neogeo_libretro.info
+@@ -45,4 +45,4 @@ notes = "(!) The BIOS files can also be inside the ROM directory or the root of
+ 
+ description = "Based on the latest up-to-date source, 'FinalBurn Neo' is compatible with FinalBurn Neo latest ROM sets. This core variant only supports Neo-Geo games. It exists solely for use with platforms that do not have the capability to use the standard FBNeo core."
+ 
+-gamedir = "fb_alpha"
++gamedir = "fba"
+diff --git a/fixgb_libretro.info b/fixgb_libretro.info
+index 15ad188..d536d43 100644
+--- a/fixgb_libretro.info
++++ b/fixgb_libretro.info
+@@ -27,4 +27,4 @@ notes = "(!) gbc_bios.bin (md5): dbfce9db9deaa2567f6a84fde55f9680"
+ 
+ description = "A preliminary Game Boy emulator written as a learning experience, this core still supports many of the games and features that are attractive to users, such as support for Game Boy Color palettes via BIOS and support for older colorization hacks by adding 'InvVRAM' to the filename (like this: foo.gb -> foo (InvVRAM).gb). However, users looking for a simple, turnkey GB/C emulator will probably have better luck with more mature options, such as SameBoy, Gambatte or GearBoy, depending on their use-case."
+ 
+-gamedir = "game_boy"
++gamedir = "gb"
+diff --git a/freeintv_libretro.info b/freeintv_libretro.info
+index d74f7de..d7f42b4 100644
+--- a/freeintv_libretro.info
++++ b/freeintv_libretro.info
+@@ -29,4 +29,4 @@ notes = "(!) exec.bin (md5): 62e761035cb657903761800f4437b8af|(!) grom.bin (md5)
+ 
+ description = "A libretro emulation core for the Mattel Intellivision computer (but not the Entertainment Computer System or Intellivoice). Many Intellivision games relied on controller overlays to provide context for the controls, and many of these can be found online for reference, including at https://arcadepunks.com/intellivision-controller-overlays."
+ 
+-gamedir = "intellivision"
++gamedir = "int"
+diff --git a/frodo_libretro.info b/frodo_libretro.info
+index d712b3b..ff49160 100644
+--- a/frodo_libretro.info
++++ b/frodo_libretro.info
+@@ -19,4 +19,4 @@ database = "Commodore - 64"
+ savestate = "false"
+ is_experimental = "true"
+ 
+-gamedir = "commodore_64"
++gamedir = "c64"
+diff --git a/fuse_libretro.info b/fuse_libretro.info
+index 27bf3bf..e224edc 100644
+--- a/fuse_libretro.info
++++ b/fuse_libretro.info
+@@ -47,4 +47,4 @@ notes = "[1] Amstrad have kindly given their permission for the redistribution|[
+ 
+ description = "A port of the Fuse Unix Spectrum Emulator to libretro, this core supports many Spectrum, Timex, Pentagon and Scorpion variants. The Pentagon and Scorpion machines need BIOS images placed inside a 'fuse' subdirectory inside the frontend's 'system' directory. This core is a good first choice for playing Spectrum games, with 81 (EightyOne) covering the Sinclair ZX 81 games."
+ 
+-gamedir = "zx_spectrum"
++gamedir = "z80"
+diff --git a/gambatte_libretro.info b/gambatte_libretro.info
+index 2231277..85273e9 100644
+--- a/gambatte_libretro.info
++++ b/gambatte_libretro.info
+@@ -31,4 +31,4 @@ notes = "(!) gb_bios.bin (md5): 32fbbd84168d3482956eb3c5051637f5|(!) gbc_bios.bi
+ 
+ description = "A port of the Gambatte Game Boy emulator to libretro. One of the very first libretro cores, this core is reasonably accurate (enough to run all but a scant handful of games with no visible bugs) and blisteringly fast. While Gearboy and SameBoy cores have surpassed it in accuracy, Gambatte is still an excellent choice on low-power systems that cannot handle the more-accurate newcomers while maintaining full speed."
+ 
+-gamedir = "game_boy"
++gamedir = "gb"
+diff --git a/gearboy_libretro.info b/gearboy_libretro.info
+index 0d7d5f1..3f0291b 100644
+--- a/gearboy_libretro.info
++++ b/gearboy_libretro.info
+@@ -19,4 +19,4 @@ database = "Nintendo - Game Boy|Nintendo - Game Boy Color"
+ 
+ description = "A port of the Gearboy Game Boy emulator to libretro. Gearboy is a new and highly accurate Game Boy emulator from indie/homebrew dev and all-around smart guy, drhelius. It supports both Game Boy and Game Boy Color games and is an excellent choice for playing these games on a modern system."
+ 
+-gamedir = "game_boy"
++gamedir = "gb"
+diff --git a/geargrafx_libretro.info b/geargrafx_libretro.info
+index 7d6936f..0408116 100644
+--- a/geargrafx_libretro.info
++++ b/geargrafx_libretro.info
+@@ -20,4 +20,4 @@ savestate = "true"
+ savestate_features = "deterministic"
+ 
+ description = "Libretro version of the accurate Geargrafx emulator. This core supports PC Engine, TurboGrafx and SuperGrafx consoles. It faithfully emulates all of the hardware and is an excellent choice for emulating these consoles on a modern system."
+-gamedir = "pc_engine"
++gamedir = "pce"
+diff --git a/gearsystem_libretro.info b/gearsystem_libretro.info
+index c2454be..13914b6 100644
+--- a/gearsystem_libretro.info
++++ b/gearsystem_libretro.info
+@@ -19,4 +19,4 @@ database = "Sega - Game Gear|Sega - Master System - Mark III|Sega - SG-1000"
+ 
+ description = "A port of the highly accurate Sega 8-bit console emulator Gearsystem to libretro. This core supports Sega's Mark III, Master System, Game Gear and Game 1000 (SG-1000) consoles, along with the Othello Multivision. It faithfully emulates all of the hardware, including undocumented features of the Z80 CPU. This core is an excellent choice for emulating these consoles on a modern system."
+ 
+-gamedir = "master_system"
++gamedir = "sms"
+diff --git a/genesis_plus_gx_libretro.info b/genesis_plus_gx_libretro.info
+index f1b494c..453be96 100644
+--- a/genesis_plus_gx_libretro.info
++++ b/genesis_plus_gx_libretro.info
+@@ -70,4 +70,4 @@ notes = "(!) sk2chip.bin (md5): b4e76e416b887f4e7413ba76fa735f16|(!) sk.bin (md5
+ 
+ description = "A port of the Genesis Plus GX emulator to libretro. Originally designed to run on the Wii console via homebrew, Genesis Plus GX was one of the first cores ported to libretro, and it has always been the first choice for any 8- and 16-bit Sega consoles, from Master System to Game Gear to Genesis/Mega Drive to Sega CD. Only the 32X is not supported. The core is both fast and highly accurate and it benefits from a tight and feature-filled integration with libretro."
+ 
+-gamedir = "mega_drive"
++gamedir = "smd"
+diff --git a/genesis_plus_gx_wide_libretro.info b/genesis_plus_gx_wide_libretro.info
+index fda7186..c9ab6fc 100644
+--- a/genesis_plus_gx_wide_libretro.info
++++ b/genesis_plus_gx_wide_libretro.info
+@@ -70,4 +70,4 @@ notes = "(!) sk2chip.bin (md5): b4e76e416b887f4e7413ba76fa735f16|(!) sk.bin (md5
+ 
+ description = "A port of the Genesis Plus GX emulator to libretro but with the addition of a widescreen hack that can be applied to games automatically (not all games play nicely with the effect, but a surprisingly large number are pretty good). Otherwise identical to the normal Genesis Plus GX libretro core, this core is a great choice for any 8- and 16-bit Sega consoles, from Master System to Game Gear to Genesis/Mega Drive to Sega CD. Only the 32X is not supported. The core is both fast and highly accurate and it benefits from a tight and feature-filled integration with libretro."
+ 
+-gamedir = "mega_drive"
++gamedir = "smd"
+diff --git a/gpsp_libretro.info b/gpsp_libretro.info
+index 571e32b..53913dd 100644
+--- a/gpsp_libretro.info
++++ b/gpsp_libretro.info
+@@ -33,4 +33,4 @@ notes = "(!) gba_bios.bin (md5): a860e8c0b6d573d191e4ec7db1b1e4f6"
+ 
+ description = "A port of the lightweight gpSP Game Boy Advance emulator to libretro. Originally designed for use on the PSP via homebrew and later ported to the OpenPandora hardware, this core runs extremely fast on low-powered hardware. This speed comes at a price, though, as the core has problems with some games. For most users, mGBA or VBA-M will be better options, and this core should only be utilized in cases where those cores cannot maintain full speed."
+ 
+-gamedir = "game_boy_advance"
++gamedir = "gba"
+diff --git a/gw_libretro.info b/gw_libretro.info
+index 5854871..7292449 100644
+--- a/gw_libretro.info
++++ b/gw_libretro.info
+@@ -20,4 +20,4 @@ savestate = "false"
+ 
+ description = "A simulator of various Game and Watch-style handheld electronic games, ported to libretro. Unlike MAME's emulation of these games, which is based on actual emulation, these simulations were created by observing the behavior of the games and then creating new logic that acts similarly. This core is much easier to get up and running than via MAME, so it's a good first choice for playing those games."
+ 
+-gamedir = "gameandwatch"
++gamedir = "g&w"
+diff --git a/handy_libretro.info b/handy_libretro.info
+index 57f42ab..1fdc549 100644
+--- a/handy_libretro.info
++++ b/handy_libretro.info
+@@ -38,4 +38,4 @@ notes = "(!) lynxboot.img (md5): fcd403db69f54290b51035d82f835e7b"
+ 
+ description = "A port of the venerable Handy Atari Lynx emulator to libretro. This core provides a solid emulation experience for this console, with support for video rotation, etc. but the hardware's unusual screen refresh rate of 75 Hz means scrolling for this core will always be a bit choppy on more common 60 Hz displays. This core is a good first choice for playing Lynx games via libretro frontends."
+ 
+-gamedir = "atari_lynx"
++gamedir = "lynx"
+diff --git a/hatari_libretro.info b/hatari_libretro.info
+index bbdf195..241a08f 100644
+--- a/hatari_libretro.info
++++ b/hatari_libretro.info
+@@ -38,4 +38,4 @@ notes = "(!) tos.img (md5): c1c57ce48e8ee4135885cee9e63a68a2"
+ 
+ description = "A port of the Hatari emulator to libretro. This core supports Atari's 16-/32-bit ST/STE/TT/Falcon hardware and, unlike many other ST emulators that just try to give a good environment for running GEM applications, Hatari tries to emulate the hardware as closely as possible, so it can support most of the old Atari games and demos. The core requires a TOS image to function and supports m3u playlists for use with multi-disk games. This core is a good option for most users on a modern device."
+ 
+-gamedir = "atari_st"
++gamedir = "st"
+diff --git a/higan_sfc_balanced_libretro.info b/higan_sfc_balanced_libretro.info
+index 55f325a..2d25aaa 100644
+--- a/higan_sfc_balanced_libretro.info
++++ b/higan_sfc_balanced_libretro.info
+@@ -98,4 +98,4 @@ notes = "[1] nSide Balanced uses split ROMS for special chip games.|[*] Notable
+ 
+ description = "nSide Balanced is based on version 105 of the higan emulator suite's SNES/SFC emulator. It includes the faster and unofficially maintained scanline-precision PPU (as opposed to the slower dot-based PPU used in the regular higan core), though the only commercial game that is affected by this is the notorious Air Strike Patrol (A.S.P.). The up-to-date bsnes core is a better choice for most users who are seeking the highest accuracy and it should be a bit faster, too."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/higan_sfc_libretro.info b/higan_sfc_libretro.info
+index 890d614..d79842e 100644
+--- a/higan_sfc_libretro.info
++++ b/higan_sfc_libretro.info
+@@ -98,4 +98,4 @@ notes = "[1] higan Accuracy uses split ROMS for special chip games.|[*] Notable
+ 
+ description = "higan Accuracy is based on version 105 of the higan emulator suite's SNES/SFC emulator. It includes the demanding dot-based PPU (which is the hallmark of the 'accuracy' profile of this emulator lineage), though the only commercial game that is affected by this is the notorious Air Strike Patrol (A.S.P.). The up-to-date bsnes core is a better choice for most users who are seeking the highest accuracy and it should be quite a bit faster, too."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/holani_libretro.info b/holani_libretro.info
+index 916a7f9..719b8d8 100644
+--- a/holani_libretro.info
++++ b/holani_libretro.info
+@@ -37,4 +37,4 @@ firmware0_md5 = "fcd403db69f54290b51035d82f835e7b"
+ firmware0_opt = "true"
+ 
+ description = "This core's primary goal is to get closer to the Lynx hardware and provide a better emulation experience than the current Handy ports."
+-gamedir = "atari_lynx"
++gamedir = "lynx"
+diff --git a/mednafen_gba_libretro.info b/mednafen_gba_libretro.info
+index 62b9958..36a225b 100644
+--- a/mednafen_gba_libretro.info
++++ b/mednafen_gba_libretro.info
+@@ -27,4 +27,4 @@ is_experimental = true
+ 
+ description = "An older fork of Mednafen's Game Boy Advance core, which is itself a fork of the Visual Boy Advance emulator. This core is not really one that anyone should use over the alternatives unless they have a specific reason to. It is only included for completionist's sake."
+ 
+-gamedir = "game_boy_advance"
++gamedir = "gba"
+diff --git a/mednafen_lynx_libretro.info b/mednafen_lynx_libretro.info
+index 2ef1c3d..8688e77 100644
+--- a/mednafen_lynx_libretro.info
++++ b/mednafen_lynx_libretro.info
+@@ -26,4 +26,4 @@ notes = "(!) lynxboot.img (md5): fcd403db69f54290b51035d82f835e7b"
+ 
+ description = "An older fork of Mednafen's Atari Lynx core, which is itself a fork of the Handy emulator. While this core works fine, many users will be better served by using the regular Handy core."
+ 
+-gamedir = "atari_lynx"
++gamedir = "lynx"
+diff --git a/mednafen_ngp_libretro.info b/mednafen_ngp_libretro.info
+index 5ecee1d..38464e9 100644
+--- a/mednafen_ngp_libretro.info
++++ b/mednafen_ngp_libretro.info
+@@ -21,4 +21,4 @@ savestate_features = "deterministic"
+ 
+ description = "An older fork of Mednafen's Neo Geo Pocket / Color core, which is itself a fork of the NeoPop emulator. While this core is quite fast, users who run into performance issues can try the performance-focused RACE core."
+ 
+-gamedir = "neo_geo_pocket"
++gamedir = "ngp"
+diff --git a/mednafen_pce_fast_libretro.info b/mednafen_pce_fast_libretro.info
+index 6ad1d16..7a6ea7e 100644
+--- a/mednafen_pce_fast_libretro.info
++++ b/mednafen_pce_fast_libretro.info
+@@ -37,4 +37,4 @@ notes = "(!) syscard3.pce (md5): 38179df8f4ac870017db21ebcbf53114|[i] For cue fi
+ 
+ description = "This is the fastest PC Engine emulator forked from the Mednafen codebase, and it includes an optimized renderer for the PSP's hardware. This speed comes at a cost, though, and a few games don't work with this core. For this reason, if a device can run the non-Fast core at full speed, that one is propably a better choice. Additionally, this core differs from the Beetle-SuperGrafx core only insofar as it does not support SuperGrafx games, so again, unless you need to use this core for a specific reason, you may as well get the added compatibility of the other PCE-compatible cores."
+ 
+-gamedir = "pc_engine"
++gamedir = "pce"
+diff --git a/mednafen_pce_libretro.info b/mednafen_pce_libretro.info
+index b51cdd8..8b73308 100644
+--- a/mednafen_pce_libretro.info
++++ b/mednafen_pce_libretro.info
+@@ -37,4 +37,4 @@ notes = "(!) syscard3.pce (md5): 38179df8f4ac870017db21ebcbf53114|[i] For cue fi
+ 
+ description = "A PC Engine (PCE) core forked from Mednafen's PCE-Accurate emulator, this core is a bit slower than the Fast core, but it is also more accurate, with support for a few extra games that are broken on the Fast core. In addition to PCE, PCE-CD, TurboGrafx 16 and TurboGrafx 16 CD, this core also differs from the Fast version in its support for the SuperGrafx console."
+ 
+-gamedir = "pc_engine"
++gamedir = "pce"
+diff --git a/mednafen_psx_hw_libretro.info b/mednafen_psx_hw_libretro.info
+index d2f1325..f675015 100644
+--- a/mednafen_psx_hw_libretro.info
++++ b/mednafen_psx_hw_libretro.info
+@@ -50,4 +50,4 @@ notes = "(!) scph5500.bin (md5): 8dd7d5296a650fac7319bce665a6a53c|(!) scph5501.b
+ 
+ description = "A significantly modified fork of Mednafen's Playstation emulator, this core differs from the non-HW version by providing GPU-accelerated renderers for OpenGL and Vulkan. These renderers provide increased internal resolution for smooth, high-res polygons with minimal performance impact, texture filtering and other cosmetic changes. Both varieties of Beetle-PSX are more accurate than PCSX-ReARMed but also significantly slower, so they are generally a better choice for higher-specced devices that can benefit from the additional features and accuracy while maintaining full speed. The Beetle-PSX cores are also very particular about requiring BIOS images, so make sure you have the correct BIOS files available and make sure they are named exactly as the core expects."
+ 
+-gamedir = "playstation"
++gamedir = "ps1"
+diff --git a/mednafen_psx_libretro.info b/mednafen_psx_libretro.info
+index 57dd135..06feb1b 100644
+--- a/mednafen_psx_libretro.info
++++ b/mednafen_psx_libretro.info
+@@ -49,4 +49,4 @@ notes = "(!) scph5500.bin (md5): 8dd7d5296a650fac7319bce665a6a53c|(!) scph5501.b
+ 
+ description = "A significantly modified fork of Mednafen's Playstation emulator, this core differs from the -HW version by focusing on software rendering (i.e., instead of hardware-accelerated rendering). The software renderer is more accurate than the OpenGL and Vulkan renderers used in the -HW core, but it lacks some of the cosmetic options and performs any internal resolution increases on the CPU instead of the GPU, which is very demanding (devices with fast CPUs may reach 2x scale but nothing can maintain full speed at 4x at the time of this writing). Both varieties of Beetle-PSX are more accurate than PCSX-ReARMed but also significantly slower, so they are generally a better choice for higher-specced devices that can benefit from the additional features and accuracy while maintaining full speed. The Beetle-PSX cores are also very particular about requiring BIOS images, so make sure you have the correct BIOS files available and make sure they are named exactly as the core expects."
+ 
+-gamedir = "playstation"
++gamedir = "ps1"
+diff --git a/mednafen_snes_libretro.info b/mednafen_snes_libretro.info
+index 6e05f0c..f724b7e 100644
+--- a/mednafen_snes_libretro.info
++++ b/mednafen_snes_libretro.info
+@@ -31,4 +31,4 @@ is_experimental = true
+ 
+ description = "An older fork of Mednafen's original SNES emulator, which is itself based on an old fork of bsnes circa v059, this core does not have any compelling uses as compared with the other SNES cores that are available. It is not as fast as Snes9x or Supafaust nor as accurate as later bsnes forks or Mesen-S, and most users would be better off trying one of those cores instead. This core only exists for completionist's sake."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/mednafen_supafaust_libretro.info b/mednafen_supafaust_libretro.info
+index af05570..56be60b 100644
+--- a/mednafen_supafaust_libretro.info
++++ b/mednafen_supafaust_libretro.info
+@@ -32,4 +32,4 @@ is_experimental = "false"
+ 
+ description = "A port of Mednafen's Supafaust SNES emulator to libretro. This core is designed to be very fast and reasonably accurate. It is fastest on ARM hardware but should be quite speedy on typical x86 machines, as well. It is a very complete port, with support for many libretro features, including frontend features that depend on stable, deterministic savestates."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/mednafen_supergrafx_libretro.info b/mednafen_supergrafx_libretro.info
+index 3789ba8..e6c083e 100644
+--- a/mednafen_supergrafx_libretro.info
++++ b/mednafen_supergrafx_libretro.info
+@@ -46,4 +46,4 @@ notes = "(!) syscard3.pce (md5): 38179df8f4ac870017db21ebcbf53114"
+ 
+ description = "A PC Engine (PCE) core forked from Mednafen's PCE-Fast emulator, this core is a bit faster than the non-Fast flavor at the cost of some accuracy/compatibility. In addition to PCE, PCE-CD, TurboGrafx 16 and TurboGrafx 16 CD, this core also differs from the Beetle-PCE-Fast version in its support for the SuperGrafx console. In general, most users are better off with the non-Fast Beetle-PCE core, but if they cannot maintain full speed with it, this is a good second choice. If this core is too slow, as well, then Beetle-PCE-Fast is the last, best choice."
+ 
+-gamedir = "pc_engine"
++gamedir = "pce"
+diff --git a/mednafen_wswan_libretro.info b/mednafen_wswan_libretro.info
+index 0f8ee44..9655cd0 100644
+--- a/mednafen_wswan_libretro.info
++++ b/mednafen_wswan_libretro.info
+@@ -21,4 +21,4 @@ savestate_features = "deterministic"
+ 
+ description = "A port of Mednafen's WonderSwan Color emulation core to libretro."
+ 
+-gamedir = "wonderswan"
++gamedir = "wswan"
+diff --git a/mesen-s_libretro.info b/mesen-s_libretro.info
+index 4c40b4e..9b23dcf 100644
+--- a/mesen-s_libretro.info
++++ b/mesen-s_libretro.info
+@@ -85,4 +85,4 @@ firmware20_opt = "true"
+ 
+ description = "Mesen-S is a high-accuracy SNES/GB/GBC core with full SGB and achievement support. While quite accurate, this core is also pretty fast, making it a good, general-purpose SNES core. Along with bsnes/hd-beta and up-to-date Snes9x, this core is a great first choice for most users."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/meteor_libretro.info b/meteor_libretro.info
+index 95b5980..69768d2 100644
+--- a/meteor_libretro.info
++++ b/meteor_libretro.info
+@@ -20,4 +20,4 @@ database = "Nintendo - Game Boy Advance"
+ 
+ description = "A very early, incomplete Game Boy Advance emulator, ported to libretro. This emulator was never completed and the libretro core should not be used by anyone for any reason. It remains only for historical and research purposes."
+ 
+-gamedir = "game_boy_advance"
++gamedir = "gba"
+diff --git a/mgba_libretro.info b/mgba_libretro.info
+index a13e6d2..6f5d143 100644
+--- a/mgba_libretro.info
++++ b/mgba_libretro.info
+@@ -47,4 +47,4 @@ notes = "(!) gba_bios.bin (md5): a860e8c0b6d573d191e4ec7db1b1e4f6|(!) gb_bios.bi
+ 
+ description = "An advanced, mature and actively developed Game Boy Advance emulator, ported to libretro. This emulator strives for high accuracy and high performance, and it is generally a good first choice for GBA emulation on any platform where it is available. gpSP is a good fallback on devices that cannot maintain full speed with mGBA."
+ 
+-gamedir = "game_boy_advance"
++gamedir = "gba"
+diff --git a/pcsx1_libretro.info b/pcsx1_libretro.info
+index 1d18d09..8c254ea 100644
+--- a/pcsx1_libretro.info
++++ b/pcsx1_libretro.info
+@@ -26,4 +26,4 @@ notes = "(!) scph5500.bin (md5): 8dd7d5296a650fac7319bce665a6a53c|(!) scph5501.b
+ 
+ description = "A never-completed fork of the PCSX-ReARMed codebase intended to target more general PC hardware. This core should not be used for playing games and exists only for research/historical purposes."
+ 
+-gamedir = "playstation"
++gamedir = "ps1"
+diff --git a/pcsx_rearmed_interpreter_libretro.info b/pcsx_rearmed_interpreter_libretro.info
+index 18d067d..23df27b 100644
+--- a/pcsx_rearmed_interpreter_libretro.info
++++ b/pcsx_rearmed_interpreter_libretro.info
+@@ -44,4 +44,4 @@ notes = "(!) scph5500.bin (md5): 8dd7d5296a650fac7319bce665a6a53c|(!) scph5501.b
+ 
+ description = "A port of the PCSX-ReARMed fork to libretro. This emulator is a technical marvel and runs incredibly well on 32-bit ARM CPUs, though it is also a good choice for other low-powered hardware that cannot run Beetle-PSX/-HW or Swanstation at full speed. However, this core has no support for increased internal resolution, texture filtering, etc., so users who want those features would be better served by the other cores. This 'interpreter' variant of the core removes the CPU dynarec for compatibility at the cost of being much slower than the normal core."
+ 
+-gamedir = "playstation"
++gamedir = "ps1"
+diff --git a/pcsx_rearmed_libretro.info b/pcsx_rearmed_libretro.info
+index adf9ebc..38fd9b5 100644
+--- a/pcsx_rearmed_libretro.info
++++ b/pcsx_rearmed_libretro.info
+@@ -46,4 +46,4 @@ notes = "(!) scph5500.bin (md5): 8dd7d5296a650fac7319bce665a6a53c|(!) scph5501.b
+ 
+ description = "A port of the PCSX-ReARMed fork to libretro. This emulator is a technical marvel and runs incredibly well on 32-bit ARM CPUs, though it is also a good choice for other low-powered hardware that cannot run Beetle-PSX/-HW or Swanstation at full speed. However, this core has no support for increased internal resolution, texture filtering, etc., so users who want those features would be better served by the other cores."
+ 
+-gamedir = "playstation"
++gamedir = "ps1"
+diff --git a/pcsx_rearmed_neon_libretro.info b/pcsx_rearmed_neon_libretro.info
+index 3b48a98..d6e72b6 100644
+--- a/pcsx_rearmed_neon_libretro.info
++++ b/pcsx_rearmed_neon_libretro.info
+@@ -43,4 +43,4 @@ notes = "(!) scph5500.bin (md5): 8dd7d5296a650fac7319bce665a6a53c|(!) scph5501.b
+ 
+ description = "A port of the PCSX-ReARMed fork to libretro. This emulator is a technical marvel and runs incredibly well on 32-bit ARM CPUs, though it is also a good choice for other low-powered hardware that cannot run Beetle-PSX/-HW or Swanstation at full speed. However, this core has no support for increased internal resolution, texture filtering, etc., so users who want those features would be better served by the other cores. This variant of the core requires the host device to support the NEON SIMD extension set to greatly improve performance and accuracy."
+ 
+-gamedir = "playstation"
++gamedir = "ps1"
+diff --git a/picodrive_libretro.info b/picodrive_libretro.info
+index 3ea6968..1c3b48b 100644
+--- a/picodrive_libretro.info
++++ b/picodrive_libretro.info
+@@ -44,4 +44,4 @@ notes = "(!) bios_CD_U.bin (md5): 2efd74e3232ff260e371b99f84024f7f|(!) bios_CD_E
+ 
+ description = "A fast and portable emulator for many Sega game consoles, ported to libretro. This core is notable for being the only open source emulator to support the 32X add-on. It also has very stable savestates, making it a good choice for features that require them. However, this core has lower accuracy than Genesis Plus GX and BlastEm, so users seeking the highest accuracy on reasonably-powered devices should use those cores instead."
+ 
+-gamedir = "mega_drive"
++gamedir = "smd"
+diff --git a/pokemini_libretro.info b/pokemini_libretro.info
+index ba2ff9e..cb37e7a 100644
+--- a/pokemini_libretro.info
++++ b/pokemini_libretro.info
+@@ -38,4 +38,4 @@ notes = "Suggested md5sum:|1e4fb124a3a886865acb574f388c803d = bios.min"
+ 
+ description = "A port of the homebrew PokeMini emulator, which emulates the Pokemon-Mini handheld console, to libretro."
+ 
+-gamedir = "pokemon_mini"
++gamedir = "pokemini"
+diff --git a/prosystem_libretro.info b/prosystem_libretro.info
+index 00f991b..32d6d85 100644
+--- a/prosystem_libretro.info
++++ b/prosystem_libretro.info
+@@ -38,4 +38,4 @@ notes = "(!) 7800 BIOS (U).rom (md5): 0763f1ffb006ddbe32e52d497ee848ae"
+ 
+ description = "A port of the ProSystem Atari 7800 emulator to libretro."
+ 
+-gamedir = "atari_7800"
++gamedir = "7800"
+diff --git a/race_libretro.info b/race_libretro.info
+index c177f82..f927cbf 100644
+--- a/race_libretro.info
++++ b/race_libretro.info
+@@ -31,4 +31,4 @@ is_experimental = "false"
+ 
+ description = "A libretro core of the RACE emulator for NeoGeo Pocket Color, which was modified by theelf to run on the Playstation Portable. As such, it is very performance focused and is a good option for devices that cannot run the Beetle-NGP core at full speed."
+ 
+-gamedir = "neo_geo_pocket"
++gamedir = "ngp"
+diff --git a/rustation_libretro.info b/rustation_libretro.info
+index b85a438..e07a032 100644
+--- a/rustation_libretro.info
++++ b/rustation_libretro.info
+@@ -21,4 +21,4 @@ is_experimental = "true"
+ 
+ description = "A WIP/experimental Playstation 1 emulator written in the Rust programming language. It is most notable for being the originator of the OpenGL hardware renderer used in the popular Beetle-PSX-HW core. Since this core is largely incomplete, the aforementioned Beetle-PSX-HW, Swanstation or even PCSX-ReARMed cores are more useful for actually playing games, but this core remains useful for technical/historical purposes."
+ 
+-gamedir = "playstation"
++gamedir = "ps1"
+diff --git a/sameboy_libretro.info b/sameboy_libretro.info
+index 6a3c723..685ec85 100644
+--- a/sameboy_libretro.info
++++ b/sameboy_libretro.info
+@@ -29,4 +29,4 @@ notes = "(!) dmg_boot.bin (md5): 32fbbd84168d3482956eb3c5051637f5|(!) cgb_boot.b
+ 
+ description = "A port of the highly accurate Game Boy emulator, SameBoy, to libretro. This core has the highest accuracy of any Game Boy emulator and also supports a variety of fun features and improvements. While its requirements are higher than most other Game Boy cores, it is a good first choice for devices strong enough to run it full speed. Lower-power devices will be better-served by Gambatte-libretro, which still has very high accuracy/compatibility and runs blisteringly fast."
+ 
+-gamedir = "game_boy"
++gamedir = "gb"
+diff --git a/smsplus_libretro.info b/smsplus_libretro.info
+index 9d68bed..7f336ed 100644
+--- a/smsplus_libretro.info
++++ b/smsplus_libretro.info
+@@ -30,4 +30,4 @@ firmware1_opt = "true"
+ 
+ description = "A cousin to the fast, accurate Genesis Plus GX emulator, this core specifically emulates the Sega Master System console hardware without including the Sega consoles covered by Genesis Plus GX. This can be useful for keeping different settings for SMS games, but otherwise, most users are better-served by using the combined Genesis Plus GX core."
+ 
+-gamedir = "master_system"
++gamedir = "sms"
+diff --git a/snes9x2002_libretro.info b/snes9x2002_libretro.info
+index 2a94f6c..b6b70dc 100644
+--- a/snes9x2002_libretro.info
++++ b/snes9x2002_libretro.info
+@@ -31,4 +31,4 @@ disk_control = "false"
+ 
+ description = "Snes9x 2002 is a fork of the classic and popular SNES emulator Snes9x from circa 2002. This is the fastest of the Snes9x cores, but it also has the lowest accuracy and worst compatibility. Nevertheless, this core works well with most popular games and is a good choice for the weakest mobile and embedded devices, though it should be considered a last resort."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/snes9x2005_libretro.info b/snes9x2005_libretro.info
+index e4eecb7..1593aa7 100644
+--- a/snes9x2005_libretro.info
++++ b/snes9x2005_libretro.info
+@@ -31,4 +31,4 @@ disk_control = "false"
+ 
+ description = "Snes9x 2005 is a fork of the classic and popular SNES emulator Snes9x from circa 2005. This core is significantly faster than the newer cores, but that speed comes at the price of accuracy, and this core has some bugs in mostly obscure games and lower audio quality. This core is ideal for very weak devices, such as New 3DS and single-board computers. Users who cannot maintain full speed with this core--much less any of the newer Snes9x cores--should fall back to Snes9x 2002 as a last resort."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/snes9x2005_plus_libretro.info b/snes9x2005_plus_libretro.info
+index cc3b991..8076c62 100644
+--- a/snes9x2005_plus_libretro.info
++++ b/snes9x2005_plus_libretro.info
+@@ -31,4 +31,4 @@ disk_control = "false"
+ 
+ description = "Snes9x 2005 Plus is a fork of the classic and popular SNES emulator Snes9x from circa 2005, but with a more accurate sound core backported from later versions. This avoids the biggest problem with the regular Snes9x 2005 core (that is, poor audio quality) at the expense of being somewhat slower. Nevertheless, this core is ideal for very weak devices, such as New 3DS and single-board computers. Users who cannot maintain full speed with this core--much less any of the newer Snes9x cores--should fall back to Snes9x 2002 as a last resort."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/snes9x2010_libretro.info b/snes9x2010_libretro.info
+index 82b7d12..13724a0 100644
+--- a/snes9x2010_libretro.info
++++ b/snes9x2010_libretro.info
+@@ -31,4 +31,4 @@ disk_control = "false"
+ 
+ description = "Snes9x 2010 is a fork of the classic and popular SNES emulator Snes9x from circa 2010, with some additional hacks and fixes backported. It was originally created and tuned specifically for maintaining full speed on Playstation 3 hardware, but it can also be useful for any device that is not quite full speed with the up-to-date Snes9x core, such as budget mobile devices. Users who cannot maintain full speed with this core, either, should fall back to Snes9x 2005."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/snes9x_libretro.info b/snes9x_libretro.info
+index 218caf5..ed784bd 100644
+--- a/snes9x_libretro.info
++++ b/snes9x_libretro.info
+@@ -41,4 +41,4 @@ disk_control = "false"
+ 
+ description = "Snes9x is a classic and popular SNES emulator that is very fast while still maintaining solid accuracy and high compatibility. It is perfect for use on desktop and laptop PCs of all ages, as well as many reasonably powerful mobile devices. This core is based on the latest up-to-date Snes9x sources and is the one most users should try first, only falling back to the year-marked snapshots if this one can't maintain full speed on their device."
+ 
+-gamedir = "super_nes"
++gamedir = "snes"
+diff --git a/stella2014_libretro.info b/stella2014_libretro.info
+index d1e92a9..5ccaebd 100644
+--- a/stella2014_libretro.info
++++ b/stella2014_libretro.info
+@@ -30,4 +30,4 @@ disk_control = "false"
+ 
+ description = "A port of Stella, the multi-platform Atari 2600 VCS emulator, to libretro. This core was forked off from the main Stella codebase circa 2014 and, as such, is a snapshot of the features, compatibility and performance from that time. As a result, it is missing many of the accuracy improvements of the up-to-date core and should only be used in cases where the host device cannot run the up-to-date core at full speed."
+ 
+-gamedir = "atari_2600"
++gamedir = "2600"
+diff --git a/stella2023_libretro.info b/stella2023_libretro.info
+index 2a8301c..7842767 100644
+--- a/stella2023_libretro.info
++++ b/stella2023_libretro.info
+@@ -29,4 +29,4 @@ disk_control = "false"
+ 
+ description = "A port of Stella, the multi-platform Atari 2600 VCS emulator, to libretro. This core has high accuracy and wide compatibility with the Atari 2600 library, making it an excellent first choice for users wanting to play these games."
+ 
+-gamedir = "atari_2600"
++gamedir = "2600"
+diff --git a/stella_libretro.info b/stella_libretro.info
+index bca62e6..43c8bd1 100644
+--- a/stella_libretro.info
++++ b/stella_libretro.info
+@@ -29,4 +29,4 @@ disk_control = "false"
+ 
+ description = "A port of Stella, the multi-platform Atari 2600 VCS emulator, to libretro. This core has high accuracy and wide compatibility with the Atari 2600 library, making it an excellent first choice for users wanting to play these games. On devices that are too weak to maintain full speed, the older Stella2014 core runs significantly faster at the cost of significantly lower accuracy."
+ 
+-gamedir = "atari_2600"
++gamedir = "2600"
+diff --git a/swanstation_libretro.info b/swanstation_libretro.info
+index 287fbfe..661734f 100644
+--- a/swanstation_libretro.info
++++ b/swanstation_libretro.info
+@@ -45,4 +45,4 @@ notes = "(!) psxonpsp660.bin (md5): c53ca5908936d412331790f4426c6c33|(!) scph550
+ 
+ description = "SwanStation is a fork of the Duckstation PlayStation 1 (aka PSX) emulator focusing on playability, speed, and long-term maintainability ported to libretro. A 'BIOS' ROM image is required to start the emulator and to play games. SwanStation includes hardware rendering (OpenGL, Vulkan and D3D11), upscaling, 24-bit color, and a dynamic recompiler (x86-64, ARMv7, AArch64)."
+ 
+-gamedir = "playstation"
++gamedir = "ps1"
+diff --git a/tempgba_libretro.info b/tempgba_libretro.info
+index 1247ae3..5a7ff07 100644
+--- a/tempgba_libretro.info
++++ b/tempgba_libretro.info
+@@ -26,4 +26,4 @@ notes = "(!) gba_bios.bin (md5): a860e8c0b6d573d191e4ec7db1b1e4f6"
+ 
+ description = "A fork of the PSP-specific TempGBA emulator for the Game Boy Advance console, ported to libretro. This core is only intended for use on Playstation Portable hardware, and, as a device-optimized fork of gpSP, it is intended to provide a better, more playable experience for GBA games on this low-powered device. Anyone using any other device should stick with the regular gpSP core or--even better--a more accurate core, such as mGBA."
+ 
+-gamedir = "game_boy_advance"
++gamedir = "gba"
+diff --git a/tgbdual_libretro.info b/tgbdual_libretro.info
+index 0a0ef01..5db73f6 100644
+--- a/tgbdual_libretro.info
++++ b/tgbdual_libretro.info
+@@ -31,4 +31,4 @@ is_experimental = "false"
+ 
+ description = "A port of the TGB Dual Game Boy emulator to libretro. While this core is a decent, usable emulator, it is most notable for being able to emulate to Game Boys connected via Link Cable, which is useful for things like trading Pokemon, etc. This functionality can be utilized by a second player either locally or via netplay (if supported by the libretro frontend). Thanks to the core's modest hardware requirements, it should run well even on low-powered hardware, though users with more powerful hardware may be better served by the SameBoy core, which can also do the same Link Cable functionality but with improved accuracy and compatibility."
+ 
+-gamedir = "game_boy"
++gamedir = "gb"
+diff --git a/uae4all_libretro.info b/uae4all_libretro.info
+index f4e5d5e..e67c557 100644
+--- a/uae4all_libretro.info
++++ b/uae4all_libretro.info
+@@ -37,4 +37,4 @@ notes = "(!) kick34005.A500 (md5): 82a21c1890cae844b3df741f2762d48d"
+ 
+ description = "An old fork of the uae4all Amiga emulator, ported to libretro. It emulates most Commodore Amiga 500 hardware with OSC 1MB Chip. The core has no built-in Kickstart, so you need to provide one. This core is intended only for use on low-powered hardware and is in the development stage"
+ 
+-gamedir = "commodore_amiga"
++gamedir = "amiga"
+diff --git a/uae4arm_libretro.info b/uae4arm_libretro.info
+index 60814ce..d8da9ea 100644
+--- a/uae4arm_libretro.info
++++ b/uae4arm_libretro.info
+@@ -43,4 +43,4 @@ firmware5_opt = "false"
+ 
+ description = "An old fork of the uae4arm Amiga emulator, ported to libretro. This core is intended only for use on very weak, low-powered hardware and should only be used in cases where the P-UAE core is not available or cannot maintain full speed."
+ 
+-gamedir = "commodore_amiga"
++gamedir = "amiga"
+diff --git a/vba_next_libretro.info b/vba_next_libretro.info
+index 6aa5d55..7fb3da7 100644
+--- a/vba_next_libretro.info
++++ b/vba_next_libretro.info
+@@ -38,4 +38,4 @@ notes = "(!) gba_bios.bin (md5): a860e8c0b6d573d191e4ec7db1b1e4f6"
+ 
+ description = "A fork of the venerable Game Boy Advance emulator, VisualBoy Advance-Merged, branched off circa 2011, but with some backported patches for improved performance and compatibility. This core runs a bit faster than the up-to-date VBA-M core, but it is based on an older snapshot of the codebase and lacks many years of development and improvements, resulting in compatibility issues with some games (mostly related to a lack of support for the tilt and solar sensors). Most users should start with the up-to-date VBA-M core and only fall back to this one if they need the additional performance boost."
+ 
+-gamedir = "game_boy_advance"
++gamedir = "gba"
+diff --git a/vbam_libretro.info b/vbam_libretro.info
+index f172e17..1075364 100644
+--- a/vbam_libretro.info
++++ b/vbam_libretro.info
+@@ -44,4 +44,4 @@ notes = "(!) gba_bios.bin (md5): a860e8c0b6d573d191e4ec7db1b1e4f6|(!) gb_bios.bi
+ 
+ description = "An up-to-date libretro port of the venerable Game Boy Advance emulator, VisualBoy Advance-Merged. In addition to Game Boy Advance, this core also supports Game Boy, Game Boy Color and Super Game Boy (borders and palette, only). Most users should start with this VBA-M core and only fall back to the older VBA-Next core if they need the additional performance boost at the cost of reduced accuracy and compatibility."
+ 
+-gamedir = "game_boy_advance"
++gamedir = "gba"
+diff --git a/x64sdl_libretro.info b/x64sdl_libretro.info
+index 0cab1da..7f49031 100644
+--- a/x64sdl_libretro.info
++++ b/x64sdl_libretro.info
+@@ -20,4 +20,4 @@ is_experimental = "true"
+ 
+ description = "An older port of the VICE Commodore 64 emulator to libretro. This port has been completely superseded by the newer VICE ports and only remains for historical/reference value. It should not be used by end-users for any reason."
+ 
+-gamedir = "commodore_64"
++gamedir = "c64"
+-- 
+2.45.2.windows.1
+

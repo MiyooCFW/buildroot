@@ -1,0 +1,62 @@
+From 334ca184e4943762bd772ad166b2523dfb61d037 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sat, 14 Mar 2026 22:58:40 +0100
+Subject: [PATCH] Create dcastaway_libretro.info
+
+with basic savestate & experimental
+---
+ dcastaway_libretro.info | 42 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
+ create mode 100644 dcastaway_libretro.info
+
+diff --git a/dcastaway_libretro.info b/dcastaway_libretro.info
+new file mode 100644
+index 0000000..e6f8e3e
+--- /dev/null
++++ b/dcastaway_libretro.info
+@@ -0,0 +1,42 @@
++# Software Information
++display_name = "Atari - ST (DCaSTaway)"
++authors = "Chui"
++supported_extensions = "st|msa"
++corename = "DCaSTaway"
++license = "GPLv2"
++permissions = ""
++display_version = "1.0"
++categories = "Emulator"
++
++# Hardware Information
++manufacturer = "Atari"
++systemname = "Atari ST"
++systemid = "atari_st"
++
++# Libretro Features
++database = "Atari - ST"
++supports_no_game = "false"
++savestate = "true"
++savestate_features = "basic"
++cheats = "false"
++input_descriptors = "true"
++memory_descriptors = "false"
++libretro_saves = "false"
++core_options = "true"
++core_options_version = "1.0"
++load_subsystem = "false"
++hw_render = "false"
++needs_fullpath = "true"
++disk_control = "true"
++is_experimental = "true"
++
++# Firmware / BIOS
++firmware_count = 1
++firmware0_desc = "tos.rom (TOS 1.04 UK Mega ST / EmuTOS 192k 0.9.12)"
++firmware0_path = "dcastaway/tos.rom"
++firmware0_opt = "false"
++notes = "(!) tos.rom (md5): 036c5ae4f885cbf62c9bed651c6c58a8|(!) tos.rom (md5): eaa828c288a0c9208a425b472a34e8b5"
++
++description = "A port of the DCaSTaway emulator to libretro. This core supports Atari's 16-/32-bit ST hardware and is aimed at lower-spec devices."
++
++gamedir = "atari_st"
+-- 
+2.45.2.windows.1
+

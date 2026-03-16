@@ -1,25 +1,43 @@
-From 7b1903330150ea01121e965722f2a1f99831069f Mon Sep 17 00:00:00 2001
+From c1d8415466225607c58bfbb7c40199d68d7c4eda Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Tue, 13 Jan 2026 21:50:33 +0100
 Subject: [PATCH] add missing `systemid` for cores req. content
 
 ---
+ bk_libretro.info           | 1 +
  easyrpg_libretro.info      | 1 +
+ emuscv_libretro.info       | 1 +
  ffmpeg_libretro.info       | 1 +
  freechaf_libretro.info     | 1 +
  freej2me_libretro.info     | 1 +
+ galaksija_libretro.info    | 1 +
  gw_libretro.info           | 1 +
  imageviewer_libretro.info  | 1 +
  lutro_libretro.info        | 1 +
+ mu_libretro.info           | 1 +
  neocd_libretro.info        | 1 +
  oberon_libretro.info       | 1 +
  qemu_libretro.info         | 1 +
  reminiscence_libretro.info | 1 +
  simcp_libretro.info        | 1 +
  stonesoup_libretro.info    | 1 +
+ theodore_libretro.info     | 1 +
+ thepowdertoy_libretro.info | 1 +
  vemulator_libretro.info    | 1 +
- 14 files changed, 14 insertions(+)
+ 20 files changed, 20 insertions(+)
 
+diff --git a/bk_libretro.info b/bk_libretro.info
+index 51c7bb4..1537dde 100644
+--- a/bk_libretro.info
++++ b/bk_libretro.info
+@@ -5,6 +5,7 @@ corename = "bk"
+ categories = "Computer"
+ database = "BK-0010/BK-0011"
+ systemname = "BK-0010/BK-0011(M)"
++systemid = "bk"
+ license = "BSD"
+ permissions = ""
+ display_version = "1.00"
 diff --git a/easyrpg_libretro.info b/easyrpg_libretro.info
 index d057e86..e1c19a3 100644
 --- a/easyrpg_libretro.info
@@ -32,6 +50,18 @@ index d057e86..e1c19a3 100644
  
  # Libretro Features
  database = "RPG Maker"
+diff --git a/emuscv_libretro.info b/emuscv_libretro.info
+index 7fb2d1a..cb3bed1 100644
+--- a/emuscv_libretro.info
++++ b/emuscv_libretro.info
+@@ -5,6 +5,7 @@ corename = "EmuSCV"
+ manufacturer = "EPOCH/YENO"
+ categories = "Emulator"
+ systemname = "Super Cassette Vision"
++systemid = "epochscv"
+ database = "Epoch - Super Cassette Vision"
+ license = "GPLv3"
+ # permissions = ""
 diff --git a/ffmpeg_libretro.info b/ffmpeg_libretro.info
 index 653c039..d8e75be 100644
 --- a/ffmpeg_libretro.info
@@ -68,6 +98,18 @@ index cac7723..d5fd425 100644
  
  # Libretro Features
  supports_no_game = "false"
+diff --git a/galaksija_libretro.info b/galaksija_libretro.info
+index 635bb9a..b178fca 100644
+--- a/galaksija_libretro.info
++++ b/galaksija_libretro.info
+@@ -11,6 +11,7 @@ display_version = "v0.1"
+ # Hardware Information
+ manufacturer = "Zavod za udžbenike i nastavna sredstva with Elektronika Inženjering"
+ # systemname = "Galaksija"
++systemid = "galaksija"
+ 
+ # BIOS / Firmware
+ firmware_count = 3
 diff --git a/gw_libretro.info b/gw_libretro.info
 index b15c192..728a255 100644
 --- a/gw_libretro.info
@@ -104,6 +146,18 @@ index 7a5e1ba..0c75d55 100644
  
  # Libretro Features
  supports_no_game = "false"
+diff --git a/mu_libretro.info b/mu_libretro.info
+index 1e97490..a50287b 100644
+--- a/mu_libretro.info
++++ b/mu_libretro.info
+@@ -11,6 +11,7 @@ categories = "Emulator"
+ # Hardware Information
+ manufacturer = "Palm"
+ systemname = "Palm OS"
++systemid = "palmos"
+ 
+ # Libretro Features
+ supports_no_game = "true"
 diff --git a/neocd_libretro.info b/neocd_libretro.info
 index a3791d0..032ceeb 100644
 --- a/neocd_libretro.info
@@ -176,6 +230,30 @@ index b624f68..bbb8582 100644
  
  # Libretro Features
  supports_no_game = "false"
+diff --git a/theodore_libretro.info b/theodore_libretro.info
+index 13d495c..3c791f4 100644
+--- a/theodore_libretro.info
++++ b/theodore_libretro.info
+@@ -12,6 +12,7 @@ categories = "Emulator"
+ # Hardware Information
+ manufacturer = "Thomson"
+ systemname = "Thomson MO/TO"
++systemid = "thomson"
+ 
+ # Libretro Features
+ supports_no_game = "true"
+diff --git a/thepowdertoy_libretro.info b/thepowdertoy_libretro.info
+index e54f44c..8491715 100644
+--- a/thepowdertoy_libretro.info
++++ b/thepowdertoy_libretro.info
+@@ -8,6 +8,7 @@ license = "GPLv3"
+ permissions = ""
+ display_version = "v92.5.336"
+ systemname = "Physics Toy"
++systemid = "physics_toy"
+ 
+ # Hardware Information
+ 
 diff --git a/vemulator_libretro.info b/vemulator_libretro.info
 index 4a16b56..ffc7d8e 100644
 --- a/vemulator_libretro.info

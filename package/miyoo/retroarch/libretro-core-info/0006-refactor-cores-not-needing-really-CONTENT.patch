@@ -1,0 +1,138 @@
+From b5cedc5d1c82f6182d8c4fd57d2745bd931593b7 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Mon, 16 Mar 2026 22:19:22 +0100
+Subject: [PATCH] refactor cores not needing really CONTENT
+
+rm `supported_extensions =` entries
+---
+ cannonball_libretro.info     | 2 +-
+ dinothawr_libretro.info      | 2 +-
+ mrboom_libretro.info         | 2 +-
+ nxengine_libretro.info       | 2 +-
+ pascal_pong_libretro.info    | 2 +-
+ scummvm_heavy_libretro.info  | 2 +-
+ scummvm_legacy_libretro.info | 2 +-
+ scummvm_libretro.info        | 2 +-
+ xrick_libretro.info          | 2 +-
+ 9 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/cannonball_libretro.info b/cannonball_libretro.info
+index 63d5881..b8d4656 100644
+--- a/cannonball_libretro.info
++++ b/cannonball_libretro.info
+@@ -1,7 +1,7 @@
+ # Software Information
+ display_name = "Cannonball"
+ authors = "Chris White"
+-supported_extensions = "game|88"
++supported_extensions = ""
+ corename = "Cannonball"
+ categories = "Game engine"
+ license = "Non-commercial"
+diff --git a/dinothawr_libretro.info b/dinothawr_libretro.info
+index ec1748f..6a44d7d 100644
+--- a/dinothawr_libretro.info
++++ b/dinothawr_libretro.info
+@@ -1,7 +1,7 @@
+ # Software Information
+ display_name = "Dinothawr"
+ authors = "Themaister|Agnes Heyer"
+-supported_extensions = "game"
++supported_extensions = ""
+ corename = "Dinothawr"
+ categories = "Game"
+ license = "Non-commercial"
+diff --git a/mrboom_libretro.info b/mrboom_libretro.info
+index 00144a6..667c756 100644
+--- a/mrboom_libretro.info
++++ b/mrboom_libretro.info
+@@ -4,7 +4,7 @@ authors = "Remdy"
+ corename = "Mr.Boom"
+ categories = "Game"
+ license = "MIT"
+-supported_extensions = "desktop"
++supported_extensions = ""
+ permissions = ""
+ display_version = "3.1"
+ 
+diff --git a/nxengine_libretro.info b/nxengine_libretro.info
+index e49b16e..4c6c58f 100644
+--- a/nxengine_libretro.info
++++ b/nxengine_libretro.info
+@@ -1,7 +1,7 @@
+ # Software Information
+ display_name = "Cave Story (NXEngine)"
+ authors = "Caitlin Shaw"
+-supported_extensions = "exe"
++supported_extensions = ""
+ corename = "NXEngine"
+ categories = "Game"
+ license = "GPLv3"
+diff --git a/pascal_pong_libretro.info b/pascal_pong_libretro.info
+index a1810d4..f3355ad 100644
+--- a/pascal_pong_libretro.info
++++ b/pascal_pong_libretro.info
+@@ -1,7 +1,7 @@
+ # Software Information
+ display_name = "PascalPong"
+ authors = "Higor Euripedes"
+-supported_extensions = "game"
++supported_extensions = ""
+ corename = "PascalPong"
+ categories = "Game"
+ license = "2-clause BSD"
+diff --git a/scummvm_heavy_libretro.info b/scummvm_heavy_libretro.info
+index 7e21143..e6f75a5 100644
+--- a/scummvm_heavy_libretro.info
++++ b/scummvm_heavy_libretro.info
+@@ -1,7 +1,7 @@
+ # Software Information
+ display_name = "ScummVM (AGS,Glk,TsAGE,Kyra,Ultima)"
+ authors = "SCUMMVMdev"
+-supported_extensions = " Seuss's  ABC|#02|$00|(A)|(a)|(b)|0|000|001|002|003|004|005|006|007|009|025|1|101|102|12|1C|1c|2|2 US|25|26|3|34|4|455|5|512|6|8|84|85|86|87|99|99 (PG)|ACX|AD|ADF|ADV|AGA|ALD|ALL|AN|ANG|AP|ASK|AUD|AVD|AVI|BAT|BIN|BLB|BMV|BND|BRO|BSF|BUN|C|C00|C06|C35|CAB|CAT|CC|CD1|CEL|CFG|CG1|CGA|CHK|CIF|CLG|CLT|CLU|CNF|CNV|COD|CPS|CRC|CRF|CSC|CSH|CUP|CUR|D$$|D00|D64|DAT|DEF|DFW|DIR|DMU|DNR|DR1|DRV|DSK|DXR|EGA|EMC|ENC|EX1|EXE|EX_|FDT|FKR|FNT|FON|FRENCH|GAM|GDA|GERMAN|GJD|GME|GR2|GRA|GRP|H$$|HAG|HE0|HE1|HE2|HEB|HELLO|HEP|HEX|HPF|HQR|HRC|IBK|IDX|IMS|IN|INF|INI|ITK|L9|LA0|LAB|LB|LEC|LFL|LIB|LIC|LNG|LZC|M4B|MAC|MAP|MDT|MHK|MID|MIX|MMM|MOR|MPC|MPL|MS0|MSG|MT|NL|NUT|OBJ|OGG|OPT|OUT|OVL|P56|PAK|PAL|PAR|PAT|PCX|PGM|PH1|PIC|PKD|PMV|PRC|PRG|Pat|QA|R00|R02|RAW|RED|RES|RIF|RL2|RLB|ROM|RRM|RSC|SAV|SCN|SCR|SEQ|SET|SHP|SHR|SM0|SM1|SMK|SND|SNG|SOG|SOL|SOU|SOUND|SPP|SQU|STK|STR|SWP|SYN|SYS|SYS16|Sax|T64|TAB|TEX|THF|TLK|TOC|TRS|TXT|Text|V16|V56|VGA|VMD|VMD-ra4j|VOC|VQA|W16|W32|WAV|WIN|Z|Z5|ZFS|a3c|acd|acx|add|ags|alr|apm|asl|avi|b25c|bin|blb|blorb|bro|bwu|cab|cas|cat|cel|cfg|crm|cup|d$$|d64|dat|dcp|dnr|doc|dsk|dta|dxr|exe|fiad|gam|game|gblorb|gfx|gmp|he0|he1|he2|hex|img|info|ini|j2|jac|jpg|lab|lfl|m4b|mac|mhk|mma|mp3|mpc|msd|nbf|nib|nl|ogg|pat|pic|prg|pth|res|rom|rsc|scummvm|sdb|slg|spr|st|str|sub|sym|t3|t64|tab|taf|tra|ttf|txt|ulx|vga|voc|vox|wav|wfn|win|woz|xfd|xnw|z1|z2|z3|z4|z4f|z5|z6|z8|z80|zblorb|zfs|zip|"
++supported_extensions = ""
+ corename = "ScummVM Heavy"
+ categories = "Game"
+ license = "GPLv3"
+diff --git a/scummvm_legacy_libretro.info b/scummvm_legacy_libretro.info
+index c9908ff..5b94043 100644
+--- a/scummvm_legacy_libretro.info
++++ b/scummvm_legacy_libretro.info
+@@ -1,7 +1,7 @@
+ # Software Information
+ display_name = "ScummVM legacy"
+ authors = "SCUMMVMdev"
+-supported_extensions = "0|1|2|3|4|5|6|8|25|99|101|102|455|512|scummvm|scumm|gam|z5|dat|blb|z6|ROM|001|taf|zblorb|dcp|(a)|cup|HE0|(A)|D$$|STK|z8|hex|ITK|CD1|pic|Z5|z3|blorb|ulx|DAT|cas|CGA|PIC|acd|SYS|OVL|alr|t3|gblorb|tab|AP|CRC|EXE|z4|W32|MAC|mac|WIN|003|000|exe|asl|slg|AVD|INI|SND|cat|ANG|CUP|SYS16|img|LB|TLK|MIX|RLB|#02|FNT|win|HE1|DMU|FON|SCR|MAP|TEX|HEP|DIR|DRV|a3c|GRV|CUR|CC|COD|OPT|LA0|gfx|GDA|ASK|LNG|ini|W16|SPP|bin|BND|BUN|TRS|add|HRS|DFW|BIN|STR|DR1|ALD|004|002|005|006|R02|R00|C00|D00|GAM|SCN|IDX|ogg|TXT|VB|GRA|BAT|BMV|H$$|MSG|VGA|PKD|SAV|CPS|PAK|SHP|PAT|dxr|gmp|SNG|C35|C06|WAV|wav|CAB|game|CG1|(b)|he2|he1|HE2|SYN|nl|PRC|V56|SEQ|P56|FKR|EX1|rom|CRF|LIC|$00|ALL|txt|acx|nbf|VXD|lab|LAB|ACX|mpc|msd|ADF|nib|HELLO|dsk|xfd|woz|d$$|SET|SOL|Pat|CFG|BSF|RES|CLT|LFL|SQU|RSC|SOUND|rsc|2 US|sub|cel|OVR|007|pat|MDT|CHK|EMC|ADV|voc|FDT|VQA|info|HPF|HQR|CSC|HEB|MID|LEC|QA|009|VMD|EGA|MHK|d64|prg|lfl|LZC|NL|DXR|flac|IMS|m4b|M4B|MOR|doc|jpg|HAG|AGA|BLB|PAL|PRG|CLG|CNF|ORB|BRO|bro|avi|str|PH1|DEF|sym|OUT|IN|TOC|AUD|j2|Text|CEL|AVI|1C|1c|L9|HRC|mhk|LIB|RED|PMV|SM0|SM1|RRM|CAT|CNV|GME|VOC|OGG|GERMAN|SHR|FRENCH|DNR|DSK|dnr|MMM|z4f|025|he0|V16|vga|TAB|CLU|b25c|INF|RL|mp3|SOU|SOG|HEX|mma|st|sdb|cab|MPC|MS0|IMG|ENC|C|GRP|PAR|PGM|Z|RL2|OBJ|ZFS|zfs|zip|z2|z1"
++supported_extensions = ""
+ corename = "ScummVM Legacy"
+ categories = "Game"
+ license = "GPLv2"
+diff --git a/scummvm_libretro.info b/scummvm_libretro.info
+index 9bc1f72..9db226f 100644
+--- a/scummvm_libretro.info
++++ b/scummvm_libretro.info
+@@ -1,7 +1,7 @@
+ # Software Information
+ display_name = "ScummVM"
+ authors = "SCUMMVMdev"
+-supported_extensions = " Seuss's  ABC|#02|$00|(A)|(a)|(b)|0|000|001|002|003|004|005|006|007|009|025|1|101|102|12|1C|1c|2|2 US|25|26|3|34|4|455|5|512|6|8|84|85|86|87|99|99 (PG)|ACX|AD|ADF|ADV|AGA|ALD|ALL|AN|ANG|AP|ASK|AUD|AVD|AVI|BAT|BIN|BLB|BMV|BND|BRO|BSF|BUN|C|C00|C06|C35|CAB|CAT|CC|CD1|CEL|CFG|CG1|CGA|CHK|CIF|CLG|CLT|CLU|CNF|CNV|COD|CPS|CRC|CRF|CSC|CSH|CUP|CUR|D$$|D00|D64|DAT|DEF|DFW|DIR|DMU|DNR|DR1|DRV|DSK|DXR|EGA|EMC|ENC|EX1|EXE|EX_|FDT|FKR|FNT|FON|FRENCH|GAM|GDA|GERMAN|GJD|GME|GR2|GRA|GRP|H$$|HAG|HE0|HE1|HE2|HEB|HELLO|HEP|HEX|HPF|HQR|HRC|IBK|IDX|IMS|IN|INF|INI|ITK|L9|LA0|LAB|LB|LEC|LFL|LIB|LIC|LNG|LZC|M4B|MAC|MAP|MDT|MHK|MID|MIX|MMM|MOR|MPC|MPL|MS0|MSG|MT|NL|NUT|OBJ|OGG|OPT|OUT|OVL|P56|PAK|PAL|PAR|PAT|PCX|PGM|PH1|PIC|PKD|PMV|PRC|PRG|Pat|QA|R00|R02|RAW|RED|RES|RIF|RL2|RLB|ROM|RRM|RSC|SAV|SCN|SCR|SEQ|SET|SHP|SHR|SM0|SM1|SMK|SND|SNG|SOG|SOL|SOU|SOUND|SPP|SQU|STK|STR|SWP|SYN|SYS|SYS16|Sax|T64|TAB|TEX|THF|TLK|TOC|TRS|TXT|Text|V16|V56|VGA|VMD|VMD-ra4j|VOC|VQA|W16|W32|WAV|WIN|Z|Z5|ZFS|a3c|acd|acx|add|ags|alr|apm|asl|avi|b25c|bin|blb|blorb|bro|bwu|cab|cas|cat|cel|cfg|crm|cup|d$$|d64|dat|dcp|dnr|doc|dsk|dta|dxr|exe|fiad|gam|game|gblorb|gfx|gmp|he0|he1|he2|hex|img|info|ini|j2|jac|jpg|lab|lfl|m4b|mac|mhk|mma|mp3|mpc|msd|nbf|nib|nl|ogg|pat|pic|prg|pth|res|rom|rsc|scummvm|sdb|slg|spr|st|str|sub|sym|t3|t64|tab|taf|tra|ttf|txt|ulx|vga|voc|vox|wav|wfn|win|woz|xfd|xnw|z1|z2|z3|z4|z4f|z5|z6|z8|z80|zblorb|zfs|zip|"
++supported_extensions = ""
+ corename = "ScummVM"
+ categories = "Game"
+ license = "GPLv3"
+diff --git a/xrick_libretro.info b/xrick_libretro.info
+index 2bb032e..cbc7787 100644
+--- a/xrick_libretro.info
++++ b/xrick_libretro.info
+@@ -1,7 +1,7 @@
+ # Software Information
+ display_name = "Rick Dangerous (XRick)"
+ authors = ""
+-supported_extensions = "zip"
++supported_extensions = ""
+ corename = "XRick"
+ categories = "Game"
+ license = "GPLv3"
+-- 
+2.45.2.windows.1
+
