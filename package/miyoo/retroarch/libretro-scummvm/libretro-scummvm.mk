@@ -9,8 +9,8 @@ LIBRETRO_SCUMMVM_VERSION = 7310d4e9f5d11553c6c5499911bd2f9b8ff3db3b
 LIBRETRO_SCUMMVM_SITE = $(call github,libretro,scummvm,$(LIBRETRO_SCUMMVM_VERSION))
 LIBRETRO_SCUMMVM_LICENSE = GPL-2.0
 LIBRETRO_SCUMMVM_LICENSE_FILES = COPYING
-# We will'be overwriting info file in final install step, so build core-info first
-LIBRETRO_SCUMMVM_DEPENDENCIES = libretro-core-info
+# # We will'be overwriting info file in final install step, so build core-info first
+# LIBRETRO_SCUMMVM_DEPENDENCIES = libretro-core-info
 
 LIBRETRO_SCUMMVM_LTO_CFLAGS = $(COMPILER_COMMONS_CFLAGS_SO)
 LIBRETRO_SCUMMVM_LTO_CXXFLAGS = $(COMPILER_COMMONS_CXXFLAGS_SO)
@@ -25,8 +25,8 @@ define LIBRETRO_SCUMMVM_BUILD_CMDS
 		$(MAKE) all TOOLSET="$(TARGET_CROSS)" -C $(@D)/backends/platform/libretro/ HEAVY=1 LITE=2 platform="$(RETROARCH_LIBRETRO_PLATFORM)"
 	$(TARGET_STRIP) --strip-unneeded $(@D)/backends/platform/libretro/scummvm_libretro.so
 	mv -fn $(@D)/backends/platform/libretro/scummvm_libretro.so $(@D)/backends/platform/libretro/scummvm_heavy_libretro.so
-	mv -fn $(@D)/backends/platform/libretro/scummvm_libretro.info $(@D)/backends/platform/libretro/scummvm_heavy_libretro.info
-	sed -i 's/display_name = "ScummVM"/display_name = "ScummVM (AGS,Glk,TsAGE,Kyra,Ultima)"/' $(@D)/backends/platform/libretro/scummvm_heavy_libretro.info
+# 	mv -fn $(@D)/backends/platform/libretro/scummvm_libretro.info $(@D)/backends/platform/libretro/scummvm_heavy_libretro.info
+# 	sed -i 's/display_name = "ScummVM"/display_name = "ScummVM (AGS,Glk,TsAGE,Kyra,Ultima)"/' $(@D)/backends/platform/libretro/scummvm_heavy_libretro.info
 # Clean & Compile scummvm core & scummvm info file
 	$(MAKE) clean TOOLSET="$(TARGET_CROSS)" -C $(@D)/backends/platform/libretro/ platform="$(RETROARCH_LIBRETRO_PLATFORM)"
 	CFLAGS="$(TARGET_CFLAGS) $(LIBRETRO_SCUMMVM_LTO_CFLAGS) -ffat-lto-objects" \
@@ -47,11 +47,11 @@ define LIBRETRO_SCUMMVM_INSTALL_TARGET_CMDS
 		${BINARIES_DIR}/retroarch/cores/scummvm_heavy_libretro.so
 	$(INSTALL) -D $(@D)/backends/platform/libretro/scummvm_libretro.so \
 		${BINARIES_DIR}/retroarch/cores/scummvm_libretro.so
-# Overwrite existing info file with src generated one
-	$(INSTALL) -D -m 0644 $(@D)/backends/platform/libretro/scummvm_heavy_libretro.info \
-		${BINARIES_DIR}/retroarch/core_info/scummvm_heavy_libretro.info
-	$(INSTALL) -D -m 0644 $(@D)/backends/platform/libretro/scummvm_libretro.info \
-		${BINARIES_DIR}/retroarch/core_info/scummvm_libretro.info
+# # Overwrite existing info file with src generated one
+# 	$(INSTALL) -D -m 0644 $(@D)/backends/platform/libretro/scummvm_heavy_libretro.info \
+# 		${BINARIES_DIR}/retroarch/core_info/scummvm_heavy_libretro.info
+# 	$(INSTALL) -D -m 0644 $(@D)/backends/platform/libretro/scummvm_libretro.info \
+# 		${BINARIES_DIR}/retroarch/core_info/scummvm_libretro.info
 endef
 
 $(eval $(generic-package))
