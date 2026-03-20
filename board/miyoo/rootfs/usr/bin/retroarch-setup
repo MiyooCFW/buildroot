@@ -46,7 +46,10 @@ ra_mode="${1}" # (default=menu); history; kiosk; minimal;
 roms_dir="${ROMS}"
 test -z "${roms_dir}" && roms_dir="/roms"
 frontend_alive="${FRONTEND}" # (default="") thus no frontend
-frontend_wdir=$(readlink -f /proc/$(pgrep "${FRONTEND}")/cwd 2>/dev/null || echo "")
+frontend_pid="$(pgrep -n ${FRONTEND} 2>/dev/null)"
+if ! test -z "${frontend_pid}"; then
+  frontend_wdir=$(readlink -f "/proc/${frontend_pid}/cwd" 2>/dev/null || echo "")
+fi
 
 if test "${frontend_alive}" == "gmenu2x"; then
   test -z "${frontend_wdir}" \
@@ -112,18 +115,20 @@ elif test "${ra_mode}" == "update"; then
         core_name="$(echo "${core_file}" | sed 's:_libretro\.so::g')"
         core_info_file="${cores_info_dir}/${core_name}_libretro.info"
         if test -f ${core_info_file}; then
+          core_romsdir="" #sanity set empty vars or might (should not) be fetched in next loops
           core_corename="$(sed -n 's:^corename = ::p' "${core_info_file}" | tr -d '"')"
           core_display_name="$(sed -n 's:^display_name = ::p' "${core_info_file}" | tr -d '"')"
           core_systemid="$(sed -n 's:^systemid = ::p' "${core_info_file}" | tr -d '"')"
           core_gamedir="$(sed -n 's:^gamedir = ::p' "${core_info_file}" | tr -d '"')"
           core_supports_no_game=$(sed -n 's:^supports_no_game = ::p' "${core_info_file}" | tr -d '"')
+          core_single_purpose=$(sed -n 's:^single_purpose = ::p' "${core_info_file}" | tr -d '"')
           core_supported_extensions="$(sed -n 's:^supported_extensions = ::p' "${core_info_file}"| tr -d '"')|zip|7z"
           test -z "${core_corename}" && \
            { if $debug; then echo -en "\nDEBUG: Missing \"corename =\" in ${core_name} info file"; fi; core_corename="${core_name}"; }
           test -z "${core_display_name}" && \
            if $debug; then echo -en "\nDEBUG: Missing \"display_name = =\" in ${core_name} info file"; fi;
-          # Test if core accepts content loading, so supports only game load OR have no supported_extensions
-          if ! ${core_supports_no_game} || ! test "${core_supported_extensions}" == "|zip|7z"; then
+          # Test if core accepts content loading, so supports only game load OR have no supported_extensions AND isn't single_purpouse
+          if ! ${core_supports_no_game} || ! test "${core_supported_extensions}" == "|zip|7z" && test "${core_single_purpose}" != "true" ; then
             if ! test -z "${core_gamedir}"; then
               core_romsdir="${roms_dir}/$(echo ${core_gamedir} | tr [:lower:] [:upper:])/"
             elif ! test -z "${core_systemid}"; then
@@ -134,6 +139,9 @@ elif test "${ra_mode}" == "update"; then
             fi
             test "${core_supported_extensions}" == "|zip|7z" && \
              { if $debug; then echo -en "\nDEBUG: Missing \"supported_extensions =\" in ${core_name} info file means no proper \"file filter\" for frontend"; fi; unset core_supported_extensions; }
+          else
+            #safety unset of zip archive support
+            unset core_supported_extensions
           fi
         else
           echo -en "\nWARNING: Missing info file for core: ${core_name}"
@@ -141,13 +149,14 @@ elif test "${ra_mode}" == "update"; then
         fi
         if test "${frontend_alive}" == "gmenu2x"; then
           core_link="${core_name}.ra"
-          core_supported_extensions=$(echo "${core_supported_extensions}" | sed 's:|:,.:g' | sed 's:^:.:') #fix extensions format
+          ! test -z "${core_supported_extensions}" && \
+            core_supported_extensions=$(echo "${core_supported_extensions}" | sed 's:|:,.:g' | sed 's:^:.:') #fix extensions format
           if ! (test -e "${core_linkdir}"/*"${core_link}" || test -e "${core_linkdir}"/.*"${core_link}") ; then
             #set empty vars or will be fetched in next loops
             selectordir=""
             selectorbrowser=""
             selectorfilter=""
-            if ! ${core_supports_no_game} || ! test -z "${core_supported_extensions}"; then
+            if ! ${core_supports_no_game} || ! test -z "${core_supported_extensions}" && test "${core_single_purpose}" != "true"; then
               selectordir="selectordir=${core_romsdir}"
               test "${core_romsdir}" != "${roms_dir}" && \
                selectorbrowser="selectorbrowser=false"
