@@ -13,8 +13,9 @@ ROMS_SIZE=1G
 #SWAP_SIZE=256M # swap size is called from genimage-sdcard.cfg in BOARD (in our normal scenario bigger than usual for resizing part. on real hw)
 #ROOTFS_SIZE=256M # rootfs ext2 size is called from defconfig in BOARD
 if test "$MINIMAL" == "yes"; then
+	# We try to build for 512MB SD, which in reality could be much smaller e.g. 479MB
 	MAIN_SIZE=64M # min ~32M for actual target data (TODO: mkfs.btrfs creates 133MiB actual size either way)
-	ROMS_SIZE=176M # more than 256M for fatersize, but we won't be using it here anyway
+	ROMS_SIZE=136M # fatresize requires 256M for FAT32 so expanding part. won't work, (TODO: use another FAT, or apply workaround: https://bugzilla.gnome.org/show_bug.cgi?id=649324#c4)
 	SWAP_SIZE=32M # generally 16÷64MB, ideally 32MB (for F1C100S ?)
 	#ROOTFS_SIZE=160M # rootfs ext2 size is called from either fragment.defconfig or env variable (invoked in make)
 	BUILD_TYPE="MINIMAL-"
