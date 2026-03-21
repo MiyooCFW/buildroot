@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-LIBRETRO_DCASTAWAY_VERSION = 120cabfc51d9bc6eef3a17a5915e3d913baf9cf0
+LIBRETRO_DCASTAWAY_VERSION = 91780ee247f78c7cd827af0fbc428b4cfa24c4c3
 LIBRETRO_DCASTAWAY_EMUTOS_VERSION = 0.9.12
 LIBRETRO_DCASTAWAY_EXTRA_DOWNLOADS = https://master.dl.sourceforge.net/project/emutos/emutos/$(LIBRETRO_DCASTAWAY_EMUTOS_VERSION)/emutos-192k-$(LIBRETRO_DCASTAWAY_EMUTOS_VERSION).zip
 LIBRETRO_DCASTAWAY_SITE = $(call github,Apaczer,DCaSTaway,$(LIBRETRO_DCASTAWAY_VERSION))
