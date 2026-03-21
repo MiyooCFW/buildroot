@@ -1,8 +1,6 @@
 config BR2_PACKAGE_LIBRETRO_RETROARCH
     bool "libretro-retroarch"
     depends on BR2_PACKAGE_RETROARCH
-    select BR2_PACKAGE_LIBRETRO_DATABASE
-    select BR2_PACKAGE_LIBRETRO_ASSETS
     help
       RetroArch is the reference frontend for the libretro API.
       Popular examples of implementations for this API includes
