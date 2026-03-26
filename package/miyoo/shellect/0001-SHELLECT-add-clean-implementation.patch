@@ -1,0 +1,59 @@
+From a89aecdaf17992dbed4d9272d2be250f2bbd80c7 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Tue, 24 Mar 2026 22:26:53 +0100
+Subject: [PATCH] [SHELLECT] add clean implementation
+
+---
+ shellect | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/shellect b/shellect
+index 18b9894..426ac20 100644
+--- a/shellect
++++ b/shellect
+@@ -221,8 +221,8 @@ arg_format() {
+ 
+     # overall display rule
+     case "$cur" in
+-	'') esc CUR 5; esc SGR '' 2 ;;
+-	*) esc CUR 2; esc SGR 35 1; printf '>'; esc SGR 33 1; esc CUR 2 ;;
++	'') esc CUR 2; esc SGR '' 2 ;;
++	*) esc CUR -2; esc SGR 35 1; printf '>'; esc SGR 33 1; esc CUR 1 ;;
+     esac
+ 
+     # content display format
+@@ -552,7 +552,7 @@ key() {
+                 redraw "$@"
+                 return 0
+                 ;;
+-            l?|C2|"$esc") # l / Arrow Right / Esc
++            l?|C2|"$esc"|"$space"?) # l / Arrow Right / Esc (ENTER) / Space
+                 case $token in
+                     '?') continue ;;
+                     *)
+@@ -744,7 +744,7 @@ key() {
+                 redraw "$@"
+                 ;;
+ 
+-            q?) # q
++            q?|"$esc_c"1) # q OR hold/press_2x ESCAPE
+                 term_exit
+                 exit 0
+                 ;;
+@@ -839,9 +839,10 @@ nl='
+ '
+ tab='	'
+ 
+-# special key setting
+-esc_c=$(printf '\033')
+-bs_char=$(printf '\177')
++# special key setting (octal ASCII codes for chars)
++esc_c=$(printf '\033') # ESCAPE (this char is also 1st part of D-inputs ↑/↓/→/←)
++bs_char=$(printf '\177') # BACKSPACE
++space=$(printf '\040') # SPACE
+ ctrl_f=$(printf '\006')
+ ctrl_u=$(printf '\025')
+ ctrl_n=$(printf '\016')
+-- 
+2.45.2.windows.1
+
