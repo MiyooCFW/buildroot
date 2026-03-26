@@ -5,6 +5,7 @@ menu "System"
 	source "package/miyoo/miyoo-daemon/Config.in"
 	source "package/miyoo/miyoo-logo/Config.in"
 	source "package/miyoo/miyoo-ctl/Config.in"
+	source "package/miyoo/shellect/Config.in"
 endmenu
 
 menu "IPKs"
