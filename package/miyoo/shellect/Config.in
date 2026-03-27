@@ -1,0 +1,4 @@
+config BR2_PACKAGE_SHELLECT
+	bool "shellect"
+	help
+	  Selection menu written in POSIX shell.
