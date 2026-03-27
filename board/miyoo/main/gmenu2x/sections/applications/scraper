@@ -1,0 +1,5 @@
+title=ScrapeArt
+description=Scrape ROMs' artwork for a System
+exec=/usr/bin/st
+params=-k -e "/bin/sh" "-c" "/mnt/apps/scraper/scraper_menu.sh [selFullPath]"
+selectordir=/roms/
