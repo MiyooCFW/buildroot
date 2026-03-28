@@ -1337,6 +1337,7 @@ F:	package/python-zopfli/
 F:	package/serd/
 F:	package/sord/
 F:	package/sratom/
+F:	package/stb/
 F:	package/zchunk/
 
 N:	James Knight <james.knight@collins.com>
