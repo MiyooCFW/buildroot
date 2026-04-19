@@ -20,6 +20,8 @@ if [ ! -r "${LOCFILE}" ]; then
     exit 1
 fi
 OLDPATH="$(cat "${LOCFILE}")"
+BASEPATH_NAME="$(basename "${OLDPATH}")"
+BASEPATH_DIR="$(dirname "${OLDPATH}")"
 
 if [ "${NEWPATH}" = "${OLDPATH}" ]; then
     echo "This buildroot SDK has already been relocated!"
@@ -28,7 +30,7 @@ fi
 
 # Check if the path substitution does work properly, e.g.  a tree
 # "/a/b/c" copied into "/a/b/c/a/b/c/" would not be allowed.
-newpath="$(sed -e "s|${OLDPATH}|${NEWPATH}|g" "${LOCFILE}")"
+newpath="$(sed -e "s|${BASEPATH_DIR}.*/${BASEPATH_NAME}|${NEWPATH}|g" "${LOCFILE}")"
 if [ "${NEWPATH}" != "${newpath}" ]; then
     echo "Something went wrong with substituting the path!"
     echo "Please choose another location for your SDK!"
@@ -40,13 +42,13 @@ echo "Relocating the buildroot SDK from ${OLDPATH} to ${NEWPATH} ..."
 # Make sure file uses the right language
 export LC_ALL=C
 # Replace the old path with the new one in all text files
-grep -lr "${OLDPATH}" . | while read -r FILE ; do
+grep -lr "${BASEPATH_DIR}.*/${BASEPATH_NAME}" . | while read -r FILE ; do
     if file -b --mime-type "${FILE}" | grep -q '^text/' && [ "${FILE}" != "${LOCFILE}" ]
     then
-        sed -i "s|${OLDPATH}|${NEWPATH}|g" "${FILE}"
+        sed -i "s|${BASEPATH_DIR}.*/${BASEPATH_NAME}|${NEWPATH}|g" "${FILE}"
     fi
 done
 
 # At the very end, we update the location file to not break the
 # SDK if this script gets interruted.
-sed -i "s|${OLDPATH}|${NEWPATH}|g" ${LOCFILE}
+echo "${NEWPATH}" > ${LOCFILE}
