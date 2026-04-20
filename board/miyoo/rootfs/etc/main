@@ -135,6 +135,10 @@ if ! $FRONTEND_ACTIVE; then
 		echo "Couldn't read /proc/cmdline, loading miyoo_snd with default args" | tee -a "${LOGS}"
 		modprobe miyoo 2>&1 | tee -a "${LOGS}"
 	fi
+	if grep -sq OSS\=\1 "${OPTIONS_CFG}"; then
+		echo "Loading extra OSS modules" | tee -a "${LOGS}"
+		modprobe -a snd_mixer_oss snd_pcm_oss 2>&1 | tee -a "${LOGS}"
+	fi
 
 	# check if it's first boot and defer to the firstboot script if yes
 	if grep -sq FIRSTBOOT\=\1 "${OPTIONS_CFG}"; then
