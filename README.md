@@ -79,7 +79,22 @@ make miyoo_musl_static_defconfig
 make sdk
 ```
 
+## Use external toolchain (pre-build SDK)
 
+- place your SDK at /opt/miyoo and run relocate script
+```shell
+/opt/miyoo/relocate-sdk.sh "/opt/miyoo"
+```
+
+- apply external TC setup with regular/static uclibc/musl libc defconfig
+```shell
+./board/miyoo/extconfig/ext_config.sh miyoo_<libc>_defconfig
+```
+
+- build BR2 pkgs as regular using provided SDK
+```shell
+make <pkg_name>
+```
 
 ## Speed up build progress
 
