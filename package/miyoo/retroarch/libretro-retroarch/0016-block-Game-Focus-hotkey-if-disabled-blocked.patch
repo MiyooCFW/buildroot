@@ -1,0 +1,29 @@
+From 22cdf4b5ae258a7c88adc8a314dfcbcaaa89ae6a Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Wed, 1 Apr 2026 23:16:26 +0200
+Subject: [PATCH] block "Game Focus" hotkey if disabled & blocked
+
+to work with "Hotkey Enable" combination only for enabling (not disabling)
+---
+ input/input_driver.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/input/input_driver.c b/input/input_driver.c
+index 0b372b336f..d671c26e4d 100644
+--- a/input/input_driver.c
++++ b/input/input_driver.c
+@@ -6234,7 +6234,11 @@ static void input_keys_pressed(
+ 
+    if (!is_menu && binds[port][RARCH_GAME_FOCUS_TOGGLE].valid)
+    {
++      input_game_focus_state_t *game_focus_st = &input_driver_st.game_focus_state;
++
+       /* Never block Game Focus toggle hotkey */
++      /* Ensure that game focus mode is disabled */
++      if (game_focus_st->enabled)
+       block_hotkey[RARCH_GAME_FOCUS_TOGGLE] = false;
+    }
+ 
+-- 
+2.45.2.windows.1
+
