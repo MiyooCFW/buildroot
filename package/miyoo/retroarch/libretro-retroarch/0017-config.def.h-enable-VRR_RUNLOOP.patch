@@ -1,0 +1,28 @@
+From 8f7b7126d23c14958e9ba2848b9bf4df92d214ca Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Mon, 20 Apr 2026 22:55:53 +0200
+Subject: [PATCH] config.def.h: enable VRR_RUNLOOP
+
+"Sync to Exact Content Frame Rate (G-Sync, FreeSync)" -> ON
+
+fixes horrendous uneven frame-pacing
+---
+ config.def.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/config.def.h b/config.def.h
+index abbe0d83a2..14d9ad7415 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -1452,7 +1452,7 @@
+ #define DEFAULT_FASTFORWARD_FRAMESKIP true
+ 
+ /* Enable runloop for variable refresh rate screens. Force x1 speed while handling fast forward too. */
+-#define DEFAULT_VRR_RUNLOOP_ENABLE false
++#define DEFAULT_VRR_RUNLOOP_ENABLE true
+ 
+ /* Run core logic one or more frames ahead then load the state back to reduce perceived input lag. */
+ #define DEFAULT_RUN_AHEAD_FRAMES 1
+-- 
+2.45.2.windows.1
+
