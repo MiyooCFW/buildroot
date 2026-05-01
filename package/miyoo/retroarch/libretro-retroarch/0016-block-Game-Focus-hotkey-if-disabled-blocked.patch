@@ -1,4 +1,4 @@
-From 22cdf4b5ae258a7c88adc8a314dfcbcaaa89ae6a Mon Sep 17 00:00:00 2001
+From 3f48f97cdd0315423422d5d2b94c32888971435f Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Wed, 1 Apr 2026 23:16:26 +0200
 Subject: [PATCH] block "Game Focus" hotkey if disabled & blocked

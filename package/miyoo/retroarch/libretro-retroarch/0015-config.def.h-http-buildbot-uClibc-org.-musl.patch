@@ -1,4 +1,4 @@
-From 47604609a5d0d9d0161127438b7ad1b8c7ca920b Mon Sep 17 00:00:00 2001
+From 8c0602e527597d3f0aebbb54fff7d463b3e13069 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Sun, 15 Feb 2026 21:05:40 +0100
 Subject: [PATCH] config.def.h: http:/buildbot (uClibc) & org.(musl)

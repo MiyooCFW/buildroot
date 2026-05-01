@@ -1,15 +1,14 @@
-From eb72c7218d2635f15423109117caadedca485736 Mon Sep 17 00:00:00 2001
+From 51ed53095be640d17089ee20203e5b1eceaeba68 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Tue, 27 Jan 2026 20:23:42 +0100
 Subject: [PATCH] Makefile: enable core updater & build deps/MBEDTLS
 
-for uClibc it's advised to use HAVE_SOCKET_LEGACY for IPv4
 ---
  Makefile.miyoo | 12 +++++++++---
  1 file changed, 9 insertions(+), 3 deletions(-)
 
 diff --git a/Makefile.miyoo b/Makefile.miyoo
-index 3e759578ca..0dde540838 100644
+index 3e759578ca..8a3b55964d 100644
 --- a/Makefile.miyoo
 +++ b/Makefile.miyoo
 @@ -51,7 +51,8 @@ HAVE_VIDEO_FILTER = 1
