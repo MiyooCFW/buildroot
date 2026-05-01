@@ -1,0 +1,272 @@
+From 20864c9dd0b8aedff7359a0ba929d9bb30f27a92 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sun, 26 Apr 2026 00:35:08 +0200
+Subject: [PATCH] add CMD_VIDEO_FILTER_TOGGLE via hotkey
+
+---
+ command.h                    |  3 +++
+ config.def.keybinds.h        | 28 ++++++++++++++++++++++++++++
+ configuration.c              |  1 +
+ input/input_defines.h        |  1 +
+ input/input_driver.c         |  2 ++
+ intl/msg_hash_us.h           | 17 +++++++++++++++++
+ menu/cbs/menu_cbs_sublabel.c |  4 ++++
+ msg_hash.h                   |  4 ++++
+ retroarch.c                  | 15 +++++++++++++++
+ runloop.c                    |  3 +++
+ 10 files changed, 78 insertions(+)
+
+diff --git a/command.h b/command.h
+index c855b88601..2876f07b92 100644
+--- a/command.h
++++ b/command.h
+@@ -109,6 +109,8 @@ enum event_command
+    CMD_EVENT_VOLUME_DOWN,
+    CMD_EVENT_MIXER_VOLUME_UP,
+    CMD_EVENT_MIXER_VOLUME_DOWN,
++   /* Toggles Video Filter*/
++   CMD_VIDEO_FILTER_TOGGLE,
+    /* Toggles FPS counter. */
+    CMD_EVENT_FPS_TOGGLE,
+    /* Toggles statistics display. */
+@@ -530,6 +532,7 @@ static const struct cmd_map map[] = {
+    { "VRR_RUNLOOP_TOGGLE",     RARCH_VRR_RUNLOOP_TOGGLE },
+    { "RUNAHEAD_TOGGLE",        RARCH_RUNAHEAD_TOGGLE },
+    { "PREEMPT_TOGGLE",         RARCH_PREEMPT_TOGGLE },
++   { "VIDEO_FILTER_TOGGLE",    RARCH_VIDEO_FILTER_TOGGLE },
+    { "FPS_TOGGLE",             RARCH_FPS_TOGGLE },
+    { "STATISTICS_TOGGLE",      RARCH_STATISTICS_TOGGLE },
+    { "AI_SERVICE",             RARCH_AI_SERVICE },
+diff --git a/config.def.keybinds.h b/config.def.keybinds.h
+index c7b7106cf7..a5e99b6a21 100644
+--- a/config.def.keybinds.h
++++ b/config.def.keybinds.h
+@@ -619,6 +619,13 @@ static const struct retro_keybind retro_keybinds_1[] = {
+       RARCH_PREEMPT_TOGGLE, NO_BTN, NO_BTN, 0,
+       true
+    },
++   {
++      NULL, NULL,
++      AXIS_NONE, AXIS_NONE,
++      MENU_ENUM_LABEL_VALUE_INPUT_META_VIDEO_FILTER_TOGGLE, RETROK_UNKNOWN,
++      RARCH_VIDEO_FILTER_TOGGLE, NO_BTN, NO_BTN, 0,
++      true
++   },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE,
+@@ -1286,6 +1293,13 @@ static const struct retro_keybind retro_keybinds_1[] = {
+       RARCH_PREEMPT_TOGGLE, NO_BTN, NO_BTN, 0,
+       true
+    },
++   {
++      NULL, NULL,
++      AXIS_NONE, AXIS_NONE,
++      MENU_ENUM_LABEL_VALUE_INPUT_META_VIDEO_FILTER_TOGGLE, RETROK_UNKNOWN,
++      RARCH_VIDEO_FILTER_TOGGLE, NO_BTN, NO_BTN, 0,
++      true
++   },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE,
+@@ -1963,6 +1977,13 @@ static const struct retro_keybind retro_keybinds_1[] = {
+       RARCH_PREEMPT_TOGGLE, NO_BTN, NO_BTN, 0,
+       true
+    },
++   {
++      NULL, NULL,
++      AXIS_NONE, AXIS_NONE,
++      MENU_ENUM_LABEL_VALUE_INPUT_META_VIDEO_FILTER_TOGGLE, RETROK_UNKNOWN,
++      RARCH_VIDEO_FILTER_TOGGLE, NO_BTN, NO_BTN, 0,
++      true
++   },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE,
+@@ -2623,6 +2644,13 @@ static const struct retro_keybind retro_keybinds_rest[] = {
+       RARCH_PREEMPT_TOGGLE, NO_BTN, NO_BTN, 0,
+       true
+    },
++   {
++      NULL, NULL,
++      AXIS_NONE, AXIS_NONE,
++      MENU_ENUM_LABEL_VALUE_INPUT_META_VIDEO_FILTER_TOGGLE, RETROK_UNKNOWN,
++      RARCH_VIDEO_FILTER_TOGGLE, NO_BTN, NO_BTN, 0,
++      true
++   },
+    {
+       NULL, NULL,
+       AXIS_NONE, AXIS_NONE,
+diff --git a/configuration.c b/configuration.c
+index 3bfcfcc025..7dbbb08d40 100644
+--- a/configuration.c
++++ b/configuration.c
+@@ -398,6 +398,7 @@ const struct input_bind_map input_config_bind_map[RARCH_BIND_LIST_END_NULL] = {
+    DECLARE_META_BIND(2, toggle_vrr_runloop,    RARCH_VRR_RUNLOOP_TOGGLE,     MENU_ENUM_LABEL_VALUE_INPUT_META_VRR_RUNLOOP_TOGGLE),
+    DECLARE_META_BIND(2, runahead_toggle,       RARCH_RUNAHEAD_TOGGLE,        MENU_ENUM_LABEL_VALUE_INPUT_META_RUNAHEAD_TOGGLE),
+    DECLARE_META_BIND(2, preempt_toggle,        RARCH_PREEMPT_TOGGLE,         MENU_ENUM_LABEL_VALUE_INPUT_META_PREEMPT_TOGGLE),
++   DECLARE_META_BIND(2, video_filter_toggle,   RARCH_VIDEO_FILTER_TOGGLE,    MENU_ENUM_LABEL_VALUE_INPUT_META_VIDEO_FILTER_TOGGLE),
+    DECLARE_META_BIND(2, fps_toggle,            RARCH_FPS_TOGGLE,             MENU_ENUM_LABEL_VALUE_INPUT_META_FPS_TOGGLE),
+    DECLARE_META_BIND(2, toggle_statistics,     RARCH_STATISTICS_TOGGLE,      MENU_ENUM_LABEL_VALUE_INPUT_META_STATISTICS_TOGGLE),
+    DECLARE_META_BIND(2, ai_service,            RARCH_AI_SERVICE,             MENU_ENUM_LABEL_VALUE_INPUT_META_AI_SERVICE),
+diff --git a/input/input_defines.h b/input/input_defines.h
+index 6bcaa0bf62..c38a4a06c7 100644
+--- a/input/input_defines.h
++++ b/input/input_defines.h
+@@ -182,6 +182,7 @@ enum
+    RARCH_VRR_RUNLOOP_TOGGLE,
+    RARCH_RUNAHEAD_TOGGLE,
+    RARCH_PREEMPT_TOGGLE,
++   RARCH_VIDEO_FILTER_TOGGLE,
+    RARCH_FPS_TOGGLE,
+    RARCH_STATISTICS_TOGGLE,
+    RARCH_AI_SERVICE,
+diff --git a/input/input_driver.c b/input/input_driver.c
+index d671c26e4d..7c8e3e8d68 100644
+--- a/input/input_driver.c
++++ b/input/input_driver.c
+@@ -7323,6 +7323,7 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
+             {0,                RARCH_UI_COMPANION_TOGGLE     },
+             {0,                RARCH_FPS_TOGGLE              },
+             {0,                RARCH_NETPLAY_HOST_TOGGLE     },
++            {0,                RARCH_VIDEO_FILTER_TOGGLE     },
+          };
+ 
+          ids[14][0] = input_config_binds[0][RARCH_QUIT_KEY].key;
+@@ -7330,6 +7331,7 @@ void input_driver_collect_system_input(input_driver_state_t *input_st,
+          ids[16][0] = input_config_binds[0][RARCH_UI_COMPANION_TOGGLE].key;
+          ids[17][0] = input_config_binds[0][RARCH_FPS_TOGGLE].key;
+          ids[18][0] = input_config_binds[0][RARCH_NETPLAY_HOST_TOGGLE].key;
++         ids[19][0] = input_config_binds[0][RARCH_VIDEO_FILTER_TOGGLE].key;
+ 
+          if (settings->bools.input_menu_swap_ok_cancel_buttons)
+          {
+diff --git a/intl/msg_hash_us.h b/intl/msg_hash_us.h
+index c49e68440f..c41766ddaf 100644
+--- a/intl/msg_hash_us.h
++++ b/intl/msg_hash_us.h
+@@ -4047,6 +4047,14 @@ MSG_HASH(
+    "Switches Preemptive Frames on/off."
+    )
+ 
++MSG_HASH(
++   MENU_ENUM_LABEL_VALUE_INPUT_META_VIDEO_FILTER_TOGGLE,
++   "Video Filter Apply (Toggle)"
++   )
++MSG_HASH(
++   MENU_ENUM_SUBLABEL_INPUT_META_VIDEO_FILTER_TOGGLE,
++   "Switches software 'Vide Filter' on/off."
++   )
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_INPUT_META_FPS_TOGGLE,
+    "Show FPS (Toggle)"
+@@ -15731,6 +15739,15 @@ MSG_HASH(
+    MSG_VIDEO_REFRESH_RATE_CHANGED,
+    "Video refresh rate changed to %s Hz."
+    )
++MSG_HASH(
++   MSG_VIDEO_FILTER_ENABLE_ON,
++   "Video-Filter: Enable"
++   )
++MSG_HASH(
++   MSG_VIDEO_FILTER_ENABLE_OFF,
++   "Video-Filter: Disable"
++   )
++
+ 
+ /* Lakka */
+ 
+diff --git a/menu/cbs/menu_cbs_sublabel.c b/menu/cbs/menu_cbs_sublabel.c
+index 08d316ee39..c204394edb 100644
+--- a/menu/cbs/menu_cbs_sublabel.c
++++ b/menu/cbs/menu_cbs_sublabel.c
+@@ -485,6 +485,7 @@ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_input_meta_ui_companion_toggle,   ME
+ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_input_meta_vrr_runloop_toggle,    MENU_ENUM_SUBLABEL_INPUT_META_VRR_RUNLOOP_TOGGLE)
+ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_input_meta_runahead_toggle,       MENU_ENUM_SUBLABEL_INPUT_META_RUNAHEAD_TOGGLE)
+ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_input_meta_preempt_toggle,        MENU_ENUM_SUBLABEL_INPUT_META_PREEMPT_TOGGLE)
++DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_input_meta_video_filter_toggle,   MENU_ENUM_SUBLABEL_INPUT_META_VIDEO_FILTER_TOGGLE)
+ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_input_meta_fps_toggle,            MENU_ENUM_SUBLABEL_INPUT_META_FPS_TOGGLE)
+ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_input_meta_statistics_toggle,     MENU_ENUM_SUBLABEL_INPUT_META_STATISTICS_TOGGLE)
+ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_input_meta_ai_service,            MENU_ENUM_SUBLABEL_INPUT_META_AI_SERVICE)
+@@ -2500,6 +2501,9 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
+             case RARCH_PREEMPT_TOGGLE:
+                BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_input_meta_preempt_toggle);
+                return 0;
++            case RARCH_VIDEO_FILTER_TOGGLE:
++               BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_input_meta_video_filter_toggle);
++               return 0;
+             case RARCH_FPS_TOGGLE:
+                BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_input_meta_fps_toggle);
+                return 0;
+diff --git a/msg_hash.h b/msg_hash.h
+index d3ac16fd4b..2d4a52a8fb 100644
+--- a/msg_hash.h
++++ b/msg_hash.h
+@@ -585,6 +585,8 @@ enum msg_hash_enums
+    MSG_VRR_RUNLOOP_ENABLED,
+    MSG_VRR_RUNLOOP_DISABLED,
+    MSG_VIDEO_REFRESH_RATE_CHANGED,
++   MSG_VIDEO_FILTER_ENABLE_ON,
++   MSG_VIDEO_FILTER_ENABLE_OFF,
+ 
+    MSG_IOS_TOUCH_MOUSE_ENABLED,
+    MSG_IOS_TOUCH_MOUSE_DISABLED,
+@@ -1175,6 +1177,7 @@ enum msg_hash_enums
+    MENU_ENUM_LABEL_VALUE_INPUT_META_VRR_RUNLOOP_TOGGLE,
+    MENU_ENUM_LABEL_VALUE_INPUT_META_RUNAHEAD_TOGGLE,
+    MENU_ENUM_LABEL_VALUE_INPUT_META_PREEMPT_TOGGLE,
++   MENU_ENUM_LABEL_VALUE_INPUT_META_VIDEO_FILTER_TOGGLE,
+    MENU_ENUM_LABEL_VALUE_INPUT_META_FPS_TOGGLE,
+    MENU_ENUM_LABEL_VALUE_INPUT_META_STATISTICS_TOGGLE,
+    MENU_ENUM_LABEL_VALUE_INPUT_META_AI_SERVICE,
+@@ -1278,6 +1281,7 @@ enum msg_hash_enums
+    MENU_ENUM_SUBLABEL_INPUT_META_VRR_RUNLOOP_TOGGLE,
+    MENU_ENUM_SUBLABEL_INPUT_META_RUNAHEAD_TOGGLE,
+    MENU_ENUM_SUBLABEL_INPUT_META_PREEMPT_TOGGLE,
++   MENU_ENUM_SUBLABEL_INPUT_META_VIDEO_FILTER_TOGGLE,
+    MENU_ENUM_SUBLABEL_INPUT_META_FPS_TOGGLE,
+    MENU_ENUM_SUBLABEL_INPUT_META_STATISTICS_TOGGLE,
+    MENU_ENUM_SUBLABEL_INPUT_META_AI_SERVICE,
+diff --git a/retroarch.c b/retroarch.c
+index 431a7b0a46..5c1163a097 100644
+--- a/retroarch.c
++++ b/retroarch.c
+@@ -3460,6 +3460,21 @@ bool command_event(enum event_command cmd, void *data)
+               runloop_st->pending_windowed_scale))
+             return false;
+          break;
++      case CMD_VIDEO_FILTER_TOGGLE:
++#ifdef HAVE_VIDEO_FILTER
++         /* Allow video filter toggle only when there is an active core. */
++         if (!(runloop_st->flags & RUNLOOP_FLAG_CORE_RUNNING))
++            break;
++         settings->bools.video_filter_enable = !(settings->bools.video_filter_enable);
++         const char *_msg =
++               settings->bools.video_filter_enable ?
++               msg_hash_to_str(MSG_VIDEO_FILTER_ENABLE_ON) :
++               msg_hash_to_str(MSG_VIDEO_FILTER_ENABLE_OFF);
++
++         runloop_msg_queue_push(_msg, strlen(_msg), 1, 60, true, NULL,
++               MESSAGE_QUEUE_ICON_DEFAULT, MESSAGE_QUEUE_CATEGORY_INFO);
++#endif
++         break;
+       case CMD_EVENT_MENU_TOGGLE:
+ #ifdef HAVE_MENU
+          if (menu_st->flags & MENU_ST_FLAG_ALIVE)
+diff --git a/runloop.c b/runloop.c
+index d31e40ba8a..7f9711f7e4 100644
+--- a/runloop.c
++++ b/runloop.c
+@@ -6364,6 +6364,9 @@ static enum runloop_state_enum runloop_check_state(
+    /* Check UI companion hotkey */
+    HOTKEY_CHECK(RARCH_UI_COMPANION_TOGGLE, CMD_EVENT_UI_COMPANION_TOGGLE, true, NULL);
+ 
++   /* Check Video Filter hotkey */
++   HOTKEY_CHECK(RARCH_VIDEO_FILTER_TOGGLE, CMD_VIDEO_FILTER_TOGGLE, true, NULL);
++
+    /* Check FPS hotkey */
+    HOTKEY_CHECK(RARCH_FPS_TOGGLE, CMD_EVENT_FPS_TOGGLE, true, NULL);
+ 
+-- 
+2.45.2.windows.1
+

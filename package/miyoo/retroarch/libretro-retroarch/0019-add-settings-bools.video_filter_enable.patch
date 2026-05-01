@@ -1,0 +1,225 @@
+From 46c311134c52ff1aa169fbac971271462c7f401c Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sun, 26 Apr 2026 00:35:04 +0200
+Subject: [PATCH] add `settings->bools.video_filter_enable`
+
+see gfx/video_driver.c
+---
+ configuration.c              |  1 +
+ configuration.h              |  1 +
+ gfx/video_driver.c           |  4 +++-
+ gfx/video_driver.h           |  1 +
+ intl/msg_hash_lbl.h          |  4 ++++
+ intl/msg_hash_us.h           |  8 ++++++++
+ menu/cbs/menu_cbs_sublabel.c |  4 ++++
+ menu/menu_displaylist.c      |  4 ++++
+ menu/menu_driver.c           |  3 +++
+ menu/menu_setting.c          | 16 ++++++++++++++++
+ msg_hash.h                   |  1 +
+ ui/drivers/qt/qt_options.cpp |  1 +
+ 12 files changed, 47 insertions(+), 1 deletion(-)
+
+diff --git a/configuration.c b/configuration.c
+index 36c81fd041..3bfcfcc025 100644
+--- a/configuration.c
++++ b/configuration.c
+@@ -1780,6 +1780,7 @@ static struct config_bool_setting *populate_settings_bool(
+    SETTING_BOOL("pause_on_disconnect",           &settings->bools.pause_on_disconnect, true, DEFAULT_PAUSE_ON_DISCONNECT, false);
+    SETTING_BOOL("auto_screenshot_filename",      &settings->bools.auto_screenshot_filename, true, DEFAULT_AUTO_SCREENSHOT_FILENAME, false);
+    SETTING_BOOL("suspend_screensaver_enable",    &settings->bools.ui_suspend_screensaver_enable, true, true, false);
++   SETTING_BOOL("video_filter_enable",           &settings->bools.video_filter_enable, true, true, false);
+    SETTING_BOOL("apply_cheats_after_toggle",     &settings->bools.apply_cheats_after_toggle, true, DEFAULT_APPLY_CHEATS_AFTER_TOGGLE, false);
+    SETTING_BOOL("apply_cheats_after_load",       &settings->bools.apply_cheats_after_load, true, DEFAULT_APPLY_CHEATS_AFTER_LOAD, false);
+    SETTING_BOOL("rewind_enable",                 &settings->bools.rewind_enable, true, DEFAULT_REWIND_ENABLE, false);
+diff --git a/configuration.h b/configuration.h
+index e1f98d1217..94b5b937a3 100644
+--- a/configuration.h
++++ b/configuration.h
+@@ -684,6 +684,7 @@ typedef struct settings
+       bool video_framecount_show;
+       bool video_memory_show;
+       bool video_msg_bgcolor_enable;
++      bool video_filter_enable;
+ #ifdef _3DS
+       bool video_3ds_lcd_bottom;
+ #endif
+diff --git a/gfx/video_driver.c b/gfx/video_driver.c
+index 8ce51c4aca..42663b410c 100644
+--- a/gfx/video_driver.c
++++ b/gfx/video_driver.c
+@@ -3014,6 +3014,7 @@ void video_driver_build_info(video_frame_info_t *video_info)
+    video_info->preemptive_frames           = settings->bools.preemptive_frames_enable;
+    video_info->runahead_frames             = settings->uints.run_ahead_frames;
+    video_info->fps_show                    = settings->bools.video_fps_show;
++   video_info->filter_enable                    = settings->bools.video_filter_enable;
+    video_info->memory_show                 = settings->bools.video_memory_show;
+    video_info->statistics_show             = settings->bools.video_statistics_show;
+    video_info->framecount_show             = settings->bools.video_framecount_show;
+@@ -3800,6 +3801,7 @@ void video_driver_frame(const void *data, unsigned width,
+       unsigned height, size_t pitch)
+ {
+    char status_text[128];
++   settings_t *settings = config_get_ptr();
+    static char video_driver_msg[256];
+    static retro_time_t last_time;
+    static retro_time_t curr_time;
+@@ -4153,7 +4155,7 @@ void video_driver_frame(const void *data, unsigned width,
+             pitch, runloop_idle);
+ 
+ #ifdef HAVE_VIDEO_FILTER
+-   if (render_frame && data && video_st->state_filter)
++   if (settings->bools.video_filter_enable && render_frame && data && video_st->state_filter)
+    {
+       unsigned output_width                             = 0;
+       unsigned output_height                            = 0;
+diff --git a/gfx/video_driver.h b/gfx/video_driver.h
+index de8b860e46..534bc76b46 100644
+--- a/gfx/video_driver.h
++++ b/gfx/video_driver.h
+@@ -479,6 +479,7 @@ typedef struct video_frame_info
+    bool runahead_second_instance;
+    bool preemptive_frames;
+    bool fps_show;
++   bool filter_enable;
+    bool memory_show;
+    bool statistics_show;
+    bool framecount_show;
+diff --git a/intl/msg_hash_lbl.h b/intl/msg_hash_lbl.h
+index e011255f92..64ea4804b5 100644
+--- a/intl/msg_hash_lbl.h
++++ b/intl/msg_hash_lbl.h
+@@ -1654,6 +1654,10 @@ MSG_HASH(
+    MENU_ENUM_LABEL_FPS_SHOW,
+    "fps_show"
+    )
++MSG_HASH(
++   MENU_ENUM_LABEL_VIDEO_FILTER_ENABLE,
++   "filter_enable"
++   )
+ MSG_HASH(
+    MENU_ENUM_LABEL_STATISTICS_SHOW,
+    "statistics_show"
+diff --git a/intl/msg_hash_us.h b/intl/msg_hash_us.h
+index 5cb6ee3dfe..c49e68440f 100644
+--- a/intl/msg_hash_us.h
++++ b/intl/msg_hash_us.h
+@@ -1792,6 +1792,14 @@ MSG_HASH(
+    MENU_ENUM_SUBLABEL_VIDEO_SYNCHRONIZATION_SETTINGS,
+    "Change video synchronization settings."
+    )
++MSG_HASH(
++   MENU_ENUM_SUBLABEL_VIDEO_FILTER_ENABLE,
++   "Apply Video Filter. Is a hint that does not necessarily have to be honored by the video driver."
++   )
++MSG_HASH(
++   MENU_ENUM_LABEL_VALUE_VIDEO_FILTER_ENABLE,
++   "Video Filter Enable"
++   )
+ MSG_HASH(
+    MENU_ENUM_LABEL_VALUE_SUSPEND_SCREENSAVER_ENABLE,
+    "Suspend Screensaver"
+diff --git a/menu/cbs/menu_cbs_sublabel.c b/menu/cbs/menu_cbs_sublabel.c
+index da6f5c0e74..08d316ee39 100644
+--- a/menu/cbs/menu_cbs_sublabel.c
++++ b/menu/cbs/menu_cbs_sublabel.c
+@@ -360,6 +360,7 @@ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_video_hdr_settings_list,           M
+ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_video_output_settings_list,           MENU_ENUM_SUBLABEL_VIDEO_OUTPUT_SETTINGS)
+ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_crt_switchres_settings_list,           MENU_ENUM_SUBLABEL_CRT_SWITCHRES_SETTINGS)
+ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_suspend_screensaver_enable,    MENU_ENUM_SUBLABEL_SUSPEND_SCREENSAVER_ENABLE)
++DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_video_filter_enable,    MENU_ENUM_SUBLABEL_VIDEO_FILTER_ENABLE)
+ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_video_window_scale,            MENU_ENUM_SUBLABEL_VIDEO_WINDOW_SCALE)
+ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_video_window_opacity,          MENU_ENUM_SUBLABEL_VIDEO_WINDOW_OPACITY)
+ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_video_window_show_decorations, MENU_ENUM_SUBLABEL_VIDEO_WINDOW_SHOW_DECORATIONS)
+@@ -5516,6 +5517,9 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
+          case MENU_ENUM_LABEL_SUSPEND_SCREENSAVER_ENABLE:
+             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_suspend_screensaver_enable);
+             break;
++         case MENU_ENUM_LABEL_VIDEO_FILTER_ENABLE:
++            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_video_filter_enable);
++            break;
+          case MENU_ENUM_LABEL_VIDEO_SCALE:
+             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_video_window_scale);
+             break;
+diff --git a/menu/menu_displaylist.c b/menu/menu_displaylist.c
+index 9a53434cee..2b68ecc4f6 100644
+--- a/menu/menu_displaylist.c
++++ b/menu/menu_displaylist.c
+@@ -8168,6 +8168,10 @@ unsigned menu_displaylist_build_list(
+                      MENU_ENUM_LABEL_SUSPEND_SCREENSAVER_ENABLE,
+                      PARSE_ONLY_BOOL, false) == 0)
+                count++;
++            if (MENU_DISPLAYLIST_PARSE_SETTINGS_ENUM(list,
++                     MENU_ENUM_LABEL_VIDEO_FILTER_ENABLE,
++                     PARSE_ONLY_BOOL, false) == 0)
++               count++;
+             if (MENU_DISPLAYLIST_PARSE_SETTINGS_ENUM(list,
+                      MENU_ENUM_LABEL_BRIGHTNESS_CONTROL,
+                      PARSE_ONLY_UINT, false) == 0)
+diff --git a/menu/menu_driver.c b/menu/menu_driver.c
+index 97306c4cbc..83b7f04fbb 100644
+--- a/menu/menu_driver.c
++++ b/menu/menu_driver.c
+@@ -6376,6 +6376,9 @@ void menu_driver_toggle(
+    bool video_adaptive_vsync          = false;
+    bool video_vsync                   = false;
+    bool video_frame_delay_auto        = false;
++#ifdef HAVE_VIDEO_FILTER
++   bool video_filter_enable           = true;
++#endif
+ 
+    if (settings)
+    {
+diff --git a/menu/menu_setting.c b/menu/menu_setting.c
+index c7a7f6ea03..6ce8a678a2 100644
+--- a/menu/menu_setting.c
++++ b/menu/menu_setting.c
+@@ -14528,6 +14528,22 @@ static bool setting_append_list(
+                   );
+             SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
+ 
++#ifdef HAVE_VIDEO_FILTER
++            CONFIG_BOOL(
++                  list, list_info,
++                  &settings->bools.video_filter_enable,
++                  MENU_ENUM_LABEL_VIDEO_FILTER_ENABLE,
++                  MENU_ENUM_LABEL_VALUE_VIDEO_FILTER_ENABLE,
++                  true,
++                  MENU_ENUM_LABEL_VALUE_OFF,
++                  MENU_ENUM_LABEL_VALUE_ON,
++                  &group_info,
++                  &subgroup_info,
++                  parent_group,
++                  general_write_handler,
++                  general_read_handler,
++                  SD_FLAG_NONE);
++#endif
+             CONFIG_PATH(
+                   list, list_info,
+                   settings->paths.path_softfilter_plugin,
+diff --git a/msg_hash.h b/msg_hash.h
+index 03a298f71d..d3ac16fd4b 100644
+--- a/msg_hash.h
++++ b/msg_hash.h
+@@ -2427,6 +2427,7 @@ enum msg_hash_enums
+    MENU_LABEL(SAVESTATE_FILE_COMPRESSION),
+ 
+    MENU_LBL_H(SUSPEND_SCREENSAVER_ENABLE),
++   MENU_LABEL(VIDEO_FILTER_ENABLE),
+    MENU_ENUM_LABEL_VOLUME_UP,
+    MENU_ENUM_LABEL_VOLUME_DOWN,
+ 
+diff --git a/ui/drivers/qt/qt_options.cpp b/ui/drivers/qt/qt_options.cpp
+index 57861ae19f..712b819bec 100644
+--- a/ui/drivers/qt/qt_options.cpp
++++ b/ui/drivers/qt/qt_options.cpp
+@@ -1408,6 +1408,7 @@ QWidget *VideoPage::widget()
+    syncGroup->add(MENU_ENUM_LABEL_VRR_RUNLOOP_ENABLE);
+ 
+    miscGroup->add(MENU_ENUM_LABEL_SUSPEND_SCREENSAVER_ENABLE);
++   miscGroup->add(MENU_ENUM_LABEL_VIDEO_FILTER_ENABLE);
+    miscGroup->add(MENU_ENUM_LABEL_VIDEO_THREADED);
+    miscGroup->add(MENU_ENUM_LABEL_VIDEO_GPU_SCREENSHOT);
+    miscGroup->add(MENU_ENUM_LABEL_VIDEO_SMOOTH);
+-- 
+2.45.2.windows.1
+

@@ -1,0 +1,95 @@
+From d3ca7fd12bc2af0d830d01814a1f9c8856265974 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Thu, 23 Apr 2026 21:55:36 +0200
+Subject: [PATCH] add `CMD_EVENT_VIDEO_FILTER_INIT` case & free on deinit
+
+init -> menu_setting.c
+deinit -> menu_cbs_ok.c
+---
+ command.h              |  2 ++
+ menu/cbs/menu_cbs_ok.c |  5 ++++-
+ menu/menu_setting.c    |  3 ++-
+ retroarch.c            | 11 +++++++++++
+ 4 files changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/command.h b/command.h
+index 7a6858e9da..c855b88601 100644
+--- a/command.h
++++ b/command.h
+@@ -113,6 +113,8 @@ enum event_command
+    CMD_EVENT_FPS_TOGGLE,
+    /* Toggles statistics display. */
+    CMD_EVENT_STATISTICS_TOGGLE,
++   /* Initializes video filter. */
++   CMD_EVENT_VIDEO_FILTER_INIT,
+    /* Initializes overlay. */
+    CMD_EVENT_OVERLAY_INIT,
+    /* Frees or caches overlay. */
+diff --git a/menu/cbs/menu_cbs_ok.c b/menu/cbs/menu_cbs_ok.c
+index 13a8731b66..7f7a5822fd 100644
+--- a/menu/cbs/menu_cbs_ok.c
++++ b/menu/cbs/menu_cbs_ok.c
+@@ -3664,6 +3664,7 @@ static int action_ok_shader_preset_remove_game(const char *path,
+ static int action_ok_video_filter_remove(const char *path,
+       const char *label, unsigned type, size_t idx, size_t entry_idx)
+ {
++#ifdef HAVE_VIDEO_FILTER
+    struct menu_state *menu_st = menu_state_get_ptr();
+    settings_t *settings       = config_get_ptr();
+    if (!settings)
+@@ -3672,11 +3673,13 @@ static int action_ok_video_filter_remove(const char *path,
+    {
+       /* Unload video filter */
+       settings->paths.path_softfilter_plugin[0] = '\0';
+-      command_event(CMD_EVENT_REINIT, NULL);
++      //command_event(CMD_EVENT_REINIT, NULL);
++      video_driver_filter_free();
+       /* Refresh menu */
+       menu_st->flags         |=  MENU_ST_FLAG_ENTRIES_NEED_REFRESH
+                              |  MENU_ST_FLAG_PREVENT_POPULATE;
+    }
++#endif
+    return 0;
+ }
+ 
+diff --git a/menu/menu_setting.c b/menu/menu_setting.c
+index 1185a04aa8..c7a7f6ea03 100644
+--- a/menu/menu_setting.c
++++ b/menu/menu_setting.c
+@@ -14543,7 +14543,8 @@ static bool setting_append_list(
+             (*list)[list_info->index - 1].get_string_representation =
+                &setting_get_string_representation_video_filter;
+             MENU_SETTINGS_LIST_CURRENT_ADD_VALUES(list, list_info, "filt");
+-            MENU_SETTINGS_LIST_CURRENT_ADD_CMD(list, list_info, CMD_EVENT_REINIT);
++            MENU_SETTINGS_LIST_CURRENT_ADD_CMD(list, list_info,
++                  CMD_EVENT_VIDEO_FILTER_INIT);
+             SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
+ 
+             END_SUB_GROUP(list, list_info, parent_group);
+diff --git a/retroarch.c b/retroarch.c
+index 301fcd8e04..431a7b0a46 100644
+--- a/retroarch.c
++++ b/retroarch.c
+@@ -3077,8 +3077,19 @@ bool command_event(enum event_command cmd, void *data)
+       case CMD_EVENT_OVERLAY_INIT:
+ #ifdef HAVE_OVERLAY
+          input_overlay_init();
++#endif
++	 break;
++      case CMD_EVENT_VIDEO_FILTER_INIT:
++      {
++#ifdef HAVE_VIDEO_FILTER
++        //video_driver_init_filter(video_driver_pix_fmt, settings);
++	const enum retro_pixel_format
++	   video_driver_pix_fmt                = video_st->pix_fmt;
++	settings_t  *settings          = config_get_ptr();
++        video_driver_init_filter(video_driver_pix_fmt, settings);
+ #endif
+          break;
++      }
+       case CMD_EVENT_CHEAT_INDEX_PLUS:
+ #ifdef HAVE_CHEATS
+          cheat_manager_index_next();
+-- 
+2.45.2.windows.1
+
