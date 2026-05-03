@@ -1,0 +1,33 @@
+From 2dd2fb25011ef28f755e5e8da371b443cd522504 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Wed, 18 Jun 2025 23:34:59 +0200
+Subject: [PATCH] gpulib/gpu: rm dubious cond. for frameskip.set
+
+restore it for some games e.g. Tekken 3
+---
+ plugins/gpulib/gpu.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/plugins/gpulib/gpu.c b/plugins/gpulib/gpu.c
+index 8c1b8e85..d2e8fed9 100644
+--- a/plugins/gpulib/gpu.c
++++ b/plugins/gpulib/gpu.c
+@@ -342,7 +342,6 @@ void GPUwriteStatus(uint32_t data)
+       break;
+     case 0x05:
+       src_x = data & 0x3ff; src_y = (data >> 10) & 0x1ff;
+-      if (src_x != gpu.screen.src_x || src_y != gpu.screen.src_y) {
+         gpu.screen.src_x = src_x;
+         gpu.screen.src_y = src_y;
+         renderer_notify_scanout_change(src_x, src_y);
+@@ -353,7 +352,6 @@ void GPUwriteStatus(uint32_t data)
+             gpu.frameskip.last_flip_frame = *gpu.state.frame_count;
+           }
+         }
+-      }
+       break;
+     case 0x06:
+       gpu.screen.x1 = data & 0xfff;
+-- 
+2.45.2.windows.1
+
