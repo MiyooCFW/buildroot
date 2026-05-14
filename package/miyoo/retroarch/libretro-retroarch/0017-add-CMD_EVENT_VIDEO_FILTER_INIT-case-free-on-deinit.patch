@@ -1,4 +1,4 @@
-From d3ca7fd12bc2af0d830d01814a1f9c8856265974 Mon Sep 17 00:00:00 2001
+From fee2b07deb4c6f0bb164f398f91d35b90e40b3ad Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Thu, 23 Apr 2026 21:55:36 +0200
 Subject: [PATCH] add `CMD_EVENT_VIDEO_FILTER_INIT` case & free on deinit

@@ -1,0 +1,26 @@
+From 54da9f45c5f39ee1d5bc542d2298b95615db1c7b Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Tue, 12 May 2026 23:00:30 +0200
+Subject: [PATCH] sdl_rs90_gfx: fix frameskip on unthreaded video
+
+This reverts commit 513370f71579d5af5471859a8b69533cdabb205a.
+---
+ gfx/drivers/sdl_rs90_gfx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/gfx/drivers/sdl_rs90_gfx.c b/gfx/drivers/sdl_rs90_gfx.c
+index dd8144a966..ac3dc52a5f 100644
+--- a/gfx/drivers/sdl_rs90_gfx.c
++++ b/gfx/drivers/sdl_rs90_gfx.c
+@@ -1079,7 +1079,7 @@ static bool sdl_rs90_gfx_frame(void *data, const void *frame,
+     * - Menu is inactive and input 'content' frame
+     *   data is NULL (may happen when e.g. a running
+     *   core skips a frame) */
+-   if (unlikely(!vid))
++   if (unlikely(!vid || (!frame && !vid->menu_active)))
+       return true;
+ 
+    /* If fast forward is currently active, we may
+-- 
+2.45.2.windows.1
+

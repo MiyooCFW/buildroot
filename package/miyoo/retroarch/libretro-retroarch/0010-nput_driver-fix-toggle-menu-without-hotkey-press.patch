@@ -1,4 +1,4 @@
-From 504fdd02ddb5504da0596b81d35810e9c13a0b0c Mon Sep 17 00:00:00 2001
+From 573540188d519c683a74ca8b193d6a16ea619ed9 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Sat, 27 Dec 2025 23:21:47 +0100
 Subject: [PATCH] nput_driver: fix toggle menu without hotkey press

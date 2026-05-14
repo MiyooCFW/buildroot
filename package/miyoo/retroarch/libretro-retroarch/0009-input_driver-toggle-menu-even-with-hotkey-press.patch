@@ -1,4 +1,4 @@
-From ac169f82287255d34b9b4df9ca245f0b644c615e Mon Sep 17 00:00:00 2001
+From 98b07c8182cea00c8eebcfe9625ac06512594810 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Fri, 19 Dec 2025 22:29:35 +0100
 Subject: [PATCH] input_driver: toggle menu even with hotkey press

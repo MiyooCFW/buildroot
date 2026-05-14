@@ -1,4 +1,4 @@
-From 40bf47bed90c5451473c5516648e6a9ee81cff1b Mon Sep 17 00:00:00 2001
+From b6f0ae815d4a890345a1fa4e7e4a9be28f61ba57 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Mon, 10 Mar 2025 20:46:29 +0100
 Subject: [PATCH] Makefile.miyoo: enable Networking
@@ -8,7 +8,7 @@ Subject: [PATCH] Makefile.miyoo: enable Networking
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/Makefile.miyoo b/Makefile.miyoo
-index ca93214ffa..3e759578ca 100644
+index 56c626949d..563d211658 100644
 --- a/Makefile.miyoo
 +++ b/Makefile.miyoo
 @@ -112,7 +112,7 @@ HAVE_LIBSHAKE = 0

@@ -1,4 +1,4 @@
-From ef30f5f1f2df349c44ddc969801458c1685c57f7 Mon Sep 17 00:00:00 2001
+From 8cf36f5fc39d283b7f8accbc334ce37720b3b5af Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Fri, 19 Dec 2025 20:52:29 +0100
 Subject: [PATCH] config.def: update default HOTKEY configuration

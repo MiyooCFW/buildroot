@@ -1,4 +1,4 @@
-From 51ed53095be640d17089ee20203e5b1eceaeba68 Mon Sep 17 00:00:00 2001
+From 706f03f8ee221b447262971977a033ae2f6d6602 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Tue, 27 Jan 2026 20:23:42 +0100
 Subject: [PATCH] Makefile: enable core updater & build deps/MBEDTLS
@@ -8,7 +8,7 @@ Subject: [PATCH] Makefile: enable core updater & build deps/MBEDTLS
  1 file changed, 9 insertions(+), 3 deletions(-)
 
 diff --git a/Makefile.miyoo b/Makefile.miyoo
-index 3e759578ca..8a3b55964d 100644
+index 563d211658..adc50ee372 100644
 --- a/Makefile.miyoo
 +++ b/Makefile.miyoo
 @@ -51,7 +51,8 @@ HAVE_VIDEO_FILTER = 1

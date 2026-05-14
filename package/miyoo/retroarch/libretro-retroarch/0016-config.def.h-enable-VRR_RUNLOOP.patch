@@ -1,4 +1,4 @@
-From 193a5cd4a8715cb784e86cce8c6db5005949fead Mon Sep 17 00:00:00 2001
+From 0de6aa4cebecc6d49a5dd0b296aef1549ce599d2 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Mon, 20 Apr 2026 22:55:53 +0200
 Subject: [PATCH] config.def.h: enable VRR_RUNLOOP

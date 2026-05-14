@@ -1,4 +1,4 @@
-From e3f1f0fadaef9b08a2580d553c708e1d16e07443 Mon Sep 17 00:00:00 2001
+From c63e538ea8e5a03d1da6d160e3f5ed7a51d46f1b Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Wed, 30 Apr 2025 23:08:23 +0200
 Subject: [PATCH] input/driver: correct Miyoo mapping in MENU

@@ -1,4 +1,4 @@
-From 46c311134c52ff1aa169fbac971271462c7f401c Mon Sep 17 00:00:00 2001
+From 915a0daf51752a667c1fc4c31bda27a9d83d85d2 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Sun, 26 Apr 2026 00:35:04 +0200
 Subject: [PATCH] add `settings->bools.video_filter_enable`

@@ -1,4 +1,4 @@
-From 82974051ff694b37721dbb2fd3c7d7003856f401 Mon Sep 17 00:00:00 2001
+From 4cfefe288aa43c7e15ddafd5c85dcc4461839392 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Mon, 10 Mar 2025 20:42:53 +0100
 Subject: [PATCH] Change def gamepad driver (sdl_dingux  to sdl) & rebind
@@ -12,7 +12,7 @@ add -DMIYOO flag
  4 files changed, 37 insertions(+), 35 deletions(-)
 
 diff --git a/Makefile.miyoo b/Makefile.miyoo
-index 95cc30d856..ca93214ffa 100644
+index 1dab751ffd..56c626949d 100644
 --- a/Makefile.miyoo
 +++ b/Makefile.miyoo
 @@ -120,7 +120,7 @@ OBJ :=
