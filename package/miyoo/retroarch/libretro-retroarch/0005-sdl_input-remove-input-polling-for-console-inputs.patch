@@ -1,4 +1,4 @@
-From 861157f180b647781847168d8ec8bf6cd8e8bd66 Mon Sep 17 00:00:00 2001
+From 307e832f05a0a00eb54101d56508b76d19946d98 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Wed, 30 Apr 2025 23:13:22 +0200
 Subject: [PATCH] sdl_input: remove input polling for console inputs

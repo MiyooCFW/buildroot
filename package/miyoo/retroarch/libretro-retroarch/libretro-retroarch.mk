@@ -19,6 +19,7 @@ RETROARCH_LIBRETRO_PLATFORM = miyoo
 # Moreover IPv6 has more overhead over IPv4, which can cause OOM segfault on dl&extract even with musl, so we'll use later for both
 
 define LIBRETRO_RETROARCH_BUILD_CMDS
+	$(SED) "s|/opt/miyoo|$(STAGING_DIR)|g" $(@D)/Makefile.miyoo
 	$(MAKE) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" -C $(@D) -f Makefile.miyoo
 	$(TARGET_STRIP) --strip-unneeded $(@D)/retroarch
 endef

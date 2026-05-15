@@ -1,0 +1,34 @@
+From cc2591694c3b09c60b7d00a30af834a8c6e8d5f1 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Thu, 19 Feb 2026 07:13:38 +0100
+Subject: [PATCH] Makefile.miyoo: use generic call for SYSROOT path (#18747)
+
+---
+ Makefile.miyoo | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/Makefile.miyoo b/Makefile.miyoo
+index adc50ee372..6fd8d33267 100644
+--- a/Makefile.miyoo
++++ b/Makefile.miyoo
+@@ -26,11 +26,13 @@ else
+ STRIP                 = $(TOOLCHAIN_DIR)/usr/bin/arm-linux-strip
+ endif
+ 
+-GCW0_SDL_CONFIG      ?= $(TOOLCHAIN_DIR)/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/bin/sdl-config
+-GCW0_FREETYPE_CONFIG ?= $(TOOLCHAIN_DIR)/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/bin/freetype-config
++SYSROOT              ?= $(shell $(CC) --print-sysroot)
+ 
+-GCW0_INC_DIR         ?= $(TOOLCHAIN_DIR)/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/include
+-GCW0_LIB_DIR         ?= $(TOOLCHAIN_DIR)/usr/arm-miyoo-linux-uclibcgnueabi/sysroot/usr/lib
++GCW0_SDL_CONFIG      ?= $(SYSROOT)/usr/bin/sdl-config
++GCW0_FREETYPE_CONFIG ?= $(SYSROOT)/usr/bin/freetype-config
++
++GCW0_INC_DIR         ?= $(SYSROOT)/usr/include
++GCW0_LIB_DIR         ?= $(SYSROOT)/usr/lib
+ 
+ #########################
+ #########################
+-- 
+2.45.2.windows.1
+
