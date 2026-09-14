@@ -1,0 +1,206 @@
+Subject: [PATCH] add cedardispsink for leased Cedar picture descriptors
+
+Present native pictures through the versioned /dev/disp interface and
+hold OMX buffers until hardware acknowledges replacement or stop. Reject
+system-memory caps and fail without silently copying on presentation errors.
+
+Upstream-Status: Inappropriate [Miyoo F1C100s private display ABI]
+
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -54,3 +54,10 @@
+ libgstdrmsink_la_LIBADD = $(GST_LIBS) -lgstframebuffersink -ldrm -lkms
+ libgstdrmsink_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
+ libgstdrmsink_la_LIBTOOLFLAGS = --tag=disable-static
++
++plugin_LTLIBRARIES += libgstcedardispsink.la
++libgstcedardispsink_la_SOURCES = gstcedardispsink.c
++libgstcedardispsink_la_CFLAGS = $(GST_CFLAGS)
++libgstcedardispsink_la_LIBADD = $(GST_LIBS)
++libgstcedardispsink_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
++libgstcedardispsink_la_LIBTOOLFLAGS = --tag=disable-static
+--- /dev/null
++++ b/src/gstcedardispsink.c
+@@ -0,0 +1,182 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++#ifdef HAVE_CONFIG_H
++#include "config.h"
++#endif
++#include <gst/base/gstbasesink.h>
++#include <fcntl.h>
++#include <sys/ioctl.h>
++#include <unistd.h>
++#include <errno.h>
++#include <string.h>
++#include "cedar-display.h"
++
++GST_DEBUG_CATEGORY_STATIC (cedar_disp_debug);
++#define GST_CAT_DEFAULT cedar_disp_debug
++
++typedef struct {
++  GstBaseSink parent;
++  GMutex lock;
++  gint fd;
++  GstBuffer *current;
++  GstBuffer *pending;
++} GstCedarDispSink;
++typedef GstBaseSinkClass GstCedarDispSinkClass;
++G_DEFINE_TYPE (GstCedarDispSink, gst_cedar_disp_sink, GST_TYPE_BASE_SINK);
++
++static GstStaticPadTemplate sink_template = GST_STATIC_PAD_TEMPLATE ("sink",
++    GST_PAD_SINK, GST_PAD_ALWAYS,
++    GST_STATIC_CAPS ("video/x-raw(" CEDAR_DISPLAY_FEATURE "), "
++        "format=(string)YV12, width=(int)[1,2048], height=(int)[1,2048], "
++        "framerate=(fraction)[0/1,2147483647/1]"));
++
++/* Must be called with lock held. An ioctl error does not authorize recycling
++ * memory still potentially read by DEFE. Keep both references in that case. */
++static gboolean
++stop_display (GstCedarDispSink *self)
++{
++  if (self->fd >= 0 && (self->current || self->pending) &&
++      ioctl (self->fd, CEDAR_DISP_STOP, 0) < 0) {
++    GST_ELEMENT_ERROR (self, RESOURCE, FAILED,
++        ("Cannot stop DEFE before releasing Cedar buffers"), ("%s", g_strerror (errno)));
++    return FALSE;
++  }
++  gst_buffer_replace (&self->current, NULL);
++  gst_buffer_replace (&self->pending, NULL);
++  return TRUE;
++}
++
++static gboolean
++cedar_start (GstBaseSink *base)
++{
++  GstCedarDispSink *self = (GstCedarDispSink *)base;
++  __u32 version = 0;
++  self->fd = open ("/dev/disp", O_RDWR | O_CLOEXEC);
++  if (self->fd < 0 || ioctl (self->fd, CEDAR_DISP_GET_VERSION, &version) < 0 ||
++      version != CEDAR_DISPLAY_VERSION) {
++    GST_ELEMENT_ERROR (self, RESOURCE, OPEN_READ_WRITE,
++        ("/dev/disp lacks Cedar display ABI version %u", CEDAR_DISPLAY_VERSION),
++        ("Install the matching kernel patch; errno: %s", g_strerror (errno)));
++    if (self->fd >= 0) close (self->fd);
++    self->fd = -1;
++    return FALSE;
++  }
++  return TRUE;
++}
++
++static gboolean
++cedar_stop (GstBaseSink *base)
++{
++  GstCedarDispSink *self = (GstCedarDispSink *)base;
++  gboolean ok;
++  g_mutex_lock (&self->lock);
++  ok = stop_display (self);
++  if (ok && self->fd >= 0) {
++    close (self->fd);
++    self->fd = -1;
++  }
++  g_mutex_unlock (&self->lock);
++  return ok;
++}
++
++static GstFlowReturn
++cedar_render (GstBaseSink *base, GstBuffer *buffer)
++{
++  GstCedarDispSink *self = (GstCedarDispSink *)base;
++  struct cedar_display_frame frame;
++  GstFlowReturn result = GST_FLOW_OK;
++  /* Only the 64-byte descriptor is copied; pixels are never mapped by CPU. */
++  if (gst_buffer_get_size (buffer) != sizeof(frame) ||
++      gst_buffer_extract (buffer, 0, &frame, sizeof(frame)) != sizeof(frame) ||
++      frame.magic != CEDAR_DISPLAY_MAGIC || frame.version != CEDAR_DISPLAY_VERSION) {
++    GST_ELEMENT_ERROR (self, STREAM, FORMAT, ("Invalid Cedar picture descriptor"), (NULL));
++    return GST_FLOW_ERROR;
++  }
++  g_mutex_lock (&self->lock);
++  if (self->fd < 0 || self->pending) {
++    result = GST_FLOW_ERROR;
++    goto done;
++  }
++  self->pending = gst_buffer_ref (buffer);
++  if (ioctl (self->fd, CEDAR_DISP_PRESENT, &frame) < 0) {
++    gint saved_errno = errno;
++    stop_display (self);
++    GST_ELEMENT_ERROR (self, RESOURCE, WRITE, ("DEFE presentation failed"),
++        ("%s; no system-memory fallback", g_strerror (saved_errno)));
++    result = GST_FLOW_ERROR;
++    goto done;
++  }
++  gst_buffer_replace (&self->current, NULL);
++  self->current = self->pending;
++  self->pending = NULL;
++  GST_LOG_OBJECT (self, "Presented Cedar buffer %p: format %u, %ux%u, Y=%08x",
++      buffer, frame.format, frame.crop_width, frame.crop_height, frame.addr[0]);
++done:
++  g_mutex_unlock (&self->lock);
++  return result;
++}
++
++static gboolean
++cedar_event (GstBaseSink *base, GstEvent *event)
++{
++  GstCedarDispSink *self = (GstCedarDispSink *)base;
++  const GstStructure *s = gst_event_get_structure (event);
++  gboolean release = GST_EVENT_TYPE (event) == GST_EVENT_FLUSH_START ||
++      GST_EVENT_TYPE (event) == GST_EVENT_EOS || GST_EVENT_TYPE (event) == GST_EVENT_CAPS ||
++      (s && gst_structure_has_name (s, CEDAR_DISPLAY_RELEASE_EVENT));
++  if (release) {
++    gboolean ok;
++    g_mutex_lock (&self->lock);
++    ok = stop_display (self);
++    g_mutex_unlock (&self->lock);
++    if (!ok) {
++      gst_event_unref (event);
++      return FALSE;
++    }
++  }
++  return GST_BASE_SINK_CLASS (gst_cedar_disp_sink_parent_class)->event (base, event);
++}
++
++static void
++cedar_finalize (GObject *object)
++{
++  GstCedarDispSink *self = (GstCedarDispSink *)object;
++  cedar_stop (GST_BASE_SINK (self));
++  g_mutex_clear (&self->lock);
++  G_OBJECT_CLASS (gst_cedar_disp_sink_parent_class)->finalize (object);
++}
++
++static void
++gst_cedar_disp_sink_class_init (GstCedarDispSinkClass *klass)
++{
++  GstElementClass *element = GST_ELEMENT_CLASS (klass);
++  GstBaseSinkClass *base = GST_BASE_SINK_CLASS (klass);
++  GST_DEBUG_CATEGORY_INIT (cedar_disp_debug, "cedardispsink", 0, "Cedar DEFE display");
++  G_OBJECT_CLASS (klass)->finalize = cedar_finalize;
++  gst_element_class_set_static_metadata (element, "Cedar DEFE display sink",
++      "Sink/Video", "Display leased Cedar pictures through F1C100s /dev/disp", "MiyooCFW");
++  gst_element_class_add_static_pad_template (element, &sink_template);
++  base->start = cedar_start;
++  base->stop = cedar_stop;
++  base->render = cedar_render;
++  base->preroll = cedar_render;
++  base->event = cedar_event;
++}
++
++static void
++gst_cedar_disp_sink_init (GstCedarDispSink *self)
++{
++  self->fd = -1;
++  g_mutex_init (&self->lock);
++  /* BaseSink must not retain an additional OMX lease as last-sample. */
++  gst_base_sink_set_last_sample_enabled (GST_BASE_SINK (self), FALSE);
++}
++
++static gboolean
++plugin_init (GstPlugin *plugin)
++{
++  return gst_element_register (plugin, "cedardispsink", GST_RANK_NONE,
++      gst_cedar_disp_sink_get_type ());
++}
++GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR, cedardispsink,
++    "Cedar zero-copy display", plugin_init, "1.0", "LGPL", "gst-fbdev2-plugins",
++    "https://github.com/MiyooCFW/buildroot")

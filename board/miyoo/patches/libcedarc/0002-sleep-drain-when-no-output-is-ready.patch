@@ -1,0 +1,43 @@
+Subject: [PATCH] openmax: wait instead of spinning when drain makes no progress
+
+A native-picture drain can return immediately when there is no picture or
+no free output header. Wait on keepDrainSem after returning rejected
+pictures, and wake drain after a decoder step. Existing control-thread
+notifications cover output-buffer recycling, flush, port and state changes.
+Keep a 5 ms timeout so stop cannot depend on a notification arriving.
+
+
+--- a/openmax/vdec/src/omx_vdec.c
++++ b/openmax/vdec/src/omx_vdec.c
+@@ -996,6 +996,8 @@
+         !impl->bDecodeForceStopFlag)
+     {
+         OmxVdecoderDecode(impl->pDec);
++        /* A decode step may have produced a picture or EOS. */
++        OmxTryPostSem(impl->m_semKeepDrain);
+     }
+     else
+     {
+@@ -1015,7 +1017,8 @@
+         impl->bHadInitDecoderFlag &&
+         !impl->bResolutionChangeFlag)
+     {
+-        if(doDrain(impl) == -1)
++        int drainResult = doDrain(impl);
++        if(drainResult == -1)
+         {
+             if(impl->bVdrvNotifyEosFlag)
+             {
+@@ -1045,6 +1048,12 @@
+                 impl->nNeedToFlushPicNum--;
+         }
+         OmxVdecoderReturnBuffer(impl->pDec);
++        /* No picture or no free OMX output header: do not spin in
++         * ValidPictureNum(). Release rejected pictures before sleeping.
++         * Decode completion and the control thread wake this semaphore;
++         * the bounded wait also keeps state/flush transitions responsive. */
++        if (drainResult == -1)
++            OmxTimedWaitSem(impl->m_semKeepDrain, 5);
+     }
+     else
+     {

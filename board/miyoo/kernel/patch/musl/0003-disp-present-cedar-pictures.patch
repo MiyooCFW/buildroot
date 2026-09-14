@@ -1,0 +1,307 @@
+Subject: [PATCH] fbdev: sunxi: add synchronous Cedar picture presentation
+
+Add a separate versioned ABI alongside the legacy DISP ioctls. Support
+MB32 UV-combined and planar YUV420 with explicit strides and cropping.
+Serialize users, acknowledge register loading and an output line before
+allowing the old picture to be recycled, and reset/drain DEFE on stop.
+
+Upstream-Status: Inappropriate [Miyoo F1C100s private display ABI]
+
+--- a/drivers/video/fbdev/sunxi/disp.c
++++ b/drivers/video/fbdev/sunxi/disp.c
+@@ -19,6 +19,11 @@
+ #include <asm/arch-suniv/common.h>
+ #include <asm/arch-suniv/tve.h>
+ #include <linux/miscdevice.h>
++#include <linux/iopoll.h>
++#include <linux/mutex.h>
++#include <linux/mm.h>
++#include <linux/capability.h>
++#include "cedar-display.h"
+ 
+ #define DISP_CMD_VERSION               0x00
+ #define DISP_CMD_LAYER_REQUEST         0x40
+@@ -113,7 +118,7 @@
+     return (int_part << 16) | frac_part;
+ }
+ 
+-static long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg) {
++static long disp_ioctl_legacy(struct file *file, unsigned int cmd, unsigned long arg) {
+ 	uint32_t
+ 	__user * uarg = (uint32_t
+ 	__user *)arg;
+@@ -234,9 +239,223 @@
+ 	iounmap(iomm.defe);
+ }
+ 
++/* Private Cedar display ABI. Legacy /dev/disp commands remain available when
++ * no Cedar client owns the frontend. All register updates are serialized. */
++static DEFINE_MUTEX(cedar_disp_lock);
++static struct file *cedar_owner;
++static u32 cedar_saved_layer;
++
++#define CEDAR_REG_LOADED BIT(10)
++#define CEDAR_LINE_REACHED BIT(9)
++#define CEDAR_DRAM_BUSY BIT(4)
++#define CEDAR_FRAME_START BIT(16)
++#define CEDAR_OUT_W 320
++#define CEDAR_OUT_H 240
++
++static int cedar_stop_locked(void)
++{
++    u32 status;
++    int ret;
++
++    /* Reset the data path before testing outstanding DRAM accesses. Do not
++     * gate the scaler clock while it can still have requests in flight. */
++    suniv_clrbits(iomm.defe + DEFE_FRM_CTRL, CEDAR_FRAME_START);
++    ret = readl_poll_timeout(iomm.defe + DEFE_STATUS, status,
++                            !(status & CEDAR_DRAM_BUSY), 50, 100000);
++    if (ret)
++        return ret;
++    suniv_clrbits(iomm.defe + DEFE_EN, BIT(0));
++    writel(cedar_saved_layer, iomm.debe + DEBE_LAY0_ATT_CTRL_REG0);
++    suniv_setbits(iomm.debe + DEBE_REGBUFF_CTRL_REG, BIT(0));
++    return 0;
++}
++
++static int cedar_validate_frame(const struct cedar_display_frame *f)
++{
++    unsigned int i, planes;
++    u64 bytes, end;
++
++    if (f->magic != CEDAR_DISPLAY_MAGIC || f->version != CEDAR_DISPLAY_VERSION ||
++        f->reserved || !f->width || !f->height || f->width > 2048 || f->height > 2048 ||
++        !f->crop_width || !f->crop_height || f->crop_x >= f->width || f->crop_y >= f->height ||
++        f->crop_width > f->width - f->crop_x || f->crop_height > f->height - f->crop_y ||
++        ((f->width | f->height | f->crop_x | f->crop_y | f->crop_width | f->crop_height) & 1))
++        return -EINVAL;
++    if (f->format == CEDAR_DISPLAY_MB32_NV12) {
++        planes = 2;
++        if ((f->stride[0] & 31) || f->stride[1] != f->stride[0])
++            return -EINVAL;
++    } else if (f->format == CEDAR_DISPLAY_YUV420P) {
++        planes = 3;
++        if ((f->stride[0] & 1) || f->stride[1] != f->stride[0] / 2 ||
++            f->stride[2] != f->stride[1])
++            return -EINVAL;
++    } else {
++        return -EINVAL;
++    }
++    if (f->stride[0] < f->width || f->stride[0] > 4096)
++        return -EINVAL;
++    for (i = 0; i < planes; i++) {
++        unsigned int h = i ? f->height / 2 : f->height;
++        if (f->format == CEDAR_DISPLAY_MB32_NV12)
++            h = ALIGN(h, 32);
++        bytes = (u64)f->stride[i] * h;
++        end = (u64)f->addr[i] + bytes - 1;
++        if (!f->addr[i] || end > U32_MAX ||
++            !pfn_valid(PHYS_PFN(f->addr[i])) || !pfn_valid(PHYS_PFN(end)))
++            return -EINVAL;
++    }
++    return 0;
++}
++
++static int cedar_present_locked(const struct cedar_display_frame *f)
++{
++    u32 status, input_mode;
++    unsigned int i, planes;
++    int ret;
++
++    input_mode = f->format == CEDAR_DISPLAY_MB32_NV12 ? 6 : 0;
++    planes = input_mode ? 2 : 3;
++    if (!(readl(iomm.defe + DEFE_EN) & BIT(0))) {
++        /* BIST is not the FIR coefficient access handshake (manual 5.2.5.1). */
++        suniv_clrbits(iomm.defe + DEFE_EN, BIT(31));
++        suniv_setbits(iomm.defe + DEFE_EN, BIT(0));
++        /* F1C100s has four-tap filters. Start with nearest-neighbour
++         * coefficients; no CPU resize or detiling is involved. */
++        suniv_setbits(iomm.defe + DEFE_FRM_CTRL, BIT(23));
++        ret = readl_poll_timeout(iomm.defe + DEFE_STATUS, status,
++                                status & BIT(11), 50, 100000);
++        if (ret) {
++            suniv_clrbits(iomm.defe + DEFE_FRM_CTRL, BIT(23));
++            return ret;
++        }
++        for (i = 0; i < 32; i++) {
++            writel(0x00004000, iomm.defe + DEFE_CH0_H_COEF + 4 * i);
++            writel(0x00004000, iomm.defe + DEFE_CH0_V_COEF + 4 * i);
++            writel(0x00004000, iomm.defe + DEFE_CH1_H_COEF + 4 * i);
++            writel(0x00004000, iomm.defe + DEFE_CH1_V_COEF + 4 * i);
++        }
++        suniv_clrbits(iomm.defe + DEFE_FRM_CTRL, BIT(23));
++    }
++    writel(0, iomm.defe + DEFE_BYPASS);
++    writel(0, iomm.defe + 0x00c); /* SCAL_AGTH: 4x4 taps */
++    writel(0, iomm.defe + 0x02c); /* progressive, single field */
++    writel((input_mode << 8) | (2 << 4), iomm.defe + DEFE_IN_FMT);
++    /* Keep the existing frontend -> backend planar RGB path. */
++    writel(0, iomm.defe + DEFE_OUT_FMT);
++    for (i = 0; i < 12; i++)
++        writel(csc_tab[i], iomm.defe + DEFE_CSC_COEF + 4 * i);
++
++    for (i = 0; i < planes; i++) {
++        u32 x = f->crop_x, y = f->crop_y, w = f->crop_width;
++        u32 stride = f->stride[i], offset, tile = 0;
++        if (i) {
++            y /= 2;
++            if (!input_mode) { x /= 2; w /= 2; }
++        }
++        if (input_mode) {
++            /* BUF_ADDR points to the first used line within the first tile. */
++            offset = (y / 32) * stride * 32 + (x / 32) * 1024 + (y & 31) * 32;
++            tile = (x & 31) | ((y & 31) << 8) | (((x + w - 1) & 31) << 16);
++            stride = (stride - 31) * 32;
++        } else {
++            offset = y * stride + x;
++        }
++        writel(f->addr[i] + offset, iomm.defe + DEFE_ADDR0 + 4 * i);
++        writel(stride, iomm.defe + DEFE_STRIDE0 + 4 * i);
++        writel(tile, iomm.defe + DEFE_TB_OFF0 + 4 * i);
++    }
++    /* F1C200s manual 5.2.4/5.2.5.34-37 describes one Y/G geometry
++     * and ratio bank. Do not write other SoCs' channel/phase registers. */
++    writel((f->crop_width - 1) | ((f->crop_height - 1) << 16),
++           iomm.defe + DEFE_IN_SIZE);
++    writel((CEDAR_OUT_W - 1) | ((CEDAR_OUT_H - 1) << 16),
++           iomm.defe + DEFE_OUT_SIZE);
++    writel(calc_scaling_factor(f->crop_width, CEDAR_OUT_W),
++           iomm.defe + DEFE_H_FACT);
++    writel(calc_scaling_factor(f->crop_height, CEDAR_OUT_H),
++           iomm.defe + DEFE_V_FACT);
++    writel(CEDAR_OUT_H - 1, iomm.defe + DEFE_INT_LINE);
++    writel(CEDAR_REG_LOADED | CEDAR_LINE_REACHED, iomm.defe + DEFE_INT_STATUS);
++    debe_layer_set_mode(0, DEBE_MODE_DEFE_VIDEO);
++    suniv_setbits(iomm.debe + DEBE_MODE_CTRL_REG, BIT(8));
++    suniv_setbits(iomm.debe + DEBE_REGBUFF_CTRL_REG, BIT(0));
++    suniv_setbits(iomm.defe + DEFE_FRM_CTRL, BIT(0) | CEDAR_FRAME_START);
++
++    /* Bit 9 is a programmable line interrupt, NOT a frame-end interrupt.
++     * First observe this commit's register-load acknowledgement, then a fresh
++     * final-output-line indication. The previous picture is no longer read. */
++    ret = readl_poll_timeout(iomm.defe + DEFE_INT_STATUS, status,
++                            status & CEDAR_REG_LOADED, 100, 250000);
++    if (ret)
++        return ret;
++    writel(CEDAR_LINE_REACHED, iomm.defe + DEFE_INT_STATUS);
++    return readl_poll_timeout(iomm.defe + DEFE_INT_STATUS, status,
++                             status & CEDAR_LINE_REACHED, 100, 250000);
++}
++
++static long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
++{
++    struct cedar_display_frame f;
++    u32 version = CEDAR_DISPLAY_VERSION;
++    long ret;
++
++    if (cmd == CEDAR_DISP_GET_VERSION)
++        return copy_to_user((void __user *)arg, &version, sizeof(version)) ? -EFAULT : 0;
++    if (cmd == CEDAR_DISP_PRESENT) {
++        if (!capable(CAP_SYS_RAWIO))
++            return -EPERM;
++        if (copy_from_user(&f, (void __user *)arg, sizeof(f)))
++            return -EFAULT;
++        ret = cedar_validate_frame(&f);
++        if (ret)
++            return ret;
++    }
++    mutex_lock(&cedar_disp_lock);
++    if (cedar_owner && cedar_owner != file) {
++        ret = -EBUSY;
++        goto out;
++    }
++    if (cmd == CEDAR_DISP_PRESENT) {
++        if (!cedar_owner) {
++            cedar_saved_layer = readl(iomm.debe + DEBE_LAY0_ATT_CTRL_REG0);
++            cedar_owner = file;
++            ret = cedar_stop_locked();
++            if (ret)
++                goto out;
++        }
++        ret = cedar_present_locked(&f);
++    } else if (cmd == CEDAR_DISP_STOP) {
++        ret = cedar_owner ? cedar_stop_locked() : 0;
++        if (!ret)
++            cedar_owner = NULL;
++    } else if (cedar_owner) {
++        ret = -EBUSY;
++    } else {
++        ret = disp_ioctl_legacy(file, cmd, arg);
++    }
++out:
++    mutex_unlock(&cedar_disp_lock);
++    return ret;
++}
++
++static int disp_release(struct inode *inode, struct file *file)
++{
++    int ret = 0;
++    mutex_lock(&cedar_disp_lock);
++    if (cedar_owner == file) {
++        ret = cedar_stop_locked();
++        /* Clear the file pointer even on failure; no dangling file owner. */
++        cedar_owner = NULL;
++    }
++    mutex_unlock(&cedar_disp_lock);
++    return ret;
++}
++
+ static const struct file_operations disp_fops = {
+ 	.owner = THIS_MODULE,
+ 	.unlocked_ioctl = disp_ioctl,
++	.release = disp_release,
+ };
+ 
+ static struct miscdevice disp_miscdev = {
+--- /dev/null
++++ b/drivers/video/fbdev/sunxi/cedar-display.h
+@@ -0,0 +1,48 @@
++/* SPDX-License-Identifier: MIT
++ * Private, versioned Cedar -> GStreamer -> F1C100s /dev/disp ABI.
++ * Addresses are CPU physical DRAM addresses, not VE-relative addresses.
++ * A frame remains owned by its OMX output buffer until that buffer is returned.
++ */
++#ifndef CEDAR_DISPLAY_H
++#define CEDAR_DISPLAY_H
++
++#include <linux/types.h>
++#include <linux/ioctl.h>
++
++#define CEDAR_DISPLAY_VERSION 1
++#define CEDAR_DISPLAY_MAGIC 0x43445231U
++#define CEDAR_DISPLAY_FEATURE "memory:CedarPicture"
++#define CEDAR_DISPLAY_RELEASE_EVENT "cedar-display-release"
++#define CEDAR_OMX_ENABLE_INDEX 0x7fcd0001U
++#define CEDAR_OMX_RELEASE_INDEX 0x7fcd0002U
++#define CEDAR_OMX_EXTENSION "OMX.allwinner.index.param.cedarDisplay"
++
++#define CEDAR_DISPLAY_YUV420P 1U /* addr: Y, U, V */
++#define CEDAR_DISPLAY_MB32_NV12 2U /* addr: Y, interleaved UV, unused */
++
++struct cedar_display_frame {
++    __u32 magic;
++    __u32 version;
++    __u32 format;
++    __u32 addr[3];
++    __u32 stride[3]; /* bytes per row before MB32 encoding */
++    __u32 width;     /* allocated luma dimensions */
++    __u32 height;
++    __u32 crop_x;
++    __u32 crop_y;
++    __u32 crop_width;
++    __u32 crop_height;
++    __u32 reserved;
++};
++
++/* New ioctls deliberately do not overlap the legacy sunxi DISP ABI.
++ * PRESENT waits for a register load and a following output-line boundary.
++ * Success permits releasing the PREVIOUS frame; the submitted frame remains
++ * in use until the next successful PRESENT or STOP.
++ * On PRESENT error keep both frames until STOP succeeds.
++ */
++#define CEDAR_DISP_GET_VERSION _IOR('C', 0x70, __u32)
++#define CEDAR_DISP_PRESENT _IOW('C', 0x71, struct cedar_display_frame)
++#define CEDAR_DISP_STOP _IO('C', 0x72)
++
++#endif
