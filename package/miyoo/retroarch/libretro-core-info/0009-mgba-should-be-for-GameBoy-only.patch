@@ -1,4 +1,4 @@
-From 5368633c5527d11af47fa9b703084bc1d41c7466 Mon Sep 17 00:00:00 2001
+From 56b857f475316139a285422bf521540f3dd34ba2 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Wed, 18 Mar 2026 21:23:06 +0100
 Subject: [PATCH] mgba: should be for GameBoy only

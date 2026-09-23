@@ -1,4 +1,4 @@
-From c1d8415466225607c58bfbb7c40199d68d7c4eda Mon Sep 17 00:00:00 2001
+From 3be27b69ff49cdb79dd3705af97bf288c92c3744 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Tue, 13 Jan 2026 21:50:33 +0100
 Subject: [PATCH] add missing `systemid` for cores req. content
