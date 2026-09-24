@@ -1,0 +1,22 @@
+From 7a7b1b5b8a6c4fb5dd910ffc2423be0e474a6f42 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Tue, 19 May 2026 21:34:08 +0200
+Subject: [PATCH] b2: `bbc` dir should be for BBC micro
+
+---
+ b2_libretro.info | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/b2_libretro.info b/b2_libretro.info
+index 797fa8d..ea233d7 100644
+--- a/b2_libretro.info
++++ b/b2_libretro.info
+@@ -78,4 +78,4 @@ is_experimental = "true"
+ # Descriptive text, useful for tooltips, etc.
+ description = "Libretro port of Tom Seddon's B2 emulator for BBC Micro."
+ 
+-gamedir = "bbcmicro"
++gamedir = "bbc"
+-- 
+2.45.2.windows.1
+

@@ -1,20 +1,19 @@
-From 0cfe4a6e234960ef37d0bde8c8dad1c3c9f1fe31 Mon Sep 17 00:00:00 2001
+From 54a1bfac6b324ca5b984f769298346ae49e57c01 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Tue, 13 Jan 2026 21:13:23 +0100
 Subject: [PATCH] re-Create uae4all_libretro.info
 
-seems they are deleted if not present in libretro-super (see list: https://github.com/libretro/libretro-super/tree/25dd1d7addfaa925485c47f4dffaedb7bd4cd3b1/dist/info)
 ---
- uae4all_libretro.info | 38 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
+ uae4all_libretro.info | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
  create mode 100644 uae4all_libretro.info
 
 diff --git a/uae4all_libretro.info b/uae4all_libretro.info
 new file mode 100644
-index 0000000..b556140
+index 0000000..9b925a5
 --- /dev/null
 +++ b/uae4all_libretro.info
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,39 @@
 +# Software Information
 +display_name = "Commodore - Amiga 500(UAE4ALL)"
 +categories = "Emulator"
@@ -34,7 +33,8 @@ index 0000000..b556140
 +database = "Commodore - Amiga"
 +supports_no_game = "false"
 +libretro_saves = "false"
-+savestate = "false"
++savestate = "true"
++savestate_features = "serialized"
 +cheats = "false"
 +input_descriptors = "true"
 +memory_descriptors = "false"

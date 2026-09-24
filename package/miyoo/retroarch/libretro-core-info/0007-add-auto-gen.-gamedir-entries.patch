@@ -1,4 +1,4 @@
-From 6a95dad6720e7559aadec462a8116bc7e74ddd14 Mon Sep 17 00:00:00 2001
+From 8fd3bca203966ce725022e8b6e7aaa0c7d447b81 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Wed, 18 Mar 2026 21:20:18 +0100
 Subject: [PATCH] add auto-gen. `gamedir =` entries
@@ -2461,10 +2461,10 @@ index 2b492b4..eece2d9 100644
 +
 +gamedir = "quake_1"
 diff --git a/uae4all_libretro.info b/uae4all_libretro.info
-index b556140..f4e5d5e 100644
+index 9b925a5..96e37d0 100644
 --- a/uae4all_libretro.info
 +++ b/uae4all_libretro.info
-@@ -36,3 +36,5 @@ firmware0_opt = "false"
+@@ -37,3 +37,5 @@ firmware0_opt = "false"
  notes = "(!) kick34005.A500 (md5): 82a21c1890cae844b3df741f2762d48d"
  
  description = "An old fork of the uae4all Amiga emulator, ported to libretro. It emulates most Commodore Amiga 500 hardware with OSC 1MB Chip. The core has no built-in Kickstart, so you need to provide one. This core is intended only for use on low-powered hardware and is in the development stage"

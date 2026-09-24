@@ -1,20 +1,21 @@
-From 800a4e91fc0f0485ae858466a63ddf551bf8e637 Mon Sep 17 00:00:00 2001
+From de34205d1bec9c0ed473c32247b97122d4bfc438 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Fri, 13 Feb 2026 18:36:19 +0100
 Subject: [PATCH] create `00_add_missing.sh` script to add blank entries
 
+upd: use also `single_purpose =` entry
 ---
- 00_add_missing.sh        | 24 ++++++++++++++++++++++++
+ 00_add_missing.sh        | 25 +++++++++++++++++++++++++
  00_example_libretro.info |  4 ++++
- 2 files changed, 28 insertions(+)
+ 2 files changed, 29 insertions(+)
  create mode 100755 00_add_missing.sh
 
 diff --git a/00_add_missing.sh b/00_add_missing.sh
 new file mode 100755
-index 0000000..024b99e
+index 0000000..100c3b3
 --- /dev/null
 +++ b/00_add_missing.sh
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,25 @@
 +#!/bin/bash
 +
 +SEARCH_DIR="${1:-.}" # first arg or CWD
@@ -22,21 +23,22 @@ index 0000000..024b99e
 +find "$SEARCH_DIR" -type f | while read -r file; do
 +    core_supports_no_game=$(sed -n 's:^supports_no_game = ::p' "$file" 2>/dev/null | tr -d '"')
 +	core_supported_extensions=$(sed -n 's:^supported_extensions = ::p' "$file" 2>/dev/null | tr -d '"')
++	core_single_purpose=$(sed -n 's:^single_purpose = ::p' "$file" 2>/dev/null | tr -d '"')
 +
-+    if [[ "$core_supports_no_game" == "false" ]] || [[ "$core_supported_extensions" != "" ]] ; then
++    if [[ "$core_supports_no_game" == "false" ]] || [[ "$core_supported_extensions" != "" ]] && [[ "$core_single_purpose" != "true" ]]; then
 +        if grep -oq "systemid =" $file; then
-+		if ! grep -oq "gamedir =" $file; then
-+			echo -e "\nWARNING: No \"gamedir =\" for core requiring content in: $file"
-+			core_systemid="$(sed -n 's:^systemid = ::p' "${file}" | tr -d '"')"
-+			echo -e "\nCreated -> gamedir = \"${core_systemid}\""
-+			echo -e "\ngamedir = \"${core_systemid}\"" >> $file
-+			core_systemid=""
-+		#else
-+			#echo "Found gamedir in: $file"
++			if ! grep -oq "gamedir =" $file; then
++				echo -e "\nWARNING: No \"gamedir =\" for core requiring content in: $file"
++				core_systemid="$(sed -n 's:^systemid = ::p' "${file}" | tr -d '"')"
++				echo -e "\nCreated -> gamedir = \"${core_systemid}\""
++				echo -e "\ngamedir = \"${core_systemid}\"" >> $file
++				core_systemid=""
++			#else
++				#echo "Found gamedir in: $file"
++			fi
++		else
++			echo -e "\nERROR: no \"systemid =\" with req. content in $file"
 +		fi
-+	else
-+		echo -e "\nERROR: no \"systemid =\" with req. content in $file"
-+	fi
 +    fi
 +done
 diff --git a/00_example_libretro.info b/00_example_libretro.info
