@@ -1,7 +1,7 @@
-From cc2591694c3b09c60b7d00a30af834a8c6e8d5f1 Mon Sep 17 00:00:00 2001
+From 6ad10bc518e8977e890cab016638982974d7a1a6 Mon Sep 17 00:00:00 2001
 From: Apaczer <94932128+Apaczer@users.noreply.github.com>
 Date: Thu, 19 Feb 2026 07:13:38 +0100
-Subject: [PATCH] Makefile.miyoo: use generic call for SYSROOT path (#18747)
+Subject: [PATCH] Makefile.miyoo: use generic call for SYSROOT path (pr 18747)
 
 ---
  Makefile.miyoo | 10 ++++++----
