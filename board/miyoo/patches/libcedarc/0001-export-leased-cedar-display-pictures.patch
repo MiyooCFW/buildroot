@@ -1,0 +1,604 @@
+Subject: [PATCH] openmax: export only leased native Cedar pictures for DEFE
+
+Require the native Cedar descriptor ABI; no pixel conversion fallback.
+Release picture leases only after display completion.
+
+Upstream-Status: Inappropriate [Miyoo F1C100s private display ABI]
+
+--- a/openmax/vdec/src/omx_vdec.c
++++ b/openmax/vdec/src/omx_vdec.c
+@@ -1,3 +1,4 @@
++#include "cedar-display.h"
+ #define LOG_TAG "omx_vdec"
+ #include "log.h"
+ 
+@@ -1415,7 +1416,8 @@
+                 //check some key parameter
+                 OMX_U32 buffer_size = (port->m_sPortDefType.format.video.nFrameWidth* \
+                   port->m_sPortDefType.format.video.nFrameHeight)*3/2;
+-                if(buffer_size != port->m_sPortDefType.nBufferSize)
++                if(port->m_sPortDefType.nBufferSize != sizeof(struct cedar_display_frame) &&
++                   buffer_size != port->m_sPortDefType.nBufferSize)
+                 {
+                     OMX_LOGW("set_parameter, OMX_IndexParamPortDefinition, OutPortDef :"
+                     "change nBufferSize[%d] to [%d] to suit frame width[%d] and height[%d]",
+@@ -1567,6 +1569,11 @@
+         return OMX_ErrorInvalidState;
+     }
+ 
++    /* Returning a display lease must also work during Executing/flush. */
++    if ((unsigned int)eConfigIndex == CEDAR_OMX_RELEASE_INDEX)
++        return OmxVdecoderSetExtConfig(impl->pDec,
++            (AW_VIDEO_EXTENSIONS_INDEXTYPE)eConfigIndex, pConfigData);
++
+     if (impl->m_state == OMX_StateExecuting)
+     {
+         logv("set_config: Ignore in Executing state\n");
+@@ -1601,6 +1608,11 @@
+     {
+         logv("Get Extension Index in Invalid State\n");
+         return OMX_ErrorInvalidState;
++    }
++
++    if (pParamName && pIndexType && !strcmp(pParamName, CEDAR_OMX_EXTENSION)) {
++        *pIndexType = (OMX_INDEXTYPE)CEDAR_OMX_ENABLE_INDEX;
++        return OMX_ErrorNone;
+     }
+ 
+     for(nIndex = 0; nIndex < sizeof(sVideoDecCustomParams)/sizeof(VIDDEC_CUSTOM_PARAM); nIndex++)
+@@ -1680,6 +1692,15 @@
+     }
+     OMX_LOGD("pPortDef[%d]->bEnabled=%d, m_state=%s, can allocate_buffer.",
+          (int)nPortIndex, def->bEnabled, OmxState2String(impl->m_state));
++    if (!isInputPort(port)) {
++        OMX_CONFIG_BOOLEANTYPE enabled;
++        memset(&enabled, 0, sizeof(enabled));
++        enabled.nSize = sizeof(enabled);
++        if (OmxVdecoderGetExtPara(impl->pDec,
++                (AW_VIDEO_EXTENSIONS_INDEXTYPE)CEDAR_OMX_ENABLE_INDEX, &enabled) == OMX_ErrorNone &&
++                enabled.bEnabled)
++            return OMX_ErrorUnsupportedSetting; /* descriptor leases require AllocateBuffer */
++    }
+     return AwOmxVdecPortPopBuffer(port, ppBufferHdr, pAppPrivate, nSizeBytes, pBuffer, OMX_FALSE);
+ 
+ }
+@@ -1800,6 +1821,8 @@
+     if (impl->m_state != OMX_StateExecuting && impl->m_state != OMX_StatePause)
+         return OMX_ErrorIncorrectStateOperation;
+ 
++    OmxVdecoderSetExtConfig(impl->pDec,
++        (AW_VIDEO_EXTENSIONS_INDEXTYPE)CEDAR_OMX_RELEASE_INDEX, pBufferHdr);
+     postMessage(impl->mqMsgHandle, AW_OMX_MSG_FILL_BUF, (uintptr_t)pBufferHdr);
+ 
+     return OMX_ErrorNone;
+--- a/openmax/vdec/src/omx_vdec_aw_decoder_linux.c
++++ b/openmax/vdec/src/omx_vdec_aw_decoder_linux.c
+@@ -32,15 +32,16 @@
+ #include "CdcUtil.h"
+ #include "omx_mutex.h"
+ #include "omx_sem.h"
++#include "cedar-display.h"
+ 
+ #define USE_ALIGN_SIZE 1
+ 
+-typedef struct TranBufferInfo
+-{
+-    void* pAddr;
+-    int  nWidth;
+-    int  nHeight;
+-}TranBufferInfo;
++
++
++typedef struct CedarOutput {
++    struct cedar_display_frame frame;
++    VideoPicture *picture;
++} CedarOutput;
+ 
+ typedef struct OmxAwDecoderContext
+ {
+@@ -71,9 +72,90 @@
+     VideoPicture*          pPicture;
+ 
+     OMX_BOOL               bUseZeroCopyBuffer;
++    OMX_BOOL               cedarDisplay;
++    OMX_BOOL               cedarClosePending;
++    unsigned int           cedarPictures;
+ 
+ 
+ }OmxAwDecoderContext;
++
++/* Called only while awMutexHandler is held. Output allocations outlive
++ * Executing -> Idle, so defer decoder destruction until the last lease ends. */
++static void cedarRelease(OmxAwDecoderContext *ctx, CedarOutput *out)
++{
++    if (!out || !out->picture)
++        return;
++    ReturnPicture(ctx->m_decoder, out->picture);
++    out->picture = NULL;
++    out->frame.magic = 0;
++    ctx->cedarPictures--;
++    if (ctx->cedarClosePending && !ctx->cedarPictures) {
++        DestroyVideoDecoder(ctx->m_decoder);
++        ctx->m_decoder = NULL;
++        ctx->cedarClosePending = OMX_FALSE;
++    }
++    OmxTryPostSem(ctx->mSemOutBuffer);
++}
++
++static int cedarDescribe(OmxAwDecoderContext *ctx, VideoPicture *pic,
++                         struct cedar_display_frame *f)
++{
++    char *planes[3] = {pic->pData0, pic->pData1, pic->pData2};
++    unsigned int i, count;
++    memset(f, 0, sizeof(*f));
++    if (pic->nWidth <= 0 || pic->nHeight <= 0 || pic->nLineStride <= 0 ||
++        pic->nWidth > 2048 || pic->nHeight > 2048 || !pic->bIsProgressive ||
++        pic->b10BitPicFlag || pic->bEnableAfbcFlag)
++        return -1;
++    f->version = CEDAR_DISPLAY_VERSION;
++    f->width = pic->nWidth;
++    f->height = pic->nHeight;
++    f->crop_x = pic->nLeftOffset;
++    f->crop_y = pic->nTopOffset;
++    f->crop_width = pic->nRightOffset - pic->nLeftOffset;
++    f->crop_height = pic->nBottomOffset - pic->nTopOffset;
++    if (pic->nRightOffset <= pic->nLeftOffset ||
++        pic->nBottomOffset <= pic->nTopOffset) {
++        f->crop_x = f->crop_y = 0;
++        f->crop_width = f->width;
++        f->crop_height = f->height;
++    }
++    if (f->crop_x > f->width || f->crop_y > f->height ||
++        f->crop_width > f->width - f->crop_x ||
++        f->crop_height > f->height - f->crop_y ||
++        ((f->crop_x | f->crop_y | f->crop_width | f->crop_height) & 1))
++        return -1;
++    f->stride[0] = pic->nLineStride;
++    if (pic->ePixelFormat == PIXEL_FORMAT_YUV_MB32_420) {
++        f->format = CEDAR_DISPLAY_MB32_NV12;
++        f->stride[1] = f->stride[0];
++        count = 2;
++        if ((f->stride[0] & 31) || !planes[1])
++            return -1;
++    } else if (pic->ePixelFormat == PIXEL_FORMAT_YV12) {
++        f->format = CEDAR_DISPLAY_YUV420P;
++        f->stride[1] = f->stride[2] = f->stride[0] / 2;
++        /* Use the allocator's actual plane bases, including its padding. */
++        if (!pic->pData1 || !pic->pData2)
++            return -1;
++        planes[1] = pic->pData2; /* U */
++        planes[2] = pic->pData1; /* V */
++        count = 3;
++    } else {
++        return -1; /* Never relabel tiled or unsupported pixels as linear. */
++    }
++    for (i = 0; i < count; i++) {
++        uintptr_t addr;
++        if (!planes[i])
++            return -1;
++        addr = (uintptr_t)CdcMemGetPhysicAddressCpu(ctx->decMemOps, planes[i]);
++        if (!addr || addr > UINT32_MAX)
++            return -1;
++        f->addr[i] = addr;
++    }
++    f->magic = CEDAR_DISPLAY_MAGIC;
++    return 0;
++}
+ 
+ static OMX_U32 liGetStreamFormat(OMX_VIDEO_CODINGTYPE videoCoding)
+ {
+@@ -258,7 +340,7 @@
+         outDef->format.video.nStride      = width_align;
+         outDef->format.video.nSliceHeight = height_align;
+ 
+-        outDef->nBufferSize = height_align*width_align *3/2;
++        outDef->nBufferSize = sizeof(struct cedar_display_frame);
+         pCtx->callback(pCtx->pUserData, AW_OMX_CB_NOTIFY_RECT, &(pCtx->mVideoRect));
+         pCtx->callback(pCtx->pUserData, AW_OMX_CB_PORT_CHANGE, NULL);
+         return 0;
+@@ -267,123 +349,10 @@
+ }
+ 
+ 
+-static void AlignCopyYV12(unsigned char* dstPtr,
+-                                                 unsigned char* srcPtr,
+-                                                 int w, int h)
+-{
+-    int yPlaneSz = w*h;
+-    int uvPlaneSz = yPlaneSz/4;
+-    //copy y
+-    memcpy(dstPtr, srcPtr, yPlaneSz);
+-
+-    //copy v
+-    unsigned char* uSrcPtr = srcPtr + yPlaneSz;
+-    unsigned char* uDstPtr = dstPtr + yPlaneSz;
+-    memcpy(uDstPtr, uSrcPtr, uvPlaneSz);
+-
+-    //*copy u
+-    unsigned char* vSrcPtr = srcPtr  + yPlaneSz*5/4;
+-    unsigned char* vDstPtr = uDstPtr + uvPlaneSz;
+-    memcpy(vDstPtr, vSrcPtr, uvPlaneSz);
+-}
+-static void AlignTransformYV12ToYUV420(unsigned char* dstPtr,
+-                                                 unsigned char* srcPtr,
+-                                                 int w, int h)
+-{
+-    int yPlaneSz = w*h;
+-    int uvPlaneSz = yPlaneSz/4;
+-    //copy y
+-    memcpy(dstPtr, srcPtr, yPlaneSz);
+-
+-    //copy u
+-    unsigned char* uSrcPtr = srcPtr + yPlaneSz*5/4;
+-    unsigned char* uDstPtr = dstPtr + yPlaneSz;
+-    memcpy(uDstPtr, uSrcPtr, uvPlaneSz);
+-
+-    //*copy v
+-    unsigned char* vSrcPtr = srcPtr  + yPlaneSz;
+-    unsigned char* vDstPtr = uDstPtr + uvPlaneSz;
+-    memcpy(vDstPtr, vSrcPtr, uvPlaneSz);
+-}
+-
+-static void TransformYV12ToYUV420(VideoPicture* pPicture,
+-                                  TranBufferInfo* pTranBufferInfo)
+-{
+-    int i;
+-    int nPicRealWidth;
+-    int nPicRealHeight;
+-    int nSrcBufWidth;
+-    int nSrcBufHeight;
+-    int nDstBufWidth;
+-    int nDstBufHeight;
+-    int nCopyDataWidth;
+-    int nCopyDataHeight;
+-    unsigned char* dstPtr;
+-    unsigned char* srcPtr;
+-    dstPtr      = (unsigned char*)pTranBufferInfo->pAddr;
+-    srcPtr      = (unsigned char*)pPicture->pData0;
+-
+-    nPicRealWidth  = pPicture->nRightOffset  - pPicture->nLeftOffset;
+-    nPicRealHeight = pPicture->nBottomOffset - pPicture->nTopOffset;
+-
+-    //* if the uOffset is not right, we should not use them to compute width and height
+-    if(nPicRealWidth <= 0 || nPicRealHeight <= 0)
+-    {
+-        nPicRealWidth  = pPicture->nWidth;
+-        nPicRealHeight = pPicture->nHeight;
+-    }
+-
+-    nSrcBufWidth  = (pPicture->nWidth + 15) & ~15;
+-    nSrcBufHeight = (pPicture->nHeight + 15) & ~15;
+-
+-    //* On chip-1673, the gpu is 32 align ,but here is not copy to gpu, so also 16 align.
+-    //* On other chip, gpu buffer is 16 align.
+-    //nDstBufWidth = (pTranBufferInfo->nWidth+ 15)&~15;
+-    nDstBufWidth  = pTranBufferInfo->nWidth;
+-
+-    nDstBufHeight = pTranBufferInfo->nHeight;
+-
+-    nCopyDataWidth  = nPicRealWidth;
+-    nCopyDataHeight = nPicRealHeight;
+-
+-    logv("nPicRealWidth & H = %d, %d, nSrcBufWidth & H = %d, %d,"
+-         "nDstBufWidth & H = %d, %d,  nCopyDataWidth & H = %d, %d",
+-          nPicRealWidth,nPicRealHeight,
+-          nSrcBufWidth,nSrcBufHeight,
+-          nDstBufWidth,nDstBufHeight,
+-          nCopyDataWidth,nCopyDataHeight);
+-
+-    //*copy y
+-    for(i=0; i < nCopyDataHeight; i++)
+-    {
+-        memcpy(dstPtr, srcPtr, nCopyDataWidth);
+-        dstPtr += nDstBufWidth;
+-        srcPtr += nSrcBufWidth;
+-    }
+-
+-    //*copy u
+-    srcPtr = ((unsigned char*)pPicture->pData0) + nSrcBufWidth*nSrcBufHeight*5/4;
+-    nCopyDataWidth  = (nCopyDataWidth+1)/2;
+-    nCopyDataHeight = (nCopyDataHeight+1)/2;
+-
+-    for(i=0; i < nCopyDataHeight; i++)
+-    {
+-        memcpy(dstPtr, srcPtr, nCopyDataWidth);
+-        dstPtr += nDstBufWidth/2;
+-        srcPtr += nSrcBufWidth/2;
+-    }
+-
+-    //*copy v
+-    srcPtr = ((unsigned char*)pPicture->pData0) + nSrcBufWidth*nSrcBufHeight;
+-    for(i=0; i<nCopyDataHeight; i++)
+-    {
+-        memcpy(dstPtr, srcPtr, nCopyDataWidth);
+-        dstPtr += nDstBufWidth/2;    //a31 gpu, uv is half of y
+-        srcPtr += nSrcBufWidth/2;
+-    }
+-
+-    return;
+-}
++
++
++
++
+ 
+ static void liReopenVideoEngine(OmxAwDecoderContext *pCtx)
+ {
+@@ -415,20 +384,34 @@
+                                        AW_VIDEO_EXTENSIONS_INDEXTYPE eParamIndex,
+                                        OMX_PTR pParamData)
+ {
+-    CEDARC_UNUSE(pDec);
+-    CEDARC_UNUSE(pParamData);
+-    CEDARC_UNUSE(eParamIndex);
+-    logw("get_parameter: unknown param %08x\n", eParamIndex);
+-    return OMX_ErrorUnsupportedIndex;
++    OmxAwDecoderContext *ctx = (OmxAwDecoderContext *)pDec;
++    OMX_CONFIG_BOOLEANTYPE *enable = pParamData;
++    if ((unsigned int)eParamIndex != CEDAR_OMX_ENABLE_INDEX)
++        return OMX_ErrorUnsupportedIndex;
++    if (!enable || enable->nSize != sizeof(*enable))
++        return OMX_ErrorBadParameter;
++    enable->bEnabled = ctx->cedarDisplay;
++    return OMX_ErrorNone;
+ }
+ 
+ static OMX_ERRORTYPE __liSetExtPara(OmxDecoder* pDec,
+                                        AW_VIDEO_EXTENSIONS_INDEXTYPE eParamIndex,
+                                        OMX_PTR pParamData)
+ {
+-    CEDARC_UNUSE(pDec);
+-    CEDARC_UNUSE(pParamData);
+-    logw("Setparameter: unknown param %d\n", eParamIndex);
++    OmxAwDecoderContext *ctx = (OmxAwDecoderContext *)pDec;
++    if ((unsigned int)eParamIndex == CEDAR_OMX_ENABLE_INDEX) {
++        OMX_CONFIG_BOOLEANTYPE *enable = pParamData;
++        if (!enable || enable->nSize != sizeof(*enable))
++            return OMX_ErrorBadParameter;
++        if (ctx->m_decoder || ctx->cedarPictures)
++            return OMX_ErrorIncorrectStateOperation;
++        if (!enable->bEnabled)
++            return OMX_ErrorUnsupportedSetting;
++        ctx->cedarDisplay = OMX_TRUE;
++        if (ctx->cedarDisplay)
++            getPortDef(ctx->pOutPort)->nBufferSize = sizeof(struct cedar_display_frame);
++        return OMX_ErrorNone;
++    }
+     return OMX_ErrorUnsupportedIndex;
+ }
+ 
+@@ -446,9 +429,16 @@
+                                        AW_VIDEO_EXTENSIONS_INDEXTYPE eConfigIndex,
+                                        OMX_PTR pConfigData)
+ {
+-    CEDARC_UNUSE(pDec);
+-    CEDARC_UNUSE(pConfigData);
+-    logw("Setparameter: unknown param %d\n", eConfigIndex);
++    OmxAwDecoderContext *ctx = (OmxAwDecoderContext *)pDec;
++    if ((unsigned int)eConfigIndex == CEDAR_OMX_RELEASE_INDEX && ctx->cedarDisplay) {
++        OMX_BUFFERHEADERTYPE *header = pConfigData;
++        if (!header || header->nOutputPortIndex != 1 || !header->pBuffer)
++            return OMX_ErrorBadParameter;
++        OmxAcquireMutex(ctx->awMutexHandler);
++        cedarRelease(ctx, (CedarOutput *)header->pBuffer);
++        OmxReleaseMutex(ctx->awMutexHandler);
++        return OMX_ErrorNone;
++    }
+     return OMX_ErrorUnsupportedIndex;
+ }
+ 
+@@ -456,12 +446,20 @@
+ {
+     OmxAwDecoderContext *pCtx = (OmxAwDecoderContext*)pDec;
+     int ret = -1;
++    if (!pCtx->cedarDisplay) {
++        loge("This build requires the Cedar display descriptor ABI");
++        return -1;
++    }
+     if(-1 == liDealWithInitData(pCtx))
+         return -1;
+     OMX_LOGD("decoder prepare");
+     liGetStremInfo(pCtx);
+ 
+     OmxAcquireMutex(pCtx->awMutexHandler);
++    if (pCtx->cedarClosePending) {
++        OmxReleaseMutex(pCtx->awMutexHandler);
++        return -1;
++    }
+     //*if mdecoder had closed before, we should create it
+     if(pCtx->m_decoder==NULL)
+     {
+@@ -471,7 +469,7 @@
+ 
+     pCtx->mVideoConfig.nAlignStride       = pCtx->mGpuAlignStride;
+ 
+-    pCtx->mVideoConfig.eOutputPixelFormat = PIXEL_FORMAT_YV12;//* Used to be YV12.
++    pCtx->mVideoConfig.eOutputPixelFormat = PIXEL_FORMAT_YUV_MB32_420;
+ 
+ #if (ENABLE_SCALEDOWN_WHEN_RESOLUTION_MOER_THAN_1080P)
+     if (pCtx->mStreamInfo.nWidth > 1920
+@@ -493,7 +491,8 @@
+     pCtx->mVideoConfig.bDispErrorFrame = 1;
+ 
+     pCtx->mVideoConfig.nDeInterlaceHoldingFrameBufferNum = 0;
+-    pCtx->mVideoConfig.nDisplayHoldingFrameBufferNum  = 0;
++    pCtx->mVideoConfig.nDisplayHoldingFrameBufferNum = pCtx->cedarDisplay ?
++        getPortDef(pCtx->pOutPort)->nBufferCountActual + 1 : 0;
+     pCtx->mVideoConfig.nRotateHoldingFrameBufferNum \
+                          = NUM_OF_PICTURES_KEEPPED_BY_ROTATE;
+     pCtx->mVideoConfig.nDecodeSmoothFrameBufferNum \
+@@ -668,8 +667,6 @@
+ {
+     VideoPicture*           pPicture     = NULL;
+     OMX_BUFFERHEADERTYPE*   pOutBufHdr  = NULL;
+-    TranBufferInfo          mTranBufferInfo;
+-    memset(&mTranBufferInfo, 0 ,sizeof(TranBufferInfo));
+     OmxAwDecoderContext *pCtx = (OmxAwDecoderContext*)pDec;
+ 
+     int validPicNum = ValidPictureNum(pCtx->m_decoder, 0);
+@@ -706,28 +703,23 @@
+          pCtx->pPicture->nWidth,    pCtx->pPicture->nHeight,
+          pCtx->pPicture->nTopOffset,pCtx->pPicture->nBottomOffset,
+          pCtx->pPicture->nLeftOffset,pCtx->pPicture->nRightOffset);
+-    CdcMemFlushCache(pCtx->decMemOps, (void*)pCtx->pPicture->pData0,
+-             pCtx->pPicture->nLineStride * pCtx->pPicture->nHeight*3/2);
+-    OMX_PARAM_PORTDEFINITIONTYPE* outDef = getPortDef(pCtx->pOutPort);
+-#if USE_ALIGN_SIZE
+-    AlignCopyYV12((unsigned char*)pOutBufHdr->pBuffer,
+-                                (unsigned char*)pCtx->pPicture->pData0,
+-                                outDef->format.video.nFrameWidth,
+-                                outDef->format.video.nFrameHeight);
+-
+-#else
+-    mTranBufferInfo.pAddr   = pOutBufHdr->pBuffer;
+-    mTranBufferInfo.nWidth  = outDef->format.video.nFrameWidth;
+-    mTranBufferInfo.nHeight = outDef->format.video.nFrameHeight;
+-    TransformYV12ToYUV420(pCtx->pPicture, &mTranBufferInfo);  // YUV420 planar
+-#endif
+-    pOutBufHdr->nTimeStamp = pCtx->pPicture->nPts;
+-    pOutBufHdr->nOffset    = 0;
+-    pOutBufHdr->nFilledLen = (outDef->format.video.nFrameWidth *
+-                              outDef->format.video.nFrameHeight) * 3 / 2;
+-
+-    return pOutBufHdr;
+-
++    {
++        CedarOutput *out = (CedarOutput *)pOutBufHdr->pBuffer;
++        if (cedarDescribe(pCtx, pCtx->pPicture, &out->frame)) {
++            pOutBufHdr->nFilledLen = 0;
++            pCtx->callback(pCtx->pUserData, AW_OMX_CB_EVENT_ERROR, NULL);
++            return pOutBufHdr; /* __liReturnBuffer releases the rejected picture. */
++        }
++        OmxAcquireMutex(pCtx->awMutexHandler);
++        out->picture = pCtx->pPicture;
++        pCtx->cedarPictures++;
++        pOutBufHdr->nTimeStamp = out->picture->nPts;
++        pCtx->pPicture = NULL; /* ownership transfers to this OMX output buffer */
++        OmxReleaseMutex(pCtx->awMutexHandler);
++        pOutBufHdr->nOffset = 0;
++        pOutBufHdr->nFilledLen = sizeof(out->frame);
++        return pOutBufHdr;
++    }
+ }
+ 
+ static void __liStandbyBuffer(OmxDecoder* pDec)
+@@ -773,21 +765,21 @@
+     }
+ }
+ 
+-static  void __liClose(OmxDecoder* pDec)
+-{
+-    OMX_LOGD("decoder close");
+-    OmxAwDecoderContext *pCtx = (OmxAwDecoderContext*)pDec;
+-    OmxTryPostSem(pCtx->mSemInData);
+-    OmxTryPostSem(pCtx->mSemOutBuffer);
+-    OmxReleaseMutex(pCtx->awMutexHandler);
+-    if(pCtx->m_decoder != NULL)
+-    {
+-        DestroyVideoDecoder(pCtx->m_decoder);
+-        pCtx->m_decoder           = NULL;
+-    }
+-    pCtx->mCodecSpecificDataLen = 0;
+-    memset(pCtx->mCodecSpecificData, 0 , CODEC_SPECIFIC_DATA_LENGTH);
+-    OmxReleaseMutex(pCtx->awMutexHandler);
++static void __liClose(OmxDecoder* pDec)
++{
++    OmxAwDecoderContext *ctx = (OmxAwDecoderContext *)pDec;
++    OmxAcquireMutex(ctx->awMutexHandler);
++    if (ctx->m_decoder) {
++        if (ctx->cedarPictures) {
++            ctx->cedarClosePending = OMX_TRUE;
++        } else {
++            DestroyVideoDecoder(ctx->m_decoder);
++            ctx->m_decoder = NULL;
++        }
++    }
++    ctx->mCodecSpecificDataLen = 0;
++    memset(ctx->mCodecSpecificData, 0, CODEC_SPECIFIC_DATA_LENGTH);
++    OmxReleaseMutex(ctx->awMutexHandler);
+ }
+ 
+ static void __liSetInputEos(OmxDecoder* pDec, OMX_BOOL bEos)
+@@ -835,7 +827,7 @@
+ static void __liGetFormat(OmxDecoder* pDec)
+ {
+     OmxAwDecoderContext *pCtx = (OmxAwDecoderContext*)pDec;
+-    pCtx->mVideoConfig.eOutputPixelFormat = PIXEL_FORMAT_YV12;
++    pCtx->mVideoConfig.eOutputPixelFormat = PIXEL_FORMAT_YUV_MB32_420;
+ }
+ 
+ static inline void __liSetExtBufNum(OmxDecoder* pDec, OMX_S32 num)
+@@ -848,6 +840,8 @@
+ {
+     OmxAwDecoderContext *pCtx = (OmxAwDecoderContext*)pDec;
+     OMX_U8* pBuffer = NULL;
++    if (pCtx->cedarDisplay && !isInputPort(port))
++        return calloc(1, sizeof(CedarOutput));
+     OMX_LOGD("kay: *** %d.", pCtx->bUseZeroCopyBuffer);
+     pCtx->bUseZeroCopyBuffer = OMX_FALSE;
+ 
+@@ -870,6 +864,13 @@
+ static void __liFreePortBuffer(OmxDecoder* pDec, AwOmxVdecPort* port, OMX_U8* pBuffer)
+ {
+     OmxAwDecoderContext *pCtx = (OmxAwDecoderContext*)pDec;
++    if (pCtx->cedarDisplay && !isInputPort(port)) {
++        OmxAcquireMutex(pCtx->awMutexHandler);
++        cedarRelease(pCtx, (CedarOutput *)pBuffer);
++        OmxReleaseMutex(pCtx->awMutexHandler);
++        free(pBuffer);
++        return;
++    }
+     if(!isInputPort(port) && pCtx->bUseZeroCopyBuffer)
+         CdcMemPfree(pCtx->decMemOps, pBuffer, NULL, NULL);
+     else
+--- /dev/null
++++ b/include/cedar-display.h
+@@ -0,0 +1,48 @@
++/* SPDX-License-Identifier: MIT
++ * Private, versioned Cedar -> GStreamer -> F1C100s /dev/disp ABI.
++ * Addresses are CPU physical DRAM addresses, not VE-relative addresses.
++ * A frame remains owned by its OMX output buffer until that buffer is returned.
++ */
++#ifndef CEDAR_DISPLAY_H
++#define CEDAR_DISPLAY_H
++
++#include <linux/types.h>
++#include <linux/ioctl.h>
++
++#define CEDAR_DISPLAY_VERSION 1
++#define CEDAR_DISPLAY_MAGIC 0x43445231U
++#define CEDAR_DISPLAY_FEATURE "memory:CedarPicture"
++#define CEDAR_DISPLAY_RELEASE_EVENT "cedar-display-release"
++#define CEDAR_OMX_ENABLE_INDEX 0x7fcd0001U
++#define CEDAR_OMX_RELEASE_INDEX 0x7fcd0002U
++#define CEDAR_OMX_EXTENSION "OMX.allwinner.index.param.cedarDisplay"
++
++#define CEDAR_DISPLAY_YUV420P 1U /* addr: Y, U, V */
++#define CEDAR_DISPLAY_MB32_NV12 2U /* addr: Y, interleaved UV, unused */
++
++struct cedar_display_frame {
++    __u32 magic;
++    __u32 version;
++    __u32 format;
++    __u32 addr[3];
++    __u32 stride[3]; /* bytes per row before MB32 encoding */
++    __u32 width;     /* allocated luma dimensions */
++    __u32 height;
++    __u32 crop_x;
++    __u32 crop_y;
++    __u32 crop_width;
++    __u32 crop_height;
++    __u32 reserved;
++};
++
++/* New ioctls deliberately do not overlap the legacy sunxi DISP ABI.
++ * PRESENT waits for a register load and a following output-line boundary.
++ * Success permits releasing the PREVIOUS frame; the submitted frame remains
++ * in use until the next successful PRESENT or STOP.
++ * On PRESENT error keep both frames until STOP succeeds.
++ */
++#define CEDAR_DISP_GET_VERSION _IOR('C', 0x70, __u32)
++#define CEDAR_DISP_PRESENT _IOW('C', 0x71, struct cedar_display_frame)
++#define CEDAR_DISP_STOP _IO('C', 0x72)
++
++#endif

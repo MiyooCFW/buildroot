@@ -7,8 +7,8 @@ Subject: [PATCH] gst-play
  Makefile.am        |   2 +-
  configure.ac       |   1 +
  player/Makefile.am |   5 +
- player/gst-play.c  | 257 +++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 264 insertions(+), 1 deletion(-)
+ player/gst-play.c  | 254 +++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 261 insertions(+), 1 deletion(-)
  create mode 100644 player/Makefile.am
  create mode 100644 player/gst-play.c
 
@@ -50,7 +50,7 @@ new file mode 100644
 index 0000000..c1a5fa7
 --- /dev/null
 +++ b/player/gst-play.c
-@@ -0,0 +1,257 @@
+@@ -0,0 +1,254 @@
 +#include <gst/gst.h>
 +#include <stdio.h>
 +#include <stdlib.h>
@@ -181,7 +181,7 @@ index 0000000..c1a5fa7
 +
 +	src = gst_element_factory_make("filesrc", "src");
 +	demuxer = gst_element_factory_make("decodebin", "decoder");
-+	video_sink = gst_element_factory_make("sunxifbsink", "sink");
++	video_sink = gst_element_factory_make("cedardispsink", "sink");
 +
 +	if (!src || !demuxer || !video_sink) {
 +		g_printerr("Failed to create elements\n");
@@ -189,10 +189,7 @@ index 0000000..c1a5fa7
 +	}
 +
 +	g_object_set(src, "location", argv[1], NULL);
-+	g_object_set(video_sink, "hardware-overlay", TRUE,
-+				 "video-memory", 2,
-+				 "buffer-pool", TRUE,
-+				 "full-screen", TRUE, NULL);
++	g_object_set(video_sink, "sync", TRUE, NULL);
 +
 +	pipeline = gst_pipeline_new("player");
 +
@@ -310,4 +307,3 @@ index 0000000..c1a5fa7
 +}
 -- 
 2.34.1
-
