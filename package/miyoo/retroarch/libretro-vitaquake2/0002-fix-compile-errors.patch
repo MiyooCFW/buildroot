@@ -1,0 +1,73 @@
+From 8bd9c2ab822caff6db02f5dccdf061c4f16c6bed Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sun, 18 Oct 2026 21:18:54 +0200
+Subject: [PATCH] fix compile errors
+
+---
+ libretro-common/features/features_cpu.c |  6 ++----
+ ref_soft/r_main.c                       | 28 -------------------------
+ 2 files changed, 2 insertions(+), 32 deletions(-)
+
+diff --git a/libretro-common/features/features_cpu.c b/libretro-common/features/features_cpu.c
+index 9bb11a29a..7d364e369 100644
+--- a/libretro-common/features/features_cpu.c
++++ b/libretro-common/features/features_cpu.c
+@@ -23,6 +23,8 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ 
++#define CLOCK_MONOTONIC 0
++
+ #if defined(_WIN32)
+ #include <direct.h>
+ #else
+@@ -108,10 +110,6 @@
+ #ifdef __MACH__
+ #include <sys/time.h>
+ 
+-#ifndef CLOCK_MONOTONIC
+-#define CLOCK_MONOTONIC 0
+-#endif
+-
+ #ifndef CLOCK_REALTIME
+ #define CLOCK_REALTIME 0
+ #endif
+diff --git a/ref_soft/r_main.c b/ref_soft/r_main.c
+index fed03da71..a9fa8816c 100644
+--- a/ref_soft/r_main.c
++++ b/ref_soft/r_main.c
+@@ -1427,31 +1427,3 @@ refexport_t SWR_GetRefAPI (refimport_t rimp)
+ 
+    return re;
+ }
+-
+-#ifndef REF_HARD_LINKED
+-// this is only here so the functions in q_shared.c and q_shwin.c can link
+-void Sys_Error (char *error, ...)
+-{
+-	va_list		argptr;
+-	char		text[1024];
+-
+-	va_start (argptr, error);
+-	vsprintf (text, error, argptr);
+-	va_end (argptr);
+-
+-	ri.Sys_Error (ERR_FATAL, "%s", text);
+-}
+-
+-void Com_Printf (char *fmt, ...)
+-{
+-	va_list		argptr;
+-	char		text[1024];
+-
+-	va_start (argptr, fmt);
+-	vsprintf (text, fmt, argptr);
+-	va_end (argptr);
+-
+-	ri.Con_Printf (PRINT_ALL, "%s", text);
+-}
+-
+-#endif
+-- 
+2.45.2.windows.1
+

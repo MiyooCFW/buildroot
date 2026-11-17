@@ -1,0 +1,78 @@
+From 999de2b3faecf285bf30080754550fe4f062a47f Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sun, 18 Oct 2026 21:24:03 +0200
+Subject: [PATCH] add `platform=miyoo`
+
+---
+ .gitlab-ci.yml                   |  6 ++++++
+ Makefile                         | 10 ++++++++++
+ libretro/libretro_core_options.h |  8 ++++++--
+ 3 files changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/.gitlab-ci.yml b/.gitlab-ci.yml
+index 0776c2879..576b2f976 100644
+--- a/.gitlab-ci.yml
++++ b/.gitlab-ci.yml
+@@ -217,6 +217,12 @@ libretro-build-vita:
+     - .libretro-vita-static-retroarch-master
+     - .core-defs
+ 
++# Miyoo
++libretro-build-miyoo-arm32:
++  extends:
++    - .libretro-miyoo-arm32-make-default
++    - .core-defs
++
+ # OpenDingux
+ libretro-build-dingux-mips32:
+   extends:
+diff --git a/Makefile b/Makefile
+index 0c6652488..20ed6e031 100644
+--- a/Makefile
++++ b/Makefile
+@@ -230,6 +230,16 @@ else ifeq ($(platform), gcw0)
+    SHARED := -shared -Wl,--version-script=$(CORE_DIR)/link.T -Wl,--no-undefined
+    CFLAGS += -DDINGUX -D_POSIX_C_SOURCE=199309L -fomit-frame-pointer -march=mips32 -mtune=mips32r2 -mhard-float
+    HAVE_OPENGL = 0
++# MIYOO
++else ifeq ($(platform), miyoo)
++   TARGET := $(TARGET_NAME)_libretro.so
++   CC = arm-linux-gcc
++   AR = arm-linux-ar
++   fpic := -fPIC
++   SHARED := -shared -Wl,--version-script=$(CORE_DIR)/link.T -Wl,--no-undefined
++   CFLAGS += -DMIYOO -fomit-frame-pointer -ffast-math -mcpu=arm926ej-s
++   CFLAGS += -DLOWRES -DLOWFPS
++   HAVE_OPENGL = 0
+ else
+    CC ?= gcc
+    TARGET := $(TARGET_NAME)_libretro.dll
+diff --git a/libretro/libretro_core_options.h b/libretro/libretro_core_options.h
+index 6531af4f8..7e71b2c84 100644
+--- a/libretro/libretro_core_options.h
++++ b/libretro/libretro_core_options.h
+@@ -104,7 +104,9 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+ #endif
+          { NULL, NULL },
+       },
+-#if defined(DINGUX)
++#if defined(MIYOO)
++      "160x120"
++#elif defined(DINGUX)
+       "320x240"
+ #elif defined(_3DS)
+       "400x240"
+@@ -145,7 +147,9 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+          { "360",  "360 fps" },
+          { NULL, NULL },
+       },
+-#if defined(DINGUX) || defined(_3DS)
++#if defined(MIYOO)
++      "15"
++#elif defined(DINGUX) || defined(_3DS)
+       "30"
+ #else
+       "auto"
+-- 
+2.45.2.windows.1
+

@@ -1,0 +1,25 @@
+From 63b55e068f311dda36e5ba9c329685a9bf3b863d Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 23:35:52 +0200
+Subject: [PATCH] MIYOO: Makefile: use "nearest" resampler
+
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 3e5c81ba4..2a69e1e97 100644
+--- a/Makefile
++++ b/Makefile
+@@ -239,7 +239,7 @@ else ifeq ($(platform), miyoo)
+    AR = arm-linux-ar
+    fpic := -fPIC
+    SHARED := -shared -Wl,--version-script=$(CORE_DIR)/link.T -Wl,--no-undefined
+-   CFLAGS += -DMIYOO -fomit-frame-pointer -ffast-math -mcpu=arm926ej-s
++   CFLAGS += -DMIYOO -DHAVE_NEAREST_RESAMPLER -fomit-frame-pointer -ffast-math -mcpu=arm926ej-s
+    CFLAGS += -DLOWRES -DLOWFPS
+    HAVE_OPENGL = 0
+    HAVE_OGG = 0
+-- 
+2.45.2.windows.1
+

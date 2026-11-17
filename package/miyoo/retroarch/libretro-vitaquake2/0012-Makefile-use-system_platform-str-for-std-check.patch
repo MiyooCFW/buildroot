@@ -1,0 +1,26 @@
+From fc683b58c4eb4280aa499a865e13391787447378 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sun, 25 Oct 2026 21:37:07 +0100
+Subject: [PATCH] Makefile: use "system_platform" str for `-std` check
+
+workaround for POSIX compliant *nix target platforms without unix suffix (fixes compiliation on UCLIBC missing otherwise _POSIX_C_SOURCE=199309L cflag for POSIX e.g. clock_gettime() function)
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 2a69e1e97..04da58eb6 100644
+--- a/Makefile
++++ b/Makefile
+@@ -303,7 +303,7 @@ else ifeq ($(basegame),zaero)
+ CFLAGS   += -DZAERO
+ endif
+ 
+-ifneq (,$(findstring unix,$(platform)))
++ifneq (,$(findstring unix,$(system_platform)))
+ CFLAGS += -std=gnu99
+ else
+ CFLAGS += -std=c99
+-- 
+2.45.2.windows.1
+

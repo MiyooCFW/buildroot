@@ -1,0 +1,48 @@
+From f429e753865014d0234abc91cd009b26f7125dc7 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 22:25:12 +0200
+Subject: [PATCH] Makefile: enable WAV or OGG support via cflag
+
+---
+ Makefile | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 20ed6e031..3e5c81ba4 100644
+--- a/Makefile
++++ b/Makefile
+@@ -2,6 +2,8 @@ STATIC_LINKING := 0
+ AR             := ar
+ HAVE_OPENGL    := 0
+ HAVE_CDAUDIO   := 1
++HAVE_OGG       := 1
++HAVE_WAV       := 0
+ 
+ ifneq ($(V),1)
+    Q := @
+@@ -240,6 +242,8 @@ else ifeq ($(platform), miyoo)
+    CFLAGS += -DMIYOO -fomit-frame-pointer -ffast-math -mcpu=arm926ej-s
+    CFLAGS += -DLOWRES -DLOWFPS
+    HAVE_OPENGL = 0
++   HAVE_OGG = 0
++   HAVE_WAV = 1
+ else
+    CC ?= gcc
+    TARGET := $(TARGET_NAME)_libretro.dll
+@@ -283,7 +287,12 @@ CFLAGS   += -DHAVE_OPENGL
+ endif
+ 
+ ifeq ($(HAVE_CDAUDIO),1)
+-CFLAGS   += -DHAVE_CDAUDIO -DHAVE_STB_VORBIS
++CFLAGS   += -DHAVE_CDAUDIO
++ifeq ($(HAVE_OGG),1)
++CFLAGS   += -DHAVE_STB_VORBIS
++else ifeq ($(HAVE_WAV),1)
++CFLAGS   += -DHAVE_RWAV
++endif
+ endif
+ 
+ ifeq ($(basegame),xatrix)
+-- 
+2.45.2.windows.1
+

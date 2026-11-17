@@ -1,0 +1,166 @@
+From 7b52acce261ab508eceb175b53c026dd0f0e1430 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 23:22:32 +0200
+Subject: [PATCH] add nearest resampler with lowest qualtiy
+
+---
+ Makefile.common                               |   1 +
+ .../resampler/drivers/nearest_resampler.c     | 105 ++++++++++++++++++
+ libretro/libretro_cdaudio.c                   |   8 ++
+ 3 files changed, 114 insertions(+)
+ create mode 100644 libretro-common/audio/resampler/drivers/nearest_resampler.c
+
+diff --git a/Makefile.common b/Makefile.common
+index 38d592a90..2761eebf8 100644
+--- a/Makefile.common
++++ b/Makefile.common
+@@ -42,6 +42,7 @@ SYSTEM_COMM_AUDIO = \
+ 	$(LIBRETRO_COMM_DIR)/audio/conversion/s16_to_float.c \
+ 	$(LIBRETRO_COMM_DIR)/audio/resampler/audio_resampler.c \
+ 	$(LIBRETRO_COMM_DIR)/audio/resampler/drivers/sinc_resampler.c \
++	$(LIBRETRO_COMM_DIR)/audio/resampler/drivers/nearest_resampler.c \
+ 	$(LIBRETRO_COMM_DIR)/file/config_file.c \
+ 	$(LIBRETRO_COMM_DIR)/file/config_file_userdata.c \
+ 	$(LIBRETRO_COMM_DIR)/formats/wav/rwav.c \
+diff --git a/libretro-common/audio/resampler/drivers/nearest_resampler.c b/libretro-common/audio/resampler/drivers/nearest_resampler.c
+new file mode 100644
+index 000000000..67642b076
+--- /dev/null
++++ b/libretro-common/audio/resampler/drivers/nearest_resampler.c
+@@ -0,0 +1,105 @@
++/* Copyright  (C) 2010-2020 The RetroArch team
++ *
++ * ---------------------------------------------------------------------------------------
++ * The following license statement only applies to this file (nearest_resampler.c).
++ * ---------------------------------------------------------------------------------------
++ *
++ * Permission is hereby granted, free of charge,
++ * to any person obtaining a copy of this software and associated documentation files (the "Software"),
++ * to deal in the Software without restriction, including without limitation the rights to
++ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
++ * and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
++ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
++ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
++ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++ */
++
++#include <stdint.h>
++#include <stdlib.h>
++#include <math.h>
++
++#include <audio/audio_resampler.h>
++
++typedef struct rarch_nearest_resampler
++{
++   float fraction;
++} rarch_nearest_resampler_t;
++
++/* The step is 1/ratio, so a ratio that is not positive, or larger than
++ * a pair of sample rates can name, leaves the inner loop emitting past
++ * data_out rather than advancing. */
++#define NEAREST_RATIO_MAX 65536.0
++
++static void resampler_nearest_process(
++      void *re_, struct resampler_data *data)
++{
++   rarch_nearest_resampler_t *re = (rarch_nearest_resampler_t*)re_;
++   audio_frame_float_t  *inp     = (audio_frame_float_t*)data->data_in;
++   audio_frame_float_t  *inp_max = (audio_frame_float_t*)inp + data->input_frames;
++   audio_frame_float_t  *outp    = (audio_frame_float_t*)data->data_out;
++   float                   ratio;
++
++   if (!(data->ratio > 0.0) || !(data->ratio <= NEAREST_RATIO_MAX))
++   {
++      data->output_frames = 0;
++      return;
++   }
++   ratio = 1.0 / data->ratio;
++
++   while (inp != inp_max)
++   {
++      while (re->fraction > 1)
++      {
++         *outp++       = *inp;
++         re->fraction -= ratio;
++      }
++      re->fraction++;
++      inp++;
++   }
++
++   data->output_frames = (outp - (audio_frame_float_t*)data->data_out);
++}
++
++static void resampler_nearest_free(void *re_)
++{
++   rarch_nearest_resampler_t *re = (rarch_nearest_resampler_t*)re_;
++   if (re)
++      free(re);
++}
++
++static void *resampler_nearest_init(const struct resampler_config *config,
++      double bandwidth_mod,
++      enum resampler_quality quality,
++      resampler_simd_mask_t mask)
++{
++   rarch_nearest_resampler_t *re = (rarch_nearest_resampler_t*)
++      calloc(1, sizeof(rarch_nearest_resampler_t));
++   if (!re)
++      return NULL;
++   re->fraction = 0;
++   return re;
++}
++
++static void resampler_nearest_reset(void *re_)
++{
++   rarch_nearest_resampler_t *re = (rarch_nearest_resampler_t*)re_;
++   if (re)
++      re->fraction = 0;
++}
++
++retro_resampler_t nearest_resampler = {
++   resampler_nearest_init,
++   resampler_nearest_process,
++   resampler_nearest_free,
++   RESAMPLER_API_VERSION,
++   "nearest",
++   "nearest",
++   resampler_nearest_reset,
++   0
++};
+diff --git a/libretro/libretro_cdaudio.c b/libretro/libretro_cdaudio.c
+index 1300982a0..ce2ae9e5a 100644
+--- a/libretro/libretro_cdaudio.c
++++ b/libretro/libretro_cdaudio.c
+@@ -120,7 +120,11 @@ void CDAudio_Play(int track, qboolean looping)
+ #if defined(HAVE_STB_VORBIS)
+       cdaudio_sound = core_audio_mixer_load_ogg(file_contents, file_len);
+ #elif defined(HAVE_RWAV)
++#if defined (HAVE_NEAREST_RESAMPLER)
++      cdaudio_sound = core_audio_mixer_load_wav(file_contents, file_len, nearest_resampler.ident, RESAMPLER_QUALITY_LOWEST);
++#else
+       cdaudio_sound = core_audio_mixer_load_wav(file_contents, file_len, sinc_resampler.ident, RESAMPLER_QUALITY_NORMAL);
++#endif
+ #endif
+ 
+       if (!cdaudio_sound)
+@@ -128,7 +132,11 @@ void CDAudio_Play(int track, qboolean looping)
+ 
+       /* Start 'playing' track file */
+       cdaudio_voice = core_audio_mixer_play(cdaudio_sound,
++#if defined (HAVE_NEAREST_RESAMPLER)
++            looping, 1.0f, nearest_resampler.ident, RESAMPLER_QUALITY_LOWEST,
++#else
+             looping, 1.0f, sinc_resampler.ident, RESAMPLER_QUALITY_NORMAL,
++#endif
+             cdaudio_stop_cb);
+ 
+       if (!cdaudio_voice)
+-- 
+2.45.2.windows.1
+

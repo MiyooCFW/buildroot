@@ -1,0 +1,25 @@
+From 06ec7713d83260d8d1ddaa1f0a213aca9c029e8e Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Mon, 26 Oct 2026 23:09:20 +0100
+Subject: [PATCH] common: add comment for `default.cfg` purpouse
+
+---
+ qcommon/common.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/qcommon/common.c b/qcommon/common.c
+index 061bb86ce..a947c1cf9 100644
+--- a/qcommon/common.c
++++ b/qcommon/common.c
+@@ -1461,6 +1461,8 @@ void Qcommon_Init (int argc, char **argv)
+ 
+ 	FS_InitFilesystem ();
+ 
++	// load basic configuration from pak0.pak for valid operation
++	// should not be overwriten by another cfg with similar name
+ 	Cbuf_AddText ("exec default.cfg\n");
+ 
+ 	//Sys_DefaultConfig();
+-- 
+2.45.2.windows.1
+

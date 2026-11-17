@@ -1,0 +1,183 @@
+From 85ccde3f7a25e4d4f8e94d94d26c371611dcd532 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Fri, 23 Oct 2026 21:56:52 +0200
+Subject: [PATCH] for LOWRES implement UI downscaling
+
+---
+ client/qmenu.c    |   4 ++
+ ref_soft/r_draw.c | 137 ++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 141 insertions(+)
+
+diff --git a/client/qmenu.c b/client/qmenu.c
+index 6ade56700..29b7ea4db 100644
+--- a/client/qmenu.c
++++ b/client/qmenu.c
+@@ -32,6 +32,10 @@ float SCR_GetMenuScale(void)
+ {
+ 	float aspect_correction;
+ 
++#ifdef LOWRES
++	if (is_soft_render && (scr_height == 120))
++		return 0.5f;
++#endif
+ 	/* When using the hardware renderer,
+ 	 * start increasing the scale once screen
+ 	 * height exceeds 240 (i.e. assume baseline
+diff --git a/ref_soft/r_draw.c b/ref_soft/r_draw.c
+index 537db7047..b9fad7f83 100644
+--- a/ref_soft/r_draw.c
++++ b/ref_soft/r_draw.c
+@@ -83,6 +83,62 @@ void SWR_Draw_Char (int x, int y, int num, float scale)
+ 	if (num == 32 || num == 32+128)
+ 		return;
+ 
++#ifdef LOWRES
++	if (vid.width == 160) {
++		int v, u;
++
++		if (y <= -4 || (y + 4) > vid.height)
++			return;
++
++		if (x <= -4 || x >= vid.width)
++			return;
++
++		row = num >> 4;
++		col = num & 15;
++		source = rsoft_draw_chars->pixels[0] + (row << 10) + (col << 3);
++
++		if (y < 0)
++		{
++			drawline = 4 + y;
++			if (drawline <= 0)
++				return;
++			source += 128 * (-y * 2);
++			y = 0;
++		}
++		else
++		{
++			drawline = 4;
++		}
++
++		dest = vid.buffer + y * vid.rowbytes + x;
++
++		for (v = 0; v < drawline; v++)
++		{
++			byte *row0 = source;
++			byte *row1 = source + 128;
++
++			for (u = 0; u < 4; u++)
++			{
++				int px = x + u;
++				if (px >= 0 && px < vid.width)
++				{
++					byte c = row0[u * 2];
++					if (c == TRANSPARENT_COLOR) c = row0[u * 2 + 1];
++					if (c == TRANSPARENT_COLOR) c = row1[u * 2];
++					if (c == TRANSPARENT_COLOR) c = row1[u * 2 + 1];
++
++					if (c != TRANSPARENT_COLOR)
++					{
++						dest[u] = c;
++					}
++				}
++			}
++			dest += vid.rowbytes;
++			source += 128 * 2;
++		}
++		return;
++	}
++#endif
+ 	if (y <= -8)
+ 		return;			// totally off screen
+ 
+@@ -254,6 +310,87 @@ void SWR_Draw_Pic (int x, int y, char *name, float scale)
+ 		return;
+ 	}
+ 
++#ifdef LOWRES
++	if (vid.width == 160) {
++		int width = pic->width >> 1;
++		int pheight = pic->height >> 1;
++		int skip_x = 0;
++		int skip_y = 0;
++
++		if (width <= 0 || pheight <= 0)
++			return;
++
++		if (x + width <= 0 || x >= vid.width || y + pheight <= 0 || y >= vid.height)
++			return;
++
++		if (y < 0)
++		{
++			skip_y = -y;
++			pheight -= skip_y;
++			y = 0;
++		}
++		if (y + pheight > vid.height)
++		{
++			pheight = vid.height - y;
++		}
++
++		if (x < 0)
++		{
++			skip_x = -x;
++			width -= skip_x;
++			x = 0;
++		}
++		if (x + width > vid.width)
++		{
++			width = vid.width - x;
++		}
++
++		if (width <= 0 || pheight <= 0)
++			return;
++
++		source = pic->pixels[0] + (skip_y * 2) * pic->width + (skip_x * 2);
++		dest = vid.buffer + y * vid.rowbytes + x;
++
++		if (!pic->transparent)
++		{
++			for (v = 0; v < pheight; v++)
++			{
++				for (u = 0; u < width; u++)
++				{
++					dest[u] = source[u * 2];
++				}
++				dest += vid.rowbytes;
++				source += pic->width * 2;
++			}
++		}
++		else
++		{
++			for (v = 0; v < pheight; v++)
++			{
++				for (u = 0; u < width; u++)
++				{
++					byte c = source[u * 2];
++					if (c == TRANSPARENT_COLOR)
++					{
++						if (source[u * 2 + 1] != TRANSPARENT_COLOR)
++							c = source[u * 2 + 1];
++						else if (source[pic->width + u * 2] != TRANSPARENT_COLOR)
++							c = source[pic->width + u * 2];
++						else if (source[pic->width + u * 2 + 1] != TRANSPARENT_COLOR)
++							c = source[pic->width + u * 2 + 1];
++					}
++					if (c != TRANSPARENT_COLOR)
++					{
++						dest[u] = c;
++					}
++				}
++				dest += vid.rowbytes;
++				source += pic->width * 2;
++			}
++		}
++		return;
++	}
++#endif
+ 	if ((x < 0) ||
+ 		(x + pic->width > vid.width) ||
+ 		(y + pic->height > vid.height))
+-- 
+2.45.2.windows.1
+
