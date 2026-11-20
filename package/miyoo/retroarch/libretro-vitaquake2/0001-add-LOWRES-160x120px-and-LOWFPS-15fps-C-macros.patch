@@ -1,0 +1,80 @@
+From 3313b2a557646887dc4695b6eefcfb7816bb3f61 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sun, 18 Oct 2026 21:18:15 +0200
+Subject: [PATCH] add LOWRES (160x120px) and LOWFPS (15fps) C macros
+
+---
+ client/cdaudio.h                 | 4 ++++
+ libretro/libretro.c              | 8 ++++++++
+ libretro/libretro_core_options.h | 6 ++++++
+ 3 files changed, 18 insertions(+)
+
+diff --git a/client/cdaudio.h b/client/cdaudio.h
+index 06121d80b..d88fbe28a 100644
+--- a/client/cdaudio.h
++++ b/client/cdaudio.h
+@@ -23,7 +23,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ 
+ #include <stdint.h>
+ 
++#ifdef LOWFPS
++#define AUDIO_SAMPLE_RATE 11025
++#else
+ #define AUDIO_SAMPLE_RATE 44100
++#endif
+ /* Audio buffer must be sufficient for operation
+  * at 30 fps
+  * > (2 * 44100) / 30 = 2490 total samples
+diff --git a/libretro/libretro.c b/libretro/libretro.c
+index 70f329345..d360e6a05 100644
+--- a/libretro/libretro.c
++++ b/libretro/libretro.c
+@@ -1446,6 +1446,9 @@ static int invert_y_axis = 1;
+  *   with images and aliases spinning out of
+  *   control...) */
+ static const unsigned supported_framerates[] = {
++#ifdef LOWFPS
++   15,
++#endif
+    30,
+    50,
+    60,
+@@ -1524,6 +1527,11 @@ static void update_variables(bool startup)
+ 
+       switch (framerate)
+       {
++#ifdef LOWFPS
++         case 15:
++            framerate_ms = 67;
++            break;
++#endif
+          case 30:
+             framerate_ms = 33;
+             break;
+diff --git a/libretro/libretro_core_options.h b/libretro/libretro_core_options.h
+index d245bef03..6531af4f8 100644
+--- a/libretro/libretro_core_options.h
++++ b/libretro/libretro_core_options.h
+@@ -67,6 +67,9 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+       NULL,
+       NULL,
+       {
++#ifdef LOWRES
++         { "160x120",    NULL },
++#endif
+          { "320x240",    NULL },
+          { "400x240",    NULL },
+          { "480x272",    NULL },
+@@ -118,6 +121,9 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+       NULL,
+       {
+          { "auto", "Auto" },
++#ifdef LOWFPS
++         { "15",   "15 fps" },
++#endif
+          { "30",   "30 fps" },
+          { "50",   "50 fps" },
+          { "60",   "60 fps" },
+-- 
+2.45.2.windows.1
+

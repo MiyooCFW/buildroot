@@ -1,0 +1,92 @@
+From 9d5728f8f73ba06b280cc76f8fd7f7892c321d5d Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Mon, 26 Oct 2026 20:51:15 +0100
+Subject: [PATCH] libretro: add extra system dir to search paths
+
+also add `custom.cfg` to launch scripts
+---
+ libretro/libretro.c | 15 +++++++++++++++
+ qcommon/common.c    |  3 +++
+ qcommon/files.c     |  5 +++++
+ 3 files changed, 23 insertions(+)
+
+diff --git a/libretro/libretro.c b/libretro/libretro.c
+index d360e6a05..8d8085a26 100644
+--- a/libretro/libretro.c
++++ b/libretro/libretro.c
+@@ -138,6 +138,7 @@ api_entry funcs[GL_FUNCS_NUM];
+ char g_rom_dir[1024] = {0};
+ char g_save_dir[1024] = {0};
+ char g_music_dir[1024] = {0};
++char g_system_dir[1024] = {0};
+ 
+ #ifdef HAVE_OPENGL
+ extern struct retro_hw_render_callback hw_render;
+@@ -2076,6 +2077,7 @@ bool retro_load_game(const struct retro_game_info *info)
+ 	char parent_dir[1024];
+ 	bool use_external_savedir = false;
+ 	const char *base_save_dir = NULL;
++	const char *base_config_dir = NULL;
+ 	enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
+ 
+ #if defined(ROGUE)
+@@ -2165,6 +2167,19 @@ bool retro_load_game(const struct retro_game_info *info)
+ 		}
+ 	}
+ 
++	/* Get default config directory from retro system dir */
++   if (environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &base_config_dir) && base_config_dir)
++   {
++		if (!string_is_empty(base_config_dir))
++		{
++         /* > Build final config path with core's name subdir */
++         fill_pathname_join(g_system_dir, base_config_dir, "vitaquake2", sizeof(g_system_dir));
++
++			/* > Create config directory, if required */
++			if (!path_is_directory(g_system_dir))
++				path_mkdir(g_system_dir);
++      }
++   }
+ 	/* > Final check: is the save directory the same as the 'rom' directory?
+ 	 *   (i.e. ensure logical behaviour if user has set a bizarre save path...) */
+ 	use_external_savedir = use_external_savedir && (strcmp(g_save_dir, g_rom_dir) != 0);
+diff --git a/qcommon/common.c b/qcommon/common.c
+index a947c1cf9..e24fc8ac0 100644
+--- a/qcommon/common.c
++++ b/qcommon/common.c
+@@ -1530,6 +1530,9 @@ void Qcommon_Init (int argc, char **argv)
+ 		SCR_EndLoadingPlaque ();
+ 	}
+ 
++	// overwrite any setting with custom config
++	Cbuf_AddText ("exec custom.cfg\n");
++	Cbuf_Execute ();
+ 	Com_Printf ("====== Quake2 Initialized ======\n\n");	
+ }
+ 
+diff --git a/qcommon/files.c b/qcommon/files.c
+index a81bc4413..46e757219 100644
+--- a/qcommon/files.c
++++ b/qcommon/files.c
+@@ -769,6 +769,7 @@ char *FS_NextPath (char *prevpath)
+ 
+ extern char g_rom_dir[1024];
+ extern char g_save_dir[1024];
++extern char g_system_dir[1024];
+ 
+ /*
+ ================
+@@ -798,6 +799,10 @@ void FS_InitFilesystem (void)
+ 	if (g_save_dir[0] != '\0')
+ 		FS_AddGameDirectory (g_save_dir);
+ 
++	// Add custom config directory to search paths
++	if (g_system_dir[0] != '\0')
++		FS_AddGameDirectory (g_system_dir);
++
+ 	// any set gamedirs will be freed up to here
+ 	fs_base_searchpaths = fs_searchpaths;
+ 
+-- 
+2.45.2.windows.1
+

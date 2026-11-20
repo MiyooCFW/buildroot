@@ -1,0 +1,24 @@
+From cea2f8af63a12197f5aad6b0b2f4ae77fc2ade33 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Fri, 23 Oct 2026 21:54:58 +0200
+Subject: [PATCH] .gitignore: add baseq2/ data dir
+
+---
+ .gitignore | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/.gitignore b/.gitignore
+index ecc5649f0..9ffbee43d 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -55,3 +55,6 @@ modules.order
+ Module.symvers
+ Mkfile.old
+ dkms.conf
++
++# Game asset dir
++baseq2/
+\ No newline at end of file
+-- 
+2.45.2.windows.1
+

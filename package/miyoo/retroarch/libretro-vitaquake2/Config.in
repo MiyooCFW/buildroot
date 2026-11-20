@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBRETRO_VITAQUAKE2
+	bool "libretro-vitaquake2"
+	depends on BR2_PACKAGE_RETROARCH
+	help
+	  A libretro quake2 core.
+
+	  https://github.com/libretro/vitaquake2

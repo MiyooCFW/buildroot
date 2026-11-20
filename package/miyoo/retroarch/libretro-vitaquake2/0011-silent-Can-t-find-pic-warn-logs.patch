@@ -1,0 +1,43 @@
+From 477820dc06afd22af936a4022a7473e99ad28dad Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Fri, 23 Oct 2026 23:28:58 +0200
+Subject: [PATCH] silent "Can't find pic" warn logs
+
+---
+ ref_soft/r_draw.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/ref_soft/r_draw.c b/ref_soft/r_draw.c
+index b9fad7f83..5be201899 100644
+--- a/ref_soft/r_draw.c
++++ b/ref_soft/r_draw.c
+@@ -271,7 +271,7 @@ void SWR_Draw_StretchPic (int x, int y, int w, int h, char *name)
+ 	image_t *pic = SWR_Draw_FindPic (name);
+ 	if (!pic)
+ 	{
+-		ri.Con_Printf (PRINT_ALL, "Can't find pic: %s\n", name);
++		//ri.Con_Printf (PRINT_ALL, "Can't find pic: %s\n", name);
+ 		return;
+ 	}
+ 	SWR_Draw_StretchPicImplementation (x, y, w, h, pic);
+@@ -306,7 +306,7 @@ void SWR_Draw_Pic (int x, int y, char *name, float scale)
+ 	image_t *pic = SWR_Draw_FindPic (name);
+ 	if (!pic)
+ 	{
+-		ri.Con_Printf (PRINT_ALL, "Can't find pic: %s\n", name);
++		//ri.Con_Printf (PRINT_ALL, "Can't find pic: %s\n", name);
+ 		return;
+ 	}
+ 
+@@ -496,7 +496,7 @@ void SWR_Draw_TileClear (int x, int y, int w, int h, char *name)
+ 	pic = SWR_Draw_FindPic (name);
+ 	if (!pic)
+ 	{
+-		ri.Con_Printf (PRINT_ALL, "Can't find pic: %s\n", name);
++		//ri.Con_Printf (PRINT_ALL, "Can't find pic: %s\n", name);
+ 		return;
+ 	}
+ 	x2 = x + w;
+-- 
+2.45.2.windows.1
+

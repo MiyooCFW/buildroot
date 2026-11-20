@@ -1,0 +1,47 @@
+From fd5d107c4b93f5c7b58e99a71ead21639c0b25a8 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sat, 31 Oct 2026 21:44:20 +0100
+Subject: [PATCH] libretro: soft rend. doesn't render "center" hand
+
+---
+ libretro/libretro.c              | 5 +++++
+ libretro/libretro_core_options.h | 2 ++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/libretro/libretro.c b/libretro/libretro.c
+index 8d8085a26..1fbe4f9dc 100644
+--- a/libretro/libretro.c
++++ b/libretro/libretro.c
+@@ -1909,10 +1909,15 @@ static void update_variables(bool startup)
+ 				Cvar_SetValue( "hand", 0 );
+ 			else if (strcmp(var.value, "left") == 0)
+ 				Cvar_SetValue( "hand", 1 );
++#ifdef HAVE_OPENGL
+ 			else if (strcmp(var.value, "center") == 0)
+ 				Cvar_SetValue( "hand", 2 );
+ 			else
+ 				Cvar_SetValue( "hand", 3 );
++#else
++			else
++				Cvar_SetValue( "hand", 2 );
++#endif
+ 		}
+ 
+ 		var.key = "vitaquakeii_cin_force43";
+diff --git a/libretro/libretro_core_options.h b/libretro/libretro_core_options.h
+index 7e71b2c84..9ab58cbf2 100644
+--- a/libretro/libretro_core_options.h
++++ b/libretro/libretro_core_options.h
+@@ -388,7 +388,9 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+       {
+          { "right",  "Right" },
+          { "left",   "Left" },
++#ifdef HAVE_OPENGL
+          { "center", "Center" },
++#endif
+          { "hidden", "Hidden" },
+          { NULL, NULL },
+       },
+-- 
+2.45.2.windows.1
+

@@ -1,0 +1,138 @@
+From 61080f3cad17140c45fc31424f76e7f4139f7209 Mon Sep 17 00:00:00 2001
+From: Apaczer <94932128+Apaczer@users.noreply.github.com>
+Date: Sat, 31 Oct 2026 23:00:20 +0100
+Subject: [PATCH] libretro: add NO_ANALOG_JOY for platforms w/o axis
+
+e.g. miyoo
+---
+ Makefile            |  6 ++++++
+ libretro/libretro.c | 47 +++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 53 insertions(+)
+
+diff --git a/Makefile b/Makefile
+index 04da58eb6..61d40da4b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -4,6 +4,7 @@ HAVE_OPENGL    := 0
+ HAVE_CDAUDIO   := 1
+ HAVE_OGG       := 1
+ HAVE_WAV       := 0
++NO_ANALOG_JOY  := 0
+ 
+ ifneq ($(V),1)
+    Q := @
+@@ -241,6 +242,7 @@ else ifeq ($(platform), miyoo)
+    SHARED := -shared -Wl,--version-script=$(CORE_DIR)/link.T -Wl,--no-undefined
+    CFLAGS += -DMIYOO -DHAVE_NEAREST_RESAMPLER -fomit-frame-pointer -ffast-math -mcpu=arm926ej-s
+    CFLAGS += -DLOWRES -DLOWFPS
++   NO_ANALOG_JOY = 1
+    HAVE_OPENGL = 0
+    HAVE_OGG = 0
+    HAVE_WAV = 1
+@@ -295,6 +297,10 @@ CFLAGS   += -DHAVE_RWAV
+ endif
+ endif
+ 
++ifeq ($(NO_ANALOG_JOY),1)
++CFLAGS   += -DNO_ANALOG_JOY
++endif
++
+ ifeq ($(basegame),xatrix)
+ CFLAGS   += -DXATRIX
+ else ifeq ($(basegame),rogue)
+diff --git a/libretro/libretro.c b/libretro/libretro.c
+index 1fbe4f9dc..517880327 100644
+--- a/libretro/libretro.c
++++ b/libretro/libretro.c
+@@ -177,6 +177,23 @@ typedef struct {
+ } input_bind_t;
+ 
+ static struct retro_input_descriptor input_desc[] = {
++#if defined(NO_ANALOG_JOY)
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,   "Horizontal Turn-" },
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,     "Move-" },
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,   "Move+" },
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,  "Horizontal Turn-" },
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,      "Attack" },
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,      "Jump / Climb" },
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,      "Run" },
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,      "Crouch / Descend" },
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L,      "Vertical Look+" },
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,      "Vertical Look-" },
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2,     "Strafe Lock" },
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,     "Next Weapon" },
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3,     "Use Inventory Item" },
++	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3,     "Drop Inventory Item" },
++#else
++/* The X and L3 binds are dropped here and futher (?)*/
+ 	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,   "Open Inventory" },
+ 	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,     "Menu Up" },
+ 	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,   "Menu Down" },
+@@ -189,6 +206,7 @@ static struct retro_input_descriptor input_desc[] = {
+ 	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2,     "Jump / Climb" },
+ 	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,     "Attack" },
+ 	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3,     "Drop Inventory Item" },
++#endif
+ 	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Show / Hide Help Computer" },
+ 	{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,  "Show Menu" },
+ 	{ 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,  RETRO_DEVICE_ID_ANALOG_X, "Strafe" },
+@@ -203,6 +221,24 @@ static struct retro_input_descriptor input_desc[] = {
+  * to *something*, otherwise the keys will be
+  * ignored (great design there...) */
+ static const input_bind_t input_binds_pad[] = {
++#if defined(NO_ANALOG_JOY)
++	[RETRO_DEVICE_ID_JOYPAD_B]      = { "AUX4",       K_AUX4,       "+attack" },
++	[RETRO_DEVICE_ID_JOYPAD_Y]      = { "AUX2",       K_AUX2,       "+speed" },
++	[RETRO_DEVICE_ID_JOYPAD_SELECT] = { "SELECT",     K_ENTER,      "help" },
++	[RETRO_DEVICE_ID_JOYPAD_START]  = { "START",      K_ESCAPE,     "" }, /* Menu Show */
++	[RETRO_DEVICE_ID_JOYPAD_UP]     = { "UPARROW",    K_UPARROW,    "+forward" },
++	[RETRO_DEVICE_ID_JOYPAD_DOWN]   = { "DOWNARROW",  K_DOWNARROW,  "+back" },
++	[RETRO_DEVICE_ID_JOYPAD_LEFT]   = { "LEFTARROW",  K_LEFTARROW,  "+left" },
++	[RETRO_DEVICE_ID_JOYPAD_RIGHT]  = { "RIGHTARROW", K_RIGHTARROW, "+right" },
++	[RETRO_DEVICE_ID_JOYPAD_A]      = { "AUX1",       K_AUX1,       "+moveup" },
++	[RETRO_DEVICE_ID_JOYPAD_X]      = { "AUX8",       K_AUX8,       "+movedown" },
++	[RETRO_DEVICE_ID_JOYPAD_L]      = { "AUX3",       K_AUX3,       "+lookup" },
++	[RETRO_DEVICE_ID_JOYPAD_R]      = { "AUX5",       K_AUX5,       "+lookdown" },
++	[RETRO_DEVICE_ID_JOYPAD_L2]     = { "AUX6",       K_AUX6,       "+strafe" },
++	[RETRO_DEVICE_ID_JOYPAD_R2]     = { "AUX7",       K_AUX7,       "weapnext" },
++	[RETRO_DEVICE_ID_JOYPAD_L3]     = { "AUX9",       K_AUX9,       "invuse" },
++	[RETRO_DEVICE_ID_JOYPAD_R3]     = { "AUX10",      K_AUX10,      "invdrop" },
++#else
+ 	[RETRO_DEVICE_ID_JOYPAD_B]      = { "AUX4",       K_AUX4,       "" }, /* Menu Cancel */
+ 	[RETRO_DEVICE_ID_JOYPAD_Y]      = { "AUX2",       K_AUX2,       "weapnext" },
+ 	[RETRO_DEVICE_ID_JOYPAD_SELECT] = { "SELECT",     K_ENTER,      "help" },
+@@ -219,6 +255,7 @@ static const input_bind_t input_binds_pad[] = {
+ 	[RETRO_DEVICE_ID_JOYPAD_R2]     = { "AUX7",       K_AUX7,       "+attack" },
+ 	[RETRO_DEVICE_ID_JOYPAD_L3]     = { 0 },
+ 	[RETRO_DEVICE_ID_JOYPAD_R3]     = { "AUX8",       K_AUX8,       "invdrop" },
++#endif
+ };
+ #define INPUT_BINDS_PAD_LEN (sizeof(input_binds_pad) / sizeof(input_binds_pad[0]))
+ 
+@@ -1103,6 +1140,11 @@ void Sys_SendKeyEvents (void)
+       /* Use Inventory Item */
+       SET_BOUND_KEY_PAD(ret, RETRO_DEVICE_ID_JOYPAD_RIGHT);
+ 
++#if defined(NO_ANALOG_JOY)
++      /* ... */
++      SET_BOUND_KEY_PAD(ret, RETRO_DEVICE_ID_JOYPAD_X);
++#endif
++
+       /* Next Weapon */
+       SET_BOUND_KEY_PAD(ret, RETRO_DEVICE_ID_JOYPAD_Y);
+ 
+@@ -1118,6 +1160,11 @@ void Sys_SendKeyEvents (void)
+       /* Attack */
+       SET_BOUND_KEY_PAD(ret, RETRO_DEVICE_ID_JOYPAD_R2);
+ 
++#if defined(NO_ANALOG_JOY)
++      /* ... */
++      SET_BOUND_KEY_PAD(ret, RETRO_DEVICE_ID_JOYPAD_L3);
++#endif
++
+       /* Drop Inventory Item */
+       SET_BOUND_KEY_PAD(ret, RETRO_DEVICE_ID_JOYPAD_R3);
+ 
+-- 
+2.45.2.windows.1
+
